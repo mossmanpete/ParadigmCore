@@ -1,50 +1,49 @@
-let createABCIServer = require('abci')
+let createABCIServer = require('abci');
 
-// turn on debug logging
-require('debug').enable('abci*')
+function decode(txByteArray) {
+  let chars = []
+  txByteArray.forEach(element => {
+    chars.push(String.fromCharCode(element))
+  });
+  return chars.join('')
+}
 
 let state = {
-  count: 0
+  // how to format for construction/testing?
+  number: 0
 }
 
 let handlers = {
-  info (request) {
+  info (_) {
     return {
       data: 'Stake Verification App',
-      version: '0.0.0',
+      version: '0.0.0a1',
       lastBlockHeight: 0,
       lastBlockAppHash: Buffer.alloc(0)
     }
   },
 
   checkTx (request) {
-    let tx = padTx(request.tx)
-    let number = tx.readUInt32BE(0)
-    if (number !== state.count) {
-      return { code: 1, log: 'tx does not match count' }
-    }
-    return { code: 0, log: 'tx succeeded' }
+    
+    //if (/* invalid */) {
+    //  return { code: 1, log: 'tx does not match count' }
+    //}
+    console.log("in checktx: ");
+    console.log(decode(request.tx));
+    return { code: 0, log: 'tx succeeded' } // valid
   },
 
   deliverTx (request) {
-    let tx = padTx(request.tx)
-    let number = tx.readUInt32BE(0)
-    if (number !== state.count) {
-      return { code: 1, log: 'tx does not match count' }
-    }
+    
+    //if (/* invalid */) {
+    //  return { code: 1, log: 'tx does not match count' }
+    //}
 
     // update state
-    state.count += 1
-
-    return { code: 0, log: 'tx succeeded' }
+    state.number += 1
+    console.log("success, tx number: "+state.number )
+    return { code: 0, log: 'tx succeeded' } // valid
   }
-}
-
-// make sure the transaction data is 4 bytes long
-function padTx (tx) {
-  let buf = Buffer.alloc(4)
-  tx.copy(buf, 4 - tx.length)
-  return buf
 }
 
 let port = 26658
