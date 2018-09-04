@@ -1,4 +1,5 @@
 let createABCIServer = require('abci');
+let port = 26658
 
 function decode(txByteArray) {
   let chars = []
@@ -25,30 +26,21 @@ let handlers = {
 
   checkTx (request) {
     
-    //if (/* invalid */) {
-    //  return { code: 1, log: 'tx does not match count' }
-    //}
-    txString = decode(request.tx);
-    txObject = JSON.parse(txString);
+    txString = request.tx.toString();//decode(request.tx);
+    //txObject = JSON.parse(txString);
     console.log("in checktx: ");
     console.log(txString);
     return { code: 0, log: 'tx succeeded' } // valid
   },
 
   deliverTx (request) {
-    
-    //if (/* invalid */) {
-    //  return { code: 1, log: 'tx does not match count' }
-    //}
-
-    // update state
+  
     state.number += 1
     console.log("success, tx number: "+state.number )
     return { code: 0, log: 'tx succeeded' } // valid
   }
 }
 
-let port = 26658
 createABCIServer(handlers).listen(port, () => {
-  console.log(`listening on port ${port}`)
+  console.log(`Listening on port ${port}`)
 })

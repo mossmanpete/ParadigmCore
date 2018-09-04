@@ -16,6 +16,8 @@
     "abci": "^3.0.2",
     "express": "^4.16.3",
     "lotion": "^0.1.19",
-    "paradigm.js": "^0.1.11"
+    "nodejs-websocket": "^1.7.1",
+    "paradigm.js": "^0.1.11",
+    "ws": "^6.0.0"
   }
 }
