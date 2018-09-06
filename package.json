@@ -18,6 +18,7 @@
     "lotion": "^0.1.19",
     "nodejs-websocket": "^1.7.1",
     "paradigm.js": "^0.1.11",
+    "redis": "^2.8.0",
     "ws": "^6.0.0"
   }
 }
