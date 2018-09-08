@@ -1,1 +1,1 @@
-// interface with redis server hash-table
+// interface with redis server hash-tables
