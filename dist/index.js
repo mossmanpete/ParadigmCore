@@ -1,5 +1,5 @@
 let createABCIServer = require('abci');
-let port = 26658
+const port = 26658;
 
 function decode(txByteArray) {
   let chars = []

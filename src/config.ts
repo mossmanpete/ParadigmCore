@@ -7,5 +7,7 @@
   @date_modified 12 September 2018
   @author Henry Harder
 
-  Interface with REDIS server.
+  Constants and configuration.
 */
+
+export const PORT: number = 26658;

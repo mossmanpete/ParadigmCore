@@ -25,7 +25,7 @@ app.use((state, tx) => {
         console.log("valid");
     } else {
         console.log("invalid");
-        return { code: 1, log: "testlog"}
+        return { code: 1, log: "1"}
     }
 });
 
