@@ -1,16 +1,19 @@
-let createABCIServer = require('abci');
-const port = 26658;
+/*
+  =========================
+  Blind Star - codename (developent)
+  index.ts @ {master}
+  =========================
+  @date_inital 12 September 2018
+  @date_modified 12 September 2018
+  @author Henry Harder
 
-function decode(txByteArray) {
-  let chars = []
-  txByteArray.forEach(element => {
-    chars.push(String.fromCharCode(element))
-  });
-  return chars.join('')
-}
+  Main ABCI application supporting the OrderStream network. 
+*/
+
+let createABCIServer = require('abci');
+let port = require('./config').PORT
 
 let state = {
-  // how to format for construction/testing?
   number: 0
 }
 
@@ -26,17 +29,15 @@ let handlers = {
 
   checkTx (request) {
     
-    txString = request.tx.toString();//decode(request.tx);
-    //txObject = JSON.parse(txString);
-    console.log("in checktx: ");
-    console.log(txString);
+    console.log("Request: " + request);
+    console.log("Request.tx: " + request.tx);
     return { code: 0, log: 'tx succeeded' } // valid
   },
 
   deliverTx (request) {
   
     state.number += 1
-    console.log("success, tx number: "+state.number )
+    console.log("Success, tx number: "+state.number )
     return { code: 0, log: 'tx succeeded' } // valid
   }
 }
