@@ -10,10 +10,16 @@
   Main ABCI application supporting the OrderStream network. 
 */
 
-let createABCIServer = require('abci');
-let port = require('./config').PORT
+let paradigm = require("paradigm.js");
 
-let state = {
+let createABCIServer = require('abci');
+let port = require('./config').PORT;
+let decode = require("./handlers").decode
+
+let p = new paradigm();
+let Order = p.Order;
+
+let state = { // eventually will represent address => limit
   number: 0
 }
 
@@ -29,19 +35,48 @@ let handlers = {
 
   checkTx (request) {
     
-    console.log("Request: " + request);
-    console.log("Request.tx: " + request.tx);
-    return { code: 0, log: 'tx succeeded' } // valid
+    try {      
+      let newOrder = new Order(JSON.parse(decode(request.tx)));
+      let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
+
+      if (typeof(newOrder.recoverMaker()) === "string"){ // change to recoverPoster eventually
+        return { 
+          code: 0, 
+          log: 'Success' 
+        }
+
+      } else {
+        return { 
+          code: 1, 
+          log: 'Bad order maker' 
+        } 
+      }
+    } catch (error) {
+      console.log(error);
+      return { 
+        code: 1, 
+        log: 'Bad order format' 
+      } 
+    }
   },
 
   deliverTx (request) {
+    /* 
+     This funciton will deliver a valid tx to the outputStream (the OrderStream)
+     via websocket to all listenting parties. It will also check the validity of
+     the stake a second time.
+    */
   
-    state.number += 1
+    state.number += 1 // temporary 
+
     console.log("Success, tx number: "+state.number )
-    return { code: 0, log: 'tx succeeded' } // valid
+    return { 
+      code: 0, 
+      log: 'tx succeeded' 
+    } 
   }
 }
 
 createABCIServer(handlers).listen(port, () => {
-  console.log(`Listening on port ${port}`)
-})
+  console.log(`Listening on port ${port}`);
+});
