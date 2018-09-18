@@ -38,7 +38,8 @@ let handlers = {
     try {      
       let newOrder = new Order(JSON.parse(decode(request.tx)));
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-
+      console.log(recoveredAddr);
+      
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -46,16 +47,16 @@ let handlers = {
         */
         return { 
           code: 0, 
-          log: 'Success' 
+          log: 'Success - stake verified.' 
         }
 
       } else {
         return { 
           code: 1, 
-          log: 'Bad order maker' 
+          log: 'Bad order maker - no stake.' 
         } 
       }
-      
+
     } catch (error) {
       console.log(error);
       return { 
@@ -66,15 +67,27 @@ let handlers = {
   },
 
   deliverTx (request) {
-    /* 
-     This funciton will deliver a valid tx to the outputStream (the OrderStream)
-     via websocket to all listenting parties. It will also check the validity of
-     the stake a second time.
-    */
-  
-    state.number += 1 // temporary 
+
+    if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
+      /*
+        The above conditional shoud rely on a verifyStake(), that checks
+        the existing state for that address. 
+      */
+      return { 
+        code: 0, 
+        log: 'Success - stake verified.' 
+      }
+    } else {
+      return { 
+        code: 1, 
+        log: 'Bad order maker - no stake.' 
+      } 
+    }
+
+    state.number += 1 // temporary
 
     console.log("Success, tx number: "+state.number )
+
     return { 
       code: 0, 
       log: 'tx succeeded' 
