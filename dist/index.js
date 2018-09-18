@@ -39,7 +39,7 @@ let handlers = {
       let newOrder = new Order(JSON.parse(decode(request.tx)));
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
       console.log(recoveredAddr);
-      
+
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -60,7 +60,7 @@ let handlers = {
     } catch (error) {
       console.log(error);
       return { 
-        code: 1, 
+        code: 1,
         log: 'Bad order format' 
       } 
     }
