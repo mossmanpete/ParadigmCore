@@ -39,7 +39,11 @@ let handlers = {
       let newOrder = new Order(JSON.parse(decode(request.tx)));
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
 
-      if (typeof(newOrder.recoverMaker()) === "string"){ // change to recoverPoster eventually
+      if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
+        /*
+          The above conditional shoud rely on a verifyStake(), that checks
+          the existing state for that address. 
+        */
         return { 
           code: 0, 
           log: 'Success' 
@@ -51,6 +55,7 @@ let handlers = {
           log: 'Bad order maker' 
         } 
       }
+      
     } catch (error) {
       console.log(error);
       return { 
