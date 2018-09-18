@@ -68,30 +68,37 @@ let handlers = {
 
   deliverTx (request) {
 
-    if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
-      /*
-        The above conditional shoud rely on a verifyStake(), that checks
-        the existing state for that address. 
-      */
-      return { 
-        code: 0, 
-        log: 'Success - stake verified.' 
+    try {      
+      let newOrder = new Order(JSON.parse(decode(request.tx)));
+      let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
+      console.log(recoveredAddr);
+
+      if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
+        /*
+          The above conditional shoud rely on a verifyStake(), that checks
+          the existing state for that address. 
+        */
+
+       state.number += 1;
+       return {
+         code: 0, 
+         log: 'Success - stake verified.'
+       }
+
+      } else {
+        return {
+          code: 1, 
+          log: 'Bad order maker - no stake.' 
+        } 
       }
-    } else {
+
+    } catch (error) {
+      console.log(error);
       return { 
-        code: 1, 
-        log: 'Bad order maker - no stake.' 
+        code: 1,
+        log: 'Bad order format' 
       } 
     }
-
-    state.number += 1 // temporary
-
-    console.log("Success, tx number: "+state.number )
-
-    return { 
-      code: 0, 
-      log: 'tx succeeded' 
-    } 
   }
 }
 
