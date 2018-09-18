@@ -22,7 +22,7 @@ From there,  `cd paradigmcore` and install dependencies: `npm i`
 ## Build
 This version is partially implemented in TypeScript, and should be compiled to update the JS files in `./dist`. Modify `tsconfig.json` to the correct target for your environment, then run:
 ```
-npm run tsc OR tsc
+npm run build OR tsc
 ```
 You can just run `tsc` if the default `tsconfig.json` is used.
 
