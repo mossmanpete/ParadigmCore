@@ -1,6 +1,6 @@
 # ParadigmCore
 
-![Status](https://img.shields.io/badge/status-alpha-green.svg) ![Version](https://img.shields.io/badge/version-0.0.11-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-beta-orange.svg) ![Version](https://img.shields.io/badge/version-0.0.1-brightgreen.svg)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg)](./LICENSE) [![Chat Server](https://img.shields.io/badge/chat%20server-join!-red.svg)](https://chat.paradigm.market/)
 
 ## Introduction
