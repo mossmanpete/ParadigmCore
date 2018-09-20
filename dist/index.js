@@ -39,11 +39,21 @@ let handlers = {
 
   checkTx (request) {
     
-    //txObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
-    //console.log(txObject);
+    try {
+      rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
+      txObjString = rawTxObject.toString('utf8');
+      txObject = JSON.parse(txObjString);
+
+    } catch (error) {
+
+      return { 
+        code: 1, 
+        log: 'Bad order - error decompressing TX.' 
+      }
+    }
 
     try {      
-      let newOrder = new Order(JSON.parse(decode(request.tx)));
+      let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
 
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
@@ -67,15 +77,28 @@ let handlers = {
       console.log(error);
       return { 
         code: 1,
-        log: 'Bad order format' 
+        log: 'Bad order format.' 
       } 
     }
   },
 
   deliverTx (request) {
 
+    try {
+      rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
+      txObjString = rawTxObject.toString('utf8');
+      txObject = JSON.parse(txObjString);
+
+    } catch (error) {
+
+      return { 
+        code: 1, 
+        log: 'Bad order - error decompressing TX.' 
+      }
+    }
+
     try {      
-      let newOrder = new Order(JSON.parse(decode(request.tx)));
+      let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
 
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
@@ -83,15 +106,13 @@ let handlers = {
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
         */
-
-       state.number -= 1; // will eventually reduce limit by 1 
-       return {
-         code: 0, 
-         log: 'Success - stake verified.'
-       }
+        return { 
+          code: 0, 
+          log: 'Success - stake of '+ recoveredAddr +' verified.' 
+        }
 
       } else {
-        return {
+        return { 
           code: 1, 
           log: 'Bad order maker - no stake.' 
         } 
@@ -101,7 +122,7 @@ let handlers = {
       console.log(error);
       return { 
         code: 1,
-        log: 'Bad order format' 
+        log: 'Bad order format.' 
       } 
     }
   }
