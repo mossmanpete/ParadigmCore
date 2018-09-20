@@ -11,10 +11,12 @@
 */
 
 let paradigm = require("paradigm.js");
+let zlib = require('zlib');
 
 let createABCIServer = require('abci');
 let port = require('./config').PORT;
 let decode = require("./handlers").decode
+let addPlus = require('./handlers').addPlus
 
 let p = new paradigm();
 let Order = p.Order;
@@ -23,6 +25,7 @@ let state = { // eventually will represent address => limit
   number: 0
 
 }
+
 
 let handlers = {
   info (_) {
@@ -36,6 +39,9 @@ let handlers = {
 
   checkTx (request) {
     
+    //txObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
+    //console.log(txObject);
+
     try {      
       let newOrder = new Order(JSON.parse(decode(request.tx)));
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
