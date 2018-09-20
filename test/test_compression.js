@@ -11,19 +11,19 @@ console.log("INPUT_LENGTH: "+ inBuffer.length);
 console.log("INPUT:\n\n"+ testJSONstring);
 console.log("\n=============\n");
 
-zlib.deflate(inBuffer, (_, res) => {
+zlib.deflate(inBuffer, (_, comp) => { // res here is the compressed order object
 
-    console.log("COMPRESSED_LENGTH: "+res.toString('base64').length);
-    console.log("COMPRESSED_RESULT:\n\n"+ res.toString('base64'));
+    console.log("COMPRESSED_LENGTH: "+comp.toString('base64').length);
+    console.log("COMPRESSED_RESULT:\n\n"+ comp.toString('base64'));
     console.log("\n=============\n");
 
-    zlib.inflate(Buffer.from(res.toString('base64'), 'base64'), (_, res) => {
+    zlib.inflate(Buffer.from(comp.toString('base64'), 'base64'), (_, decomp) => { // res here is the decompressed object
         console.log("INPUT_LEN: " + inBuffer.length);
-        console.log("DECOMPRESSED_LEN: "+ res.length);
-        console.log("DECOMPRESSED_RESULT:\n\n"+ res.toString('utf8'));
+        console.log("DECOMPRESSED_LEN: "+ decomp.length);
+        console.log("DECOMPRESSED_RESULT:\n\n"+ decomp.toString('utf8'));
         console.log("\n=============\n");
         console.log("\nEQUALITY_CHECK:");
-        console.log("INPUT === DECOMPRESSED_RESULT: "+ (res.toString('utf8') === inBuffer.toString('utf8')));
+        console.log("INPUT === DECOMPRESSED_RESULT: "+ (decomp.toString('utf8') === inBuffer.toString('utf8')));
         console.log("\n=============\n");
     });
 });
