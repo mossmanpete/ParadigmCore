@@ -1,3 +1,5 @@
+// working on how to compress and encode orders - ignore this:q
+
 let comp = require('lzutf8');
 
 function b2str(b){
