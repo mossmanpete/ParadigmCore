@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /*
   =========================
   Blind Star - codename (developent)
@@ -10,7 +11,6 @@
 
   General functions and utilities, as well as ABCI handlers.
 */
-Object.defineProperty(exports, "__esModule", { value: true });
 function decode(txByteArray) {
     let chars = [];
     txByteArray.forEach(element => {

@@ -21,6 +21,7 @@ let Order = p.Order;
 
 let state = { // eventually will represent address => limit
   number: 0
+
 }
 
 let handlers = {
@@ -38,7 +39,6 @@ let handlers = {
     try {      
       let newOrder = new Order(JSON.parse(decode(request.tx)));
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-      console.log(recoveredAddr);
 
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
@@ -47,7 +47,7 @@ let handlers = {
         */
         return { 
           code: 0, 
-          log: 'Success - stake verified.' 
+          log: 'Success - stake of '+ recoveredAddr +' verified.' 
         }
 
       } else {
@@ -71,7 +71,6 @@ let handlers = {
     try {      
       let newOrder = new Order(JSON.parse(decode(request.tx)));
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-      console.log(recoveredAddr);
 
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
@@ -79,7 +78,7 @@ let handlers = {
           the existing state for that address. 
         */
 
-       state.number += 1;
+       state.number -= 1; // will eventually reduce limit by 1 
        return {
          code: 0, 
          log: 'Success - stake verified.'

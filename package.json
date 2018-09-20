@@ -16,6 +16,7 @@
   "dependencies": {
     "abci": "^3.0.2",
     "express": "^4.16.3",
+    "lzutf8": "^0.5.5",
     "nodejs-websocket": "^1.7.1",
     "paradigm.js": "^0.1.11",
     "redis": "^2.8.0",
