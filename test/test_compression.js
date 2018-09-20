@@ -11,13 +11,13 @@ console.log("INPUT_LENGTH: "+ inBuffer.length);
 console.log("INPUT:\n\n"+ testJSONstring);
 console.log("\n=============\n");
 
-zlib.deflate(inBuffer, (_, comp) => { // res here is the compressed order object
+zlib.deflate(inBuffer, (_, comp) => { // comp is the compressed order object
 
     console.log("COMPRESSED_LENGTH: "+comp.toString('base64').length);
     console.log("COMPRESSED_RESULT:\n\n"+ comp.toString('base64'));
     console.log("\n=============\n");
 
-    zlib.inflate(Buffer.from(comp.toString('base64'), 'base64'), (_, decomp) => { // res here is the decompressed object
+    zlib.inflate(Buffer.from(comp.toString('base64'), 'base64'), (_, decomp) => { // decomp is the decompressed object
         console.log("INPUT_LEN: " + inBuffer.length);
         console.log("DECOMPRESSED_LEN: "+ decomp.length);
         console.log("DECOMPRESSED_RESULT:\n\n"+ decomp.toString('utf8'));
