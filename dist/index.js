@@ -43,6 +43,7 @@ let handlers = {
       txObjString = rawTxObject.toString('utf8');
       txObject = JSON.parse(txObjString);
     } catch (error) {
+      console.log("Bad order at "+Date()+".")
       return { 
         code: 1, 
         log: 'Bad order - error decompressing TX.' 
@@ -67,7 +68,8 @@ let handlers = {
         } 
       }
     } catch (error) {
-      console.log(error);
+      //console.log(error);
+      console.log("Bad order at "+Date()+".")
       return { 
         code: 1,
         log: 'Bad order format.' 
@@ -81,6 +83,7 @@ let handlers = {
       txObjString = rawTxObject.toString('utf8');
       txObject = JSON.parse(txObjString);
     } catch (error) {
+      console.log("Bad order at "+Date()+".")
       return { 
         code: 1, 
         log: 'Bad order - error decompressing TX.' 
@@ -105,7 +108,8 @@ let handlers = {
         } 
       }
     } catch (error) {
-      console.log(error);
+      //console.log(error);
+      console.log("Bad order at "+Date()+".")
       return { 
         code: 1,
         log: 'Bad order format.' 
@@ -113,7 +117,7 @@ let handlers = {
     }
   }
 }
-
+w]
 abci(handlers).listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
