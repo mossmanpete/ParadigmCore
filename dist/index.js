@@ -43,6 +43,7 @@ let handlers = {
       txObjString = rawTxObject.toString('utf8');
       txObject = JSON.parse(txObjString);
     } catch (error) {
+      // console.log(error)
       console.log("Bad order at "+Date()+".")
       return { 
         code: 1, 
@@ -68,7 +69,7 @@ let handlers = {
         } 
       }
     } catch (error) {
-      //console.log(error);
+      // console.log(error);
       console.log("Bad order at "+Date()+".")
       return { 
         code: 1,
@@ -83,6 +84,7 @@ let handlers = {
       txObjString = rawTxObject.toString('utf8');
       txObject = JSON.parse(txObjString);
     } catch (error) {
+      console.log(error)
       console.log("Bad order at "+Date()+".")
       return { 
         code: 1, 
@@ -117,7 +119,7 @@ let handlers = {
     }
   }
 }
-w]
+
 abci(handlers).listen(port, () => {
   console.log(`Listening on port ${port}`);
 });

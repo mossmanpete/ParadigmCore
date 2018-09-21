@@ -28,3 +28,9 @@ zlib.deflate(inBuffer, (_, comp) => { // comp is the compressed order object
         console.log("\n=============\n");
     });
 });
+
+// can also use synchronous functions => deflateSync() and inflateSync()
+
+testString = "Hello world, I am an uncompressed string";
+bufferedString = Buffer.from(testString, 'utf8');
+compresedBuffer = zlib.deflateSync
