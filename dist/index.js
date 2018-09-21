@@ -26,7 +26,6 @@ let state = { // eventually will represent address => limit
 
 }
 
-
 let handlers = {
   info (_) {
     return {
@@ -43,19 +42,15 @@ let handlers = {
       rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
       txObjString = rawTxObject.toString('utf8');
       txObject = JSON.parse(txObjString);
-
     } catch (error) {
-
       return { 
         code: 1, 
         log: 'Bad order - error decompressing TX.' 
       }
     }
-
     try {      
       let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -65,14 +60,12 @@ let handlers = {
           code: 0, 
           log: 'Success - stake of '+ recoveredAddr +' verified.' 
         }
-
       } else {
         return { 
           code: 1, 
           log: 'Bad order maker - no stake.' 
         } 
       }
-
     } catch (error) {
       console.log(error);
       return { 
@@ -81,26 +74,21 @@ let handlers = {
       } 
     }
   },
-
   deliverTx (request) {
 
     try {
       rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
       txObjString = rawTxObject.toString('utf8');
       txObject = JSON.parse(txObjString);
-
     } catch (error) {
-
       return { 
         code: 1, 
         log: 'Bad order - error decompressing TX.' 
       }
     }
-
     try {      
       let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -110,14 +98,12 @@ let handlers = {
           code: 0, 
           log: 'Success - stake of '+ recoveredAddr +' verified.' 
         }
-
       } else {
         return { 
           code: 1, 
           log: 'Bad order maker - no stake.' 
         } 
       }
-
     } catch (error) {
       console.log(error);
       return { 
