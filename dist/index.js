@@ -11,10 +11,12 @@
 */
 
 let paradigm = require("paradigm.js");
+let zlib = require('zlib');
 
-let createABCIServer = require('abci');
+let abci = require('abci');
 let port = require('./config').PORT;
 let decode = require("./handlers").decode
+let addPlus = require('./handlers').addPlus
 
 let p = new paradigm();
 let Order = p.Order;
@@ -36,10 +38,21 @@ let handlers = {
 
   checkTx (request) {
     
+    try {
+      rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
+      txObjString = rawTxObject.toString('utf8');
+      txObject = JSON.parse(txObjString);
+    } catch (error) {
+      // console.log(error)
+      console.log("Bad order at "+Date()+".")
+      return { 
+        code: 1, 
+        log: 'Bad order - error decompressing TX.' 
+      }
+    }
     try {      
-      let newOrder = new Order(JSON.parse(decode(request.tx)));
+      let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -49,58 +62,64 @@ let handlers = {
           code: 0, 
           log: 'Success - stake of '+ recoveredAddr +' verified.' 
         }
-
       } else {
         return { 
           code: 1, 
           log: 'Bad order maker - no stake.' 
         } 
       }
-
     } catch (error) {
-      console.log(error);
+      // console.log(error);
+      console.log("Bad order at "+Date()+".")
       return { 
         code: 1,
-        log: 'Bad order format' 
+        log: 'Bad order format.' 
       } 
     }
   },
-
   deliverTx (request) {
 
+    try {
+      rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
+      txObjString = rawTxObject.toString('utf8');
+      txObject = JSON.parse(txObjString);
+    } catch (error) {
+      console.log(error)
+      console.log("Bad order at "+Date()+".")
+      return { 
+        code: 1, 
+        log: 'Bad order - error decompressing TX.' 
+      }
+    }
     try {      
-      let newOrder = new Order(JSON.parse(decode(request.tx)));
+      let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-
       if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
         */
-
-       state.number -= 1; // will eventually reduce limit by 1 
-       return {
-         code: 0, 
-         log: 'Success - stake verified.'
-       }
-
+        return { 
+          code: 0, 
+          log: 'Success - stake of '+ recoveredAddr +' verified.' 
+        }
       } else {
-        return {
+        return { 
           code: 1, 
           log: 'Bad order maker - no stake.' 
         } 
       }
-
     } catch (error) {
-      console.log(error);
+      //console.log(error);
+      console.log("Bad order at "+Date()+".")
       return { 
         code: 1,
-        log: 'Bad order format' 
+        log: 'Bad order format.' 
       } 
     }
   }
 }
 
-createABCIServer(handlers).listen(port, () => {
+abci(handlers).listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
