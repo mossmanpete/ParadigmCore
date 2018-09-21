@@ -13,7 +13,7 @@
 let paradigm = require("paradigm.js");
 let zlib = require('zlib');
 
-let createABCIServer = require('abci');
+let abci = require('abci');
 let port = require('./config').PORT;
 let decode = require("./handlers").decode
 let addPlus = require('./handlers').addPlus
@@ -128,6 +128,6 @@ let handlers = {
   }
 }
 
-createABCIServer(handlers).listen(port, () => {
+abci(handlers).listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
