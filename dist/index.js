@@ -10,21 +10,23 @@
   Main ABCI application supporting the OrderStream network. 
 */
 
-let paradigm = require("paradigm.js");
-let zlib = require('zlib');
+let _pjs = require("paradigm.js");
+let _enc = require("./PayloadCipher").PayloadCipher
 
 let abci = require('abci');
 let port = require('./config').ABCI_PORT;
 let version = require('./config').VERSION;
-let decode = require("./handlers").decode
-let addPlus = require('./handlers').addPlus
 
-let p = new paradigm();
-let Order = p.Order;
+let paradigm = new _pjs(); // new paradigm instance
+let Order = paradigm.Order; 
+
+let cipher = new _enc({ // new Payload
+  inputEncoding: 'utf8',
+  outputEncoding: 'base64'
+});
 
 let state = { // eventually will represent address => limit
   number: 0
-
 }
 
 let handlers = {
@@ -38,11 +40,10 @@ let handlers = {
   },
 
   checkTx (request) {
+    let txObject;
     
     try {
-      rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
-      txObjString = rawTxObject.toString('utf8');
-      txObject = JSON.parse(txObjString);
+      txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
       // console.log(error)
       console.log("Bad order at "+Date()+".")
@@ -51,10 +52,11 @@ let handlers = {
         log: 'Bad order - error decompressing TX.' 
       }
     }
+
     try {      
       let newOrder = new Order(txObject);
-      let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-      if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
+      let recoveredAddr = newOrder.recoverPoster();
+      if (typeof(recoveredAddr) === "string"){ 
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
@@ -78,24 +80,25 @@ let handlers = {
       } 
     }
   },
-  deliverTx (request) {
 
+  deliverTx (request) {
+    let txObject;
+    
     try {
-      rawTxObject = zlib.inflateSync(Buffer.from(addPlus(decode(request.tx)), 'base64'));
-      txObjString = rawTxObject.toString('utf8');
-      txObject = JSON.parse(txObjString);
+      txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      console.log(error)
+      // console.log(error)
       console.log("Bad order at "+Date()+".")
       return { 
         code: 1, 
         log: 'Bad order - error decompressing TX.' 
       }
     }
+
     try {      
       let newOrder = new Order(txObject);
-      let recoveredAddr = newOrder.recoverMaker(); // eventually will be *.recoverPoster()
-      if (typeof(recoveredAddr) === "string"){ // change to recoverPoster eventually
+      let recoveredAddr = newOrder.recoverPoster();
+      if (typeof(recoveredAddr) === "string"){ 
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
@@ -111,7 +114,7 @@ let handlers = {
         } 
       }
     } catch (error) {
-      //console.log(error);
+      // console.log(error);
       console.log("Bad order at "+Date()+".")
       return { 
         code: 1,

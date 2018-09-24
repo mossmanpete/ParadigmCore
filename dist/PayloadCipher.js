@@ -2,7 +2,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  PayloadEncoder.ts @ {server}
+  PayloadCipher.ts @ {server}
   =========================
   @date_inital 21 September 2018
   @date_modified 24 September 2018
@@ -13,14 +13,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const zlib = require("zlib");
 const config_1 = require("./config");
-class PayloadEncoder {
+class PayloadCipher {
     constructor(options) {
         /*
-         Supply `new PayloadEncoder(...)` with options object:
-         let options = {
-             inputEncoding: "..." // encoding type
-             outputEncoding: "..." // encoding type
-         }
+            Supply `new PayloadCipher(...)` with options object:
+            let options = {
+                inputEncoding: "..." // encoding type
+                outputEncoding: "..." // encoding type
+            }
         */
         if (options != null) {
             this.inEncoding = options.inputEncoding;
@@ -102,5 +102,23 @@ class PayloadEncoder {
         }
         return outObj;
     }
+    ABCIdecode(inBuff) {
+        /*
+            ABCIdecode is used in the ABCI application to decode the
+            input buffer
+        */
+        let inStr = inBuff.toString('utf8');
+        let outArr = [];
+        for (let i = 0; i < inStr.length; i++) {
+            if (inStr.charAt(i) == " ") {
+                outArr.push('+'); // "+" gets lost somewhere 
+                // TODO: find where this happens
+            }
+            else {
+                outArr.push(inStr.charAt(i));
+            }
+        }
+        return this.decodeToObject(outArr.join(''));
+    }
 }
-exports.PayloadEncoder = PayloadEncoder;
+exports.PayloadCipher = PayloadCipher;

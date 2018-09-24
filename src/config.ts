@@ -16,6 +16,9 @@ export const VERSION: string = "0.0.1a5"; // PC Version
 export const ABCI_PORT: number = 26658;
 export const API_PORT: number = 3000;
 
+// endpoints for ABCI/RPC
+export const ABCI_URI: string = "http://localhost:26657/"
+
 // encoding types for order transport 
 export const IN_ENC: string = 'utf8'
 export const OUT_ENC: string = 'base64'

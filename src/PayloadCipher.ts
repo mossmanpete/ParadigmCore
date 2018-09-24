@@ -1,7 +1,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  PayloadEncoder.ts @ {server}
+  PayloadCipher.ts @ {server}
   =========================
   @date_inital 21 September 2018
   @date_modified 24 September 2018
@@ -13,17 +13,17 @@
 import * as zlib from "zlib";
 import { IN_ENC, OUT_ENC } from "./config";
 
-export class PayloadEncoder {
+export class PayloadCipher {
     private inEncoding: string; // encoding for in/output of orders, default utf8
     private outEncoding: string;  // encoding used for URL transport, default base64
 
     constructor(options: any) {
         /*
-         Supply `new PayloadEncoder(...)` with options object: 
-         let options = {
-             inputEncoding: "..." // encoding type
-             outputEncoding: "..." // encoding type
-         }
+            Supply `new PayloadCipher(...)` with options object: 
+            let options = {
+                inputEncoding: "..." // encoding type
+                outputEncoding: "..." // encoding type
+            }
         */
 
         if(options != null){
@@ -31,7 +31,7 @@ export class PayloadEncoder {
             this.outEncoding = options.outputEncoding
         } else {
             this.inEncoding = IN_ENC;
-            this.outEncoding = OUT_ENC
+            this.outEncoding = OUT_ENC;
         }
     }
 
@@ -109,5 +109,23 @@ export class PayloadEncoder {
         }
 
         return outObj;
+    }
+
+    public ABCIdecode(inBuff: Buffer): object {
+        /*
+            ABCIdecode is used in the ABCI application to decode the
+            input buffer 
+        */
+       let inStr: string = inBuff.toString('utf8');
+       let outArr: Array<string> = [];
+       for(let i=0; i<inStr.length; i++){
+           if(inStr.charAt(i) == " "){
+               outArr.push('+');    // "+" gets lost somewhere 
+                                    // TODO: find where this happens
+           } else {
+               outArr.push(inStr.charAt(i));
+           }
+       }
+       return this.decodeToObject(outArr.join(''));
     }
 }
