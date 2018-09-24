@@ -31,11 +31,11 @@ app.use(bodyParser.json());
 app.post("/post", (req, res) => {
     try {
         let payloadStr = pe.encodeFromObject(req.body)
+        Message.staticSend(res, payloadStr);
     } catch (error) {
         console.log(error) // DEBUG
         Message.staticSendError(res, "Error parsing order, check format and try again.", 400);
     }
-    Message.staticSend(res, payloadStr);
 });
 
 app.listen(API_PORT, () => {

@@ -12,13 +12,20 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 class Message {
-    static staticSend(res, message, error) {
+    static staticSendError(res, message, error) {
         let json = {
             "error": error,
             "message": message,
             "processed": new Date().toLocaleString()
         };
         res.status(error).send(json);
+    }
+    static staticSend(res, message) {
+        let json = {
+            "message": message,
+            "processed": new Date().toLocaleString()
+        };
+        res.status(200).send(json);
     }
     constructor(response, message, error) {
         if (error != null) {

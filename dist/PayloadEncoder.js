@@ -5,7 +5,7 @@
   PayloadEncoder.ts @ {server}
   =========================
   @date_inital 21 September 2018
-  @date_modified 21 September 2018
+  @date_modified 24 September 2018
   @author Henry Harder
 
   Compression and encoding.
@@ -75,9 +75,32 @@ class PayloadEncoder {
         }
         catch (err) {
             console.log(err); // debugging (REMOVE)
-            throw new Error("Error encoding payload.");
+            throw new Error("Error decoding payload.");
         }
         return outStr;
+    }
+    decodeToObject(input) {
+        let inBuff; // input buffer
+        let dcBuff; // decompressed buffer
+        let outStr; // decoded string
+        let outObj; // output object
+        try {
+            inBuff = Buffer.from(input, this.outEncoding);
+            dcBuff = zlib.inflateSync(inBuff);
+            outStr = dcBuff.toString(this.inEncoding);
+        }
+        catch (err) {
+            console.log(err); // debugging (REMOVE)
+            throw new Error("Error decoding payload.");
+        }
+        try {
+            outObj = JSON.parse(outStr);
+        }
+        catch (err) {
+            console.log(err);
+            throw new Error("Error creating object from JSON");
+        }
+        return outObj;
     }
 }
 exports.PayloadEncoder = PayloadEncoder;
