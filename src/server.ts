@@ -17,7 +17,7 @@ import * as cors from "cors";
 import { PayloadCipher } from "./PayloadCipher"; 
 import { Message } from "./Message";
 
-import { API_PORT, VERSION } from "./config";
+import { API_PORT, VERSION, ABCI_URI} from "./config";
 
 let pe = new PayloadCipher({
     inputEncoding: 'utf8',
@@ -34,16 +34,34 @@ app.use(function (err, req, res, next) {
 });
 
 app.post("/post", (req, res) => {
+    let payloadStr: string;
     try {
-        let payloadStr = pe.encodeFromObject(req.body)
-        console.log(payloadStr) // temporary
-        Message.staticSend(res, payloadStr); // temporary
+        payloadStr = pe.encodeFromObject(req.body)
     } catch (error) {
-        console.log(error) // DEBUG
         Message.staticSendError(res, "Error parsing order, check format and try again.", 400);
     }
+    
+    let getURL = `/broadcast_tx_sync?tx=\"${payloadStr}\"`;
 
     // deliver TX to ABCI server here
+    let options = {
+        hostname: 'localhost',
+        port: 26657,
+        path: getURL
+    }
+
+    http.get(options, function(getres) {
+        if(res.statusCode != 200){
+            Message.staticSendError(res, "Internal server error.", 500);
+        }
+      
+        getres.on("data", function(chunk) {
+          res.send(chunk);
+        });
+      }).on('error', function(e) {
+        Message.staticSendError(res, e.message, 500);
+      });
+
 });
 
 // to run in-process version, should we have `export function start(){app.listen(...)}` ???

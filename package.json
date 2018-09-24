@@ -1,6 +1,6 @@
 {
   "name": "nodejs-orderstream",
-  "version": "0.0.0a1",
+  "version": "0.0.1a6",
   "description": "Node.js OrderStream implementation",
   "main": "index.js",
   "scripts": {
