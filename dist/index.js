@@ -1,10 +1,10 @@
 /*
   =========================
   Blind Star - codename (developent)
-  index.ts @ {master}
+  index.ts @ {server}
   =========================
   @date_inital 12 September 2018
-  @date_modified 12 September 2018
+  @date_modified 24 September 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 

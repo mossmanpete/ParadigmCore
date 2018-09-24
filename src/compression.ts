@@ -1,7 +1,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  compression.ts @ {master}
+  compression.ts @ {server}
   =========================
   @date_inital 21 September 2018
   @date_modified 21 September 2018
@@ -21,11 +21,18 @@ export class TransactionPayload {
     constructor(input: string) {
         this.raw = input;
         this.rawBytes = Buffer.from(this.raw, 'base64');
+        try {
+            this.decompressedBytes = this.decompress()
+        } catch (error) {
+            throw new Error("Bad order encoding");
+        }
+        this.decoded = this.decompressedBytes.toString('utf8');
     }
 
     private decompress() {
         try {
             let decBuffer: Buffer = zlib.inflateSync(this.rawBytes);
+            return decBuffer;
         } catch (error) {
             return Buffer.from("0");
         }
