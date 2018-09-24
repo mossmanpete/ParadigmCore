@@ -28,15 +28,16 @@ app.use(function (err, req, res, next) {
     Message_1.Message.staticSendError(res, "Bad JSON format, check TX and try again.", 400);
 });
 app.post("/post", (req, res) => {
-    console.log(req.body);
     try {
         let payloadStr = pe.encodeFromObject(req.body);
-        //Message.staticSend(res, payloadStr);
+        console.log(payloadStr); // temporary
+        Message_1.Message.staticSend(res, payloadStr); // temporary
     }
     catch (error) {
         console.log(error); // DEBUG
         Message_1.Message.staticSendError(res, "Error parsing order, check format and try again.", 400);
     }
+    // deliver TX to ABCI server here
 });
 // to run in-process version, should we have `export function start(){app.listen(...)}` ???
 app.listen(config_1.API_PORT, () => {
