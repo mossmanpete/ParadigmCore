@@ -18,14 +18,6 @@ export function decode(txByteArray: Array<number>) {
   return chars.join('')
 }
 
-export function bufferToString(byteArr): string{
-  let outarr = [];
-  for(let i=0; i<byteArr.length; i++){
-      outarr.push(String.fromCharCode(parseInt(byteArr[i])));
-  }
-  return outarr.join('')
-}
-
 export function addPlus(string: string): string{
   // add "+" characters back to URLs... this is pretty hacky
   let out = [];

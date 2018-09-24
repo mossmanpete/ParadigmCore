@@ -2,7 +2,7 @@
     "compilerOptions": {
         "outDir": "./dist",
         "baseUrl": "./",
-        "target": "esnext",
+        "target": "es6",
         "module": "commonjs"
     },
     "include":[

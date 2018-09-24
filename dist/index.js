@@ -14,7 +14,8 @@ let paradigm = require("paradigm.js");
 let zlib = require('zlib');
 
 let abci = require('abci');
-let port = require('./config').PORT;
+let port = require('./config').ABCI_PORT;
+let version = require('./config').VERSION;
 let decode = require("./handlers").decode
 let addPlus = require('./handlers').addPlus
 
@@ -30,7 +31,7 @@ let handlers = {
   info (_) {
     return {
       data: 'Stake Verification App',
-      version: '0.0.0a1',
+      version: version,
       lastBlockHeight: 0,
       lastBlockAppHash: Buffer.alloc(0)
     }
