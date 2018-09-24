@@ -10,7 +10,7 @@
   Constants and configuration.
 */
 
-export const VERSION: string = "0.0.1a5"; // PC Version 
+export const VERSION: string = "0.0.1a6"; // PC Version 
 
 // public/private ports for ABCI and RPC server
 export const ABCI_PORT: number = 26658;

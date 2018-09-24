@@ -11,7 +11,7 @@
   Constants and configuration.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.VERSION = "0.0.1a5"; // PC Version 
+exports.VERSION = "0.0.1a6"; // PC Version 
 // public/private ports for ABCI and RPC server
 exports.ABCI_PORT = 26658;
 exports.API_PORT = 3000;

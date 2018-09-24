@@ -44,7 +44,9 @@ app.post("/post", (req, res) => {
         path: getURL
     };
     http.get(options, function (getres) {
-        console.log("Got response: " + res.statusCode);
+        if (res.statusCode != 200) {
+            Message_1.Message.staticSendError(res, "Internal server error.", 500);
+        }
         getres.on("data", function (chunk) {
             res.send(chunk);
         });
