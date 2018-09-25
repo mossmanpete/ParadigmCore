@@ -1,9 +1,7 @@
-import { ABCI_PORT } from "./config";
-
 /*
   =========================
   Blind Star - codename (developent)
-  index.ts @ {server}
+  index.ts @ {master}
   =========================
   @date_inital 12 September 2018
   @date_modified 24 September 2018
@@ -12,48 +10,53 @@ import { ABCI_PORT } from "./config";
   Main ABCI application supporting the OrderStream network. 
 */
 
+import * as abci from 'abci';
+import * as _ws from "ws";
+import * as _pjs from "paradigm.js";
 
-let _pjs = require("paradigm.js");
-let _enc = require("./PayloadCipher").PayloadCipher
+import { EventEmitter } from "events";
+import { startAPIserver } from "./server";
+import { state } from "./state";
+import { ABCI_PORT, VERSION, WS_PORT } from "./config";
+import { Logger } from "./Logger";
+import { Vote } from "./Vote";
+import { PayloadCipher } from "./PayloadCipher";
 
-let abci = require('abci');
-let startAPI = require("./server").startAPIserver;
-let port = require('./config').ABCI_PORT;
-let version = require('./config').VERSION;
-let Vote = require('./Vote').Vote;
-
-
+let emitter = new EventEmitter(); // event emitter for WS
+let wss = new _ws.Server({ port: WS_PORT });
+let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
 let paradigm = new _pjs(); // new paradigm instance
-let Order = paradigm.Order; 
+let Order = paradigm.Order;
 
-let cipher = new _enc({ // new Payload
-  inputEncoding: 'utf8',
-  outputEncoding: 'base64'
+wss.on("connection", (ws) => {
+  ws.send("hello");
+  emitter.on("validOrder", (order) => {
+    ws.send(JSON.stringify({
+      "event": "new-order",
+      "timestamp": Math.floor(Date.now()/1000),
+      "data": order
+    }));
+  });
 });
 
-let state = { // eventually will represent address => limit
-  number: 0
-}
-
 let handlers = {
-  info (_) {
+  info: (_) => {
     return {
       data: 'Stake Verification App',
-      version: version,
+      version: VERSION,
       lastBlockHeight: 0,
       lastBlockAppHash: Buffer.alloc(0)
     }
   },
 
-  checkTx (request) {
+  checkTx: (request) => {
     let txObject;
     
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      // console.log(error)
-      console.log("Bad order at "+Date()+".")
-      return Vote.invalid('Bad order - error decompressing TX.');
+      Logger.logEvent("Bad order post, error decompressing TX - rejected (checkTx)");
+      return Vote.invalid("Bad order, error decompressing TX");
     }
 
     try {      
@@ -64,25 +67,24 @@ let handlers = {
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
         */        
-        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`);
+        return Vote.valid(`Stake verified, order kept.`);
       } else {
+        Logger.logEvent("Bad order post, no stake - rejected (checkTx)")
         return Vote.invalid('Bad order maker - no stake.');
       }
     } catch (error) {
-      // console.log(error);
-      console.log("Bad order at "+Date()+".")
+      Logger.logEvent("Bad order post, bad format - rejected (checkTx)");
       return Vote.invalid('Bad order format.');
     }
   },
 
-  deliverTx (request) {
+  deliverTx: (request) => {
     let txObject;
     
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      // console.log(error)
-      console.log("Bad order at "+Date()+".")
+      Logger.logEvent("Bad order, error decompressing - rejected (deliverTx)")
       return Vote.invalid('Bad order - error decompressing TX.');
     }
 
@@ -93,20 +95,32 @@ let handlers = {
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
-       */
+
+          BEGIN STATE MODIFICATION
+        */
+        
+        emitter.emit("validOrder", newOrder.toJSON());
+        state.number += 1;
+
+        /*
+          END STATE MODIFICATION
+        */
+
+        Logger.logEvent("Valid order received (in deliverTx)")
         return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`);
       } else {
+        Logger.logEvent("Bad order post, no stake - rejected (deliverTx)")
         return Vote.invalid('Bad order maker - no stake.');
       }
     } catch (error) {
-      // console.log(error);
-      console.log("Bad order at "+Date()+".")
+      console.log(error);
+      Logger.logEvent("Bad order post, bad format - rejected (deliverTx)");
       return Vote.invalid('Bad order format.');
     }
   }
 }
 
-abci(handlers).listen(port, () => {
-  console.log(`[PC - ABCI Server @${version}: ${new Date().toLocaleString()}] ABCI server started on port ${port}.`);
-  startAPI();
+abci(handlers).listen(ABCI_PORT, () => {
+  Logger.logEvent(`ABCI server started on port ${ABCI_PORT}.`);
+  startAPIserver();
 });

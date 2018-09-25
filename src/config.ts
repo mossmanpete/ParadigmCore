@@ -9,15 +9,16 @@
 
   Constants and configuration.
 */
-
 export const VERSION: string = "0.0.1a7"; // PC Version 
 
-// public/private ports for ABCI and RPC server
+// endpoints for ABCI/RPC
+export const ABCI_HOST: string = "localhost";
+export const ABCI_RPC_PORT: number = 26657;
+
+// public/private ports for ABCI, RPC, and WS servers
 export const ABCI_PORT: number = 26658;
 export const API_PORT: number = 3000;
-
-// endpoints for ABCI/RPC
-export const ABCI_URI: string = "http://localhost:26657"
+export const WS_PORT: number = 8080;
 
 // encoding types for order transport 
 export const IN_ENC: string = 'utf8'

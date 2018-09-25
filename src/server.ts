@@ -16,8 +16,9 @@ import * as bodyParser from "body-parser";
 import * as cors from "cors";
 import { PayloadCipher } from "./PayloadCipher"; 
 import { Message } from "./Message";
+import { Logger } from "./Logger";
 
-import { API_PORT, VERSION, ABCI_URI} from "./config";
+import { API_PORT, VERSION, ABCI_HOST, ABCI_RPC_PORT} from "./config";
 
 let pe = new PayloadCipher({
     inputEncoding: 'utf8',
@@ -45,8 +46,8 @@ app.post("/post", (req, res) => {
 
     // deliver TX to ABCI server here
     let options = {
-        hostname: 'localhost',
-        port: 26657,
+        hostname: ABCI_HOST,
+        port: ABCI_RPC_PORT,
         path: getURL
     }
 
@@ -68,6 +69,6 @@ app.post("/post", (req, res) => {
 // to run in-process version, should we have `export function start(){app.listen(...)}` ???
 export function startAPIserver(): void {
     app.listen(API_PORT, () => {
-        console.log(`[PC - API Server @${VERSION}: ${new Date().toLocaleString()}] API server started on port ${API_PORT}.`);
+        Logger.logEvent(`API server started on port ${API_PORT}.`);
     });
 }
