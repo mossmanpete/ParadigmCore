@@ -29,7 +29,7 @@ let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
 
 wss.on("connection", (ws) => {
-  ws.send("hello");
+  ws.send('Connected to the OrderStream network.');
   emitter.on("validOrder", (order) => {
     ws.send(JSON.stringify({
       "event": "new-order",
