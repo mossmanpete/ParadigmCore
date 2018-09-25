@@ -1,3 +1,5 @@
+import { ABCI_PORT } from "./config";
+
 /*
   =========================
   Blind Star - codename (developent)
@@ -105,6 +107,6 @@ let handlers = {
 }
 
 abci(handlers).listen(port, () => {
-  console.log(`Listening on port ${port}`);
-  // startAPI();
+  console.log(`[PC - ABCI Server @${version}: ${new Date().toLocaleString()}] ABCI server started on port ${port}.`);
+  startAPI();
 });
