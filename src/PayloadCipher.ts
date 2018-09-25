@@ -17,7 +17,7 @@ export class PayloadCipher {
     private inEncoding: string; // encoding for in/output of orders, default utf8
     private outEncoding: string;  // encoding used for URL transport, default base64
 
-    constructor(options: any) {
+    constructor(options?: any) {
         /*
             Supply `new PayloadCipher(...)` with options object: 
             let options = {

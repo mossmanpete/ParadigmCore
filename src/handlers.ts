@@ -10,11 +10,5 @@
   General functions and utilities, as well as ABCI handlers.
 */
 
-export function checkTx(): object {
-  return {};
-}
-
-export function deliverTx(): object {
-  return {};
-}
+// needed?
 
