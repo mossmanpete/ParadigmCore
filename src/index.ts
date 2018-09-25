@@ -1,3 +1,5 @@
+import { ABCI_PORT } from "./config";
+
 /*
   =========================
   Blind Star - codename (developent)
@@ -10,12 +12,16 @@
   Main ABCI application supporting the OrderStream network. 
 */
 
+
 let _pjs = require("paradigm.js");
 let _enc = require("./PayloadCipher").PayloadCipher
 
 let abci = require('abci');
+let startAPI = require("./server").startAPIserver;
 let port = require('./config').ABCI_PORT;
 let version = require('./config').VERSION;
+let Vote = require('./Vote').Vote;
+
 
 let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order; 
@@ -47,10 +53,7 @@ let handlers = {
     } catch (error) {
       // console.log(error)
       console.log("Bad order at "+Date()+".")
-      return { 
-        code: 1, 
-        log: 'Bad order - error decompressing TX.' 
-      }
+      return Vote.invalid('Bad order - error decompressing TX.');
     }
 
     try {      
@@ -60,24 +63,15 @@ let handlers = {
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
-        */
-        return { 
-          code: 0, 
-          log: 'Success - stake of '+ recoveredAddr +' verified.' 
-        }
+        */        
+        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`);
       } else {
-        return { 
-          code: 1, 
-          log: 'Bad order maker - no stake.' 
-        } 
+        return Vote.invalid('Bad order maker - no stake.');
       }
     } catch (error) {
       // console.log(error);
       console.log("Bad order at "+Date()+".")
-      return { 
-        code: 1,
-        log: 'Bad order format.' 
-      } 
+      return Vote.invalid('Bad order format.');
     }
   },
 
@@ -89,10 +83,7 @@ let handlers = {
     } catch (error) {
       // console.log(error)
       console.log("Bad order at "+Date()+".")
-      return { 
-        code: 1, 
-        log: 'Bad order - error decompressing TX.' 
-      }
+      return Vote.invalid('Bad order - error decompressing TX.');
     }
 
     try {      
@@ -102,28 +93,20 @@ let handlers = {
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
-        */
-        return { 
-          code: 0, 
-          log: 'Success - stake of '+ recoveredAddr +' verified.' 
-        }
+       */
+        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`);
       } else {
-        return { 
-          code: 1, 
-          log: 'Bad order maker - no stake.' 
-        } 
+        return Vote.invalid('Bad order maker - no stake.');
       }
     } catch (error) {
       // console.log(error);
       console.log("Bad order at "+Date()+".")
-      return { 
-        code: 1,
-        log: 'Bad order format.' 
-      } 
+      return Vote.invalid('Bad order format.');
     }
   }
 }
 
 abci(handlers).listen(port, () => {
-  console.log(`Listening on port ${port}`);
+  console.log(`[PC - ABCI Server @${version}: ${new Date().toLocaleString()}] ABCI server started on port ${port}.`);
+  startAPI();
 });
