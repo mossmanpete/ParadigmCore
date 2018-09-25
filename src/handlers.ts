@@ -1,7 +1,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  handlers.ts @ {server}
+  handlers.ts @ {master}
   =========================
   @date_inital 12 September 2018
   @date_modified 24 September 2018

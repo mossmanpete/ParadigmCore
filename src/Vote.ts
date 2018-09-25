@@ -1,7 +1,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  Vote.ts @ {server}
+  Vote.ts @ {master}
   =========================
   @date_inital 24 September 2018
   @date_modified 24 September 2018

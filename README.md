@@ -1,6 +1,6 @@
 # ParadigmCore
 
-![Status](https://img.shields.io/badge/status-beta-orange.svg) ![Version](https://img.shields.io/badge/version-0.0.1-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-beta-orange.svg) ![Version](https://img.shields.io/badge/version-0.0.1a7-brightgreen.svg)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg)](./LICENSE) [![Chat Server](https://img.shields.io/badge/chat%20server-join!-red.svg)](https://chat.paradigm.market/)
 
 ## Introduction
@@ -20,7 +20,7 @@ You should then clone this repository into a clean working directory. Something 
 From there,  `cd paradigmcore` and install dependencies: `npm i`
 
 ## Build
-This version is partially implemented in TypeScript, and should be compiled to update the JS files in `./dist`. Modify `tsconfig.json` to the correct target for your environment, then run:
+This version is primarily implemented in TypeScript, and should be compiled to update the JS files in `./dist`. Modify `tsconfig.json` to the correct target for your environment, then run:
 ```
 npm run build OR tsc
 ```
@@ -35,6 +35,13 @@ Assuming you have already configured the node with `tendermint init`, this will 
 ```
 npm run start OR node ./dist/index.js
 ```
+
+## Use
+This part will be expanded on soon. The primary interface endpoint (currently is) exposed as:
+```
+HTTP POST: localhost:3000/post
+```
+Where `request.body` is a JSON Paradigm order. This should be the primary point of contact with `ParadigmCore` for your application. The response from the server will tell you if the order was valid and accepted, and if so, the order hash that can be used to refrence it.
 
 ## Contributing
 

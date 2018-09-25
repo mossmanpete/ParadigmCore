@@ -1,7 +1,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  PayloadCipher.ts @ {server}
+  PayloadCipher.ts @ {master}
   =========================
   @date_inital 21 September 2018
   @date_modified 24 September 2018

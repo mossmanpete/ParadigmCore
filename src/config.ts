@@ -1,7 +1,7 @@
 /*
   =========================
   Blind Star - codename (developent)
-  config.ts @ {server}
+  config.ts @ {master}
   =========================
   @date_inital 12 September 2018
   @date_modified 24 September 2018
@@ -10,7 +10,7 @@
   Constants and configuration.
 */
 
-export const VERSION: string = "0.0.1a6"; // PC Version 
+export const VERSION: string = "0.0.1a7"; // PC Version 
 
 // public/private ports for ABCI and RPC server
 export const ABCI_PORT: number = 26658;
