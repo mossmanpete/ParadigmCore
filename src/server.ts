@@ -66,6 +66,8 @@ app.post("/post", (req, res) => {
 });
 
 // to run in-process version, should we have `export function start(){app.listen(...)}` ???
-app.listen(API_PORT, () => {
-    console.log(`[PC@${VERSION}: ${new Date().toLocaleString()}] Server started on port ${API_PORT}.`);
-});
+export function startAPIserver(): void {
+    app.listen(API_PORT, () => {
+        console.log(`[PC - API Server @${VERSION}: ${new Date().toLocaleString()}] Server started on port ${API_PORT}.`);
+    });
+}

@@ -15,9 +15,11 @@ let _pjs = require("paradigm.js");
 let _enc = require("./PayloadCipher").PayloadCipher
 
 let abci = require('abci');
+let startAPI = require("./server").startAPIserver;
 let port = require('./config').ABCI_PORT;
 let version = require('./config').VERSION;
 let Vote = require('./Vote').Vote;
+
 
 let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order; 
@@ -104,4 +106,5 @@ let handlers = {
 
 abci(handlers).listen(port, () => {
   console.log(`Listening on port ${port}`);
+  // startAPI();
 });
