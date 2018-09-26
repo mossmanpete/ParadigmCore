@@ -30,14 +30,22 @@ let Order = paradigm.Order;
 
 wss.on("connection", (ws) => {
   ws.send('Connected to the OrderStream network.');
-  emitter.on("validOrder", (order) => {
+  emitter.on("order", (order) => {
     ws.send(JSON.stringify({
-      "event": "new-order",
+      "event": "order",
       "timestamp": Math.floor(Date.now()/1000),
       "data": order
     }));
   });
+  ws.on('message', (_) => {
+    ws.send('Not currently accepting commands.');
+  });
 });
+
+wss.on('listening', (_) => {
+  Logger.logEvent(`WS server started on port ${WS_PORT}.`);
+});
+
 
 let handlers = {
   info: (_) => {
@@ -99,7 +107,7 @@ let handlers = {
           BEGIN STATE MODIFICATION
         */
         
-        emitter.emit("validOrder", newOrder.toJSON());
+        emitter.emit("order", newOrder.toJSON());
         state.number += 1;
 
         /*

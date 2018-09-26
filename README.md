@@ -8,7 +8,12 @@ ParadigmCore is the main package that enables the functionality of the OrderStre
 
 ParadigmCore (`nodejs-os`) is the direct tendermint implementation of the OrderStream network node software. It is an [ABCI application](https://cosmos.network/docs/sdk/core/app4.html) intended to be used with the [Tendermint](https://github.com/tendermint/tendermint) state replication software. 
 
-This version of ParadigmCore no longer uses BigchainDB, and does not include a database or query functionality for orders. It instead provides interfaces for common database solutions that can be used at the discretion of the node's host, depending on production environment. 
+This version of ParadigmCore no longer uses BigchainDB, and does not include a database or query functionality for orders. It instead provides interfaces for common database solutions that can be used at the discretion of the node's host, depending on production environment.
+
+Valid orders are relayed via WebSocket protocol, by default from the following endpoint (this can be proxied to public or used by any application/middleware):
+```sh
+ws://localhost:8080/
+```
 
 ## Download and Install Dependencies
 
