@@ -7,7 +7,7 @@
   @date_modified 25 September 2018
   @author Henry Harder
 
-  Logger class to handle logs to STDOUT.
+  Simple Logger class to handle logs to STDOUT.
 */
 
 import { VERSION } from "./config";
