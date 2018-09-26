@@ -41,14 +41,11 @@ app.post("/post", (req, res) => {
     } catch (error) {
         Message.staticSendError(res, "Error parsing order, check format and try again.", 400);
     }
-    
-    let getURL = `/broadcast_tx_sync?tx=\"${payloadStr}\"`;
 
-    // deliver TX to ABCI server here
     let options = {
         hostname: ABCI_HOST,
         port: ABCI_RPC_PORT,
-        path: getURL
+        path: `/broadcast_tx_sync?tx=\"${payloadStr}\"`
     }
 
     http.get(options, function(getres) {
@@ -63,7 +60,6 @@ app.post("/post", (req, res) => {
       }).on('error', function(e) {
         Message.staticSendError(res, e.message, 500);
       });
-
 });
 
 // to run in-process version, should we have `export function start(){app.listen(...)}` ???
