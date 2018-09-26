@@ -18,7 +18,7 @@ import { PayloadCipher } from "./PayloadCipher";
 import { Message } from "./Message";
 import { Logger } from "./Logger";
 
-import { API_PORT, VERSION, ABCI_HOST, ABCI_RPC_PORT} from "./config";
+import { API_PORT, ABCI_HOST, ABCI_RPC_PORT} from "./config";
 
 let pe = new PayloadCipher({
     inputEncoding: 'utf8',
@@ -34,7 +34,7 @@ app.use(function (err, req, res, next) {
     Message.staticSendError(res, "Bad JSON format, check TX and try again.", 400);
 });
 
-app.post("/post", (req, res) => {
+app.post("/", (req, res) => {
     let payloadStr: string;
     try {
         payloadStr = pe.encodeFromObject(req.body)

@@ -4,7 +4,7 @@
   index.ts @ {master}
   =========================
   @date_inital 12 September 2018
-  @date_modified 24 September 2018
+  @date_modified 26 September 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 
@@ -35,7 +35,7 @@ wss.on("connection", (ws) => {
       "event": "order",
       "timestamp": Math.floor(Date.now()/1000),
       "data": order
-    }));
+    }) + "\n"); // send a newline for formatting (may want to remove)
   });
   ws.on('message', (_) => {
     ws.send('Not currently accepting commands.');
