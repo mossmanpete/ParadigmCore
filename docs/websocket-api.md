@@ -15,7 +15,7 @@ ws.send(JSON.stringify(order.toJSON()))
 ```
 Raw messages will be strings, but calling `JSON.parse(msg)` will return objects like this:
 
-```json
+```js
 {
     "event": "new-order",
     "timestamp": 1537905576,
