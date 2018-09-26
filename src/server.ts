@@ -34,7 +34,7 @@ app.use(function (err, req, res, next) {
     Message.staticSendError(res, "Bad JSON format, check TX and try again.", 400);
 });
 
-app.post("/", (req, res) => {
+app.post("/*", (req, res) => {
     let payloadStr: string;
     try {
         payloadStr = pe.encodeFromObject(req.body)
