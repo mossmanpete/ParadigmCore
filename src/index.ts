@@ -13,6 +13,8 @@
 import * as abci from 'abci';
 import * as _ws from "ws";
 import * as _pjs from "paradigm.js";
+import * as hash from "object-hash";
+import * as crypto from "crypto";
 
 import { EventEmitter } from "events";
 import { startAPIserver } from "./server";
@@ -22,6 +24,7 @@ import { Logger } from "./Logger";
 import { Vote } from "./Vote";
 import { PayloadCipher } from "./PayloadCipher";
 import { WebSocketMessage } from "./WebSocketMessage";
+import { Hasher } from './Hasher';
 
 let emitter = new EventEmitter(); // event emitter for WS
 let wss = new _ws.Server({ port: WS_PORT });
@@ -30,14 +33,26 @@ let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
 
 wss.on("connection", (ws) => {
-  WebSocketMessage.sendMessage(ws, `Connected to the OrderStream network at ${new Date().toLocaleString()}`);
-  
+  try {
+    WebSocketMessage.sendMessage(ws, `Connected to the OrderStream network at ${new Date().toLocaleString()}`);
+  } catch (err) {
+    Logger.logError("Error broadcasting websocket event.");
+  }
+
   emitter.on("order", (order) => {
-    WebSocketMessage.sendOrder(ws, order);
+    try {
+      WebSocketMessage.sendOrder(ws, order);
+    } catch (err) {
+      Logger.logError("Error broadcasting websocket event.");
+    }
   });
 
   ws.on('message', (msg) => {
-    WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
+    try {
+      WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
+    } catch (err) {
+      Logger.logError("Error broadcasting websocket event.");
+    }
   });
 });
 
@@ -76,7 +91,7 @@ let handlers = {
           the existing state for that address. 
         */
         Logger.logEvent(`Order added to mempool from: ${recoveredAddr}`);
-        return Vote.valid(`Stake verified, order added to mempool.`);
+        return Vote.valid(`Stake verified, order added to mempool.`, "nil");
       } else {
         Logger.logEvent("Bad order post, no stake - rejected (checkTx)")
         return Vote.invalid('Bad order maker - no stake.');
@@ -109,8 +124,10 @@ let handlers = {
 
           BEGIN STATE MODIFICATION
         */
-        
-        emitter.emit("order", newOrder.toJSON());
+
+        let dupOrder: any = newOrder.toJSON();
+        dupOrder.id = Hasher.hashOrder(newOrder);
+        emitter.emit("order", dupOrder);
         state.number += 1;
 
         /*
@@ -118,7 +135,7 @@ let handlers = {
         */
 
         Logger.logEvent("Valid order received (in deliverTx)")
-        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`);
+        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`, dupOrder.id);
       } else {
         Logger.logEvent("Bad order post, no stake - rejected (deliverTx)")
         return Vote.invalid('Bad order maker - no stake.');

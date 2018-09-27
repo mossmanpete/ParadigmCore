@@ -23,3 +23,6 @@ export const WS_PORT: number = 4242;
 // encoding types for order server-side transport 
 export const IN_ENC: string = 'utf8'
 export const OUT_ENC: string = 'base64'
+
+// Transaction broadcast mode: async, sync, or commit
+export const TX_MODE: string = 'commit';

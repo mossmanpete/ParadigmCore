@@ -14,11 +14,12 @@ import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
+
 import { PayloadCipher } from "./PayloadCipher"; 
 import { Message } from "./ExpressMessage";
 import { Logger } from "./Logger";
 
-import { API_PORT, ABCI_HOST, ABCI_RPC_PORT} from "./config";
+import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "./config";
 
 let pe = new PayloadCipher({
     inputEncoding: 'utf8',
@@ -45,7 +46,7 @@ app.post("/*", (req, res) => {
     let options = {
         hostname: ABCI_HOST,
         port: ABCI_RPC_PORT,
-        path: `/broadcast_tx_sync?tx=\"${payloadStr}\"`
+        path: `/broadcast_tx_${TX_MODE}?tx=\"${payloadStr}\"`
     }
 
     http.get(options, function(getres) {
@@ -54,7 +55,7 @@ app.post("/*", (req, res) => {
         }
       
         getres.on("data", function(chunk) {
-          res.send(chunk);
+            res.send(chunk);
         });
 
       }).on('error', function(e) {

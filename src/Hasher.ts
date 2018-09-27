@@ -1,0 +1,30 @@
+/*
+  =========================
+  Blind Star - codename (developent)
+  Message.ts @ {master}
+  =========================
+  @date_inital 19 August 2018
+  @date_modified 24 September 2018
+  @author Henry Harder
+
+  Class for preparing and creating OrderID's via salted hash.
+*/
+import * as crypto from "crypto";
+import * as hash from "object-hash";
+
+export class Hasher {
+  public static hashOrder(order: any): string { // change to @type: paradigm.Order
+    let hashPrep: object = {
+      "subContract": order.subContract,
+      "posterSignature": order.posterSignature,
+      "salt": crypto.randomBytes(16)
+    }
+
+    try {
+      let hashedOrder: string = hash(hashPrep);
+      return hashedOrder
+    } catch (error) {
+      throw new Error("Error hashing order.");
+    }
+  }
+}

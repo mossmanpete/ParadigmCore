@@ -19,7 +19,11 @@ export class WebSocketMessage {
             "data": message
         }
 
-        ws.send(`${JSON.stringify(msg)}\n`);
+        try {
+            ws.send(`${JSON.stringify(msg)}\n`);
+        } catch (error) {
+            throw new Error('Error sending WS event.');   
+        } 
     }
 
     public static sendOrder(ws, order: object): void {
@@ -30,6 +34,10 @@ export class WebSocketMessage {
             "data": order
         }
 
-        ws.send(`${JSON.stringify(msg)}\n`);
+        try {
+            ws.send(`${JSON.stringify(msg)}\n`);
+        } catch (error) {
+            throw new Error('Error sending WS event.');   
+        } 
     }
 }
