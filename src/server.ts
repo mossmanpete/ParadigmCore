@@ -15,7 +15,7 @@ import * as http from "http";
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
 import { PayloadCipher } from "./PayloadCipher"; 
-import { Message } from "./Message";
+import { Message } from "./ExpressMessage";
 import { Logger } from "./Logger";
 
 import { API_PORT, ABCI_HOST, ABCI_RPC_PORT} from "./config";
