@@ -21,6 +21,7 @@ import { ABCI_PORT, VERSION, WS_PORT } from "./config";
 import { Logger } from "./Logger";
 import { Vote } from "./Vote";
 import { PayloadCipher } from "./PayloadCipher";
+import { WebSocketMessage } from "./WebSocketMessage";
 
 let emitter = new EventEmitter(); // event emitter for WS
 let wss = new _ws.Server({ port: WS_PORT });
@@ -29,23 +30,20 @@ let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
 
 wss.on("connection", (ws) => {
-  ws.send('Connected to the OrderStream network.');
+  WebSocketMessage.sendMessage(ws, `Connected to the OrderStream network at ${new Date().toLocaleString()}`);
+  
   emitter.on("order", (order) => {
-    ws.send(JSON.stringify({
-      "event": "order",
-      "timestamp": Math.floor(Date.now()/1000),
-      "data": order
-    }) + "\n"); // send a newline for formatting (may want to remove)
+    WebSocketMessage.sendOrder(ws, order);
   });
-  ws.on('message', (_) => {
-    ws.send('Not currently accepting commands.');
+
+  ws.on('message', (msg) => {
+    WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
   });
 });
 
 wss.on('listening', (_) => {
   Logger.logEvent(`WS server started on port ${WS_PORT}.`);
 });
-
 
 let handlers = {
   info: (_) => {
