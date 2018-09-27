@@ -59,7 +59,9 @@ let handlers = {
 
   checkTx: (request) => {
     let txObject;
-    
+
+    Logger.logEvent(`Incoming external ABCI transaction`);
+
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
@@ -70,12 +72,13 @@ let handlers = {
     try {      
       let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverPoster();
-      if (typeof(recoveredAddr) === "string"){ 
+      if (typeof(recoveredAddr) === "string"){
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
-        */        
-        return Vote.valid(`Stake verified, order kept.`);
+        */
+        Logger.logEvent(`Order added to mempool from: ${recoveredAddr}`);
+        return Vote.valid(`Stake verified, order added to mempool.`);
       } else {
         Logger.logEvent("Bad order post, no stake - rejected (checkTx)")
         return Vote.invalid('Bad order maker - no stake.');
@@ -88,6 +91,8 @@ let handlers = {
 
   deliverTx: (request) => {
     let txObject;
+
+    Logger.logEvent(`Incoming external ABCI transaction`);
     
     try {
       txObject = cipher.ABCIdecode(request.tx);
