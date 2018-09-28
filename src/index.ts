@@ -13,8 +13,6 @@
 import * as abci from 'abci';
 import * as _ws from "ws";
 import * as _pjs from "paradigm.js";
-import * as hash from "object-hash";
-import * as crypto from "crypto";
 
 import { EventEmitter } from "events";
 import { startAPIserver } from "./server";
@@ -117,6 +115,7 @@ let handlers = {
     try {      
       let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverPoster();
+
       if (typeof(recoveredAddr) === "string"){ 
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -127,7 +126,7 @@ let handlers = {
 
         let dupOrder: any = newOrder.toJSON();
         dupOrder.id = Hasher.hashOrder(newOrder);
-        emitter.emit("order", dupOrder);
+        emitter.emit("order", dupOrder); // broadcast order event
         state.number += 1;
 
         /*
