@@ -9,7 +9,6 @@
 
   Class for preparing and creating OrderID's via salted hash.
 */
-import * as crypto from "crypto";
 import * as hash from "object-hash";
 
 export class Hasher {
@@ -17,7 +16,7 @@ export class Hasher {
     let hashPrep: object = {
       "subContract": order.subContract,
       "posterSignature": order.posterSignature,
-      "salt": crypto.randomBytes(16)
+      "makerValues": order.makerValues
     }
 
     try {
