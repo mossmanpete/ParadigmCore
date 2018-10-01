@@ -1,10 +1,11 @@
 /*
   =========================
-  Blind Star - codename (developent)
-  wsMessage.ts @ {dev}
+  ParadigmCore: Blind Star
+  WebSocketMessage.ts @ {dev}
   =========================
+  
   @date_inital 27 August 2018
-  @date_modified 27 September 2018
+  @date_modified 1 October 2018
   @author Henry Harder
 
   Simple class for creating and sending JSON messages using WebSocket.

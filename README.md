@@ -1,6 +1,6 @@
 # ParadigmCore
 
-![Status](https://img.shields.io/badge/status-beta-orange.svg) ![Version](https://img.shields.io/badge/version-0.0.1a8-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.0.2a1-brightgreen.svg)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg)](./LICENSE) [![Chat Server](https://img.shields.io/badge/chat%20server-join!-red.svg)](https://chat.paradigm.market/)
 
 ## Introduction
@@ -11,8 +11,8 @@ ParadigmCore (`nodejs-os`) is the direct tendermint implementation of the OrderS
 This version of ParadigmCore no longer uses BigchainDB, and does not include a database or query functionality for orders. It instead provides interfaces for common database solutions that can be used at the discretion of the node's host, depending on production environment.
 
 Valid orders are relayed via WebSocket protocol, by default from the following endpoint (this can be proxied to public or used by any application/middleware):
-```sh
-ws://localhost:8080/
+```
+ws://localhost:4242/
 ```
 
 ## Download and Install Dependencies

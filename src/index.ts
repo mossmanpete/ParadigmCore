@@ -1,10 +1,11 @@
 /*
   =========================
-  Blind Star - codename (developent)
+  ParadigmCore: Blind Star
   index.ts @ {master}
   =========================
+
   @date_inital 12 September 2018
-  @date_modified 26 September 2018
+  @date_modified 1 October 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 
