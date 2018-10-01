@@ -1,10 +1,11 @@
 /*
   =========================
-  Blind Star - codename (developent)
+  ParadigmCore: Blind Star
   index.ts @ {master}
   =========================
+
   @date_inital 12 September 2018
-  @date_modified 24 September 2018
+  @date_modified 1 October 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 
@@ -21,6 +22,8 @@ import { ABCI_PORT, VERSION, WS_PORT } from "./config";
 import { Logger } from "./Logger";
 import { Vote } from "./Vote";
 import { PayloadCipher } from "./PayloadCipher";
+import { WebSocketMessage } from "./WebSocketMessage";
+import { Hasher } from './Hasher';
 
 let emitter = new EventEmitter(); // event emitter for WS
 let wss = new _ws.Server({ port: WS_PORT });
@@ -29,23 +32,32 @@ let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
 
 wss.on("connection", (ws) => {
-  ws.send('Connected to the OrderStream network.');
+  try {
+    WebSocketMessage.sendMessage(ws, `Connected to the OrderStream network at ${new Date().toLocaleString()}`);
+  } catch (err) {
+    Logger.logError("Error broadcasting websocket event.");
+  }
+
   emitter.on("order", (order) => {
-    ws.send(JSON.stringify({
-      "event": "order",
-      "timestamp": Math.floor(Date.now()/1000),
-      "data": order
-    }));
+    try {
+      WebSocketMessage.sendOrder(ws, order);
+    } catch (err) {
+      Logger.logError("Error broadcasting websocket event.");
+    }
   });
-  ws.on('message', (_) => {
-    ws.send('Not currently accepting commands.');
+
+  ws.on('message', (msg) => {
+    try {
+      WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
+    } catch (err) {
+      Logger.logError("Error broadcasting websocket event.");
+    }
   });
 });
 
 wss.on('listening', (_) => {
   Logger.logEvent(`WS server started on port ${WS_PORT}.`);
 });
-
 
 let handlers = {
   info: (_) => {
@@ -59,7 +71,9 @@ let handlers = {
 
   checkTx: (request) => {
     let txObject;
-    
+
+    Logger.logEvent(`Incoming external ABCI transaction`);
+
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
@@ -70,12 +84,13 @@ let handlers = {
     try {      
       let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverPoster();
-      if (typeof(recoveredAddr) === "string"){ 
+      if (typeof(recoveredAddr) === "string"){
         /*
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
-        */        
-        return Vote.valid(`Stake verified, order kept.`);
+        */
+        Logger.logEvent(`Order added to mempool from: ${recoveredAddr}`);
+        return Vote.valid(`Stake verified, order added to mempool.`, "nil");
       } else {
         Logger.logEvent("Bad order post, no stake - rejected (checkTx)")
         return Vote.invalid('Bad order maker - no stake.');
@@ -88,6 +103,8 @@ let handlers = {
 
   deliverTx: (request) => {
     let txObject;
+
+    Logger.logEvent(`Incoming external ABCI transaction`);
     
     try {
       txObject = cipher.ABCIdecode(request.tx);
@@ -99,6 +116,7 @@ let handlers = {
     try {      
       let newOrder = new Order(txObject);
       let recoveredAddr = newOrder.recoverPoster();
+
       if (typeof(recoveredAddr) === "string"){ 
         /*
           The above conditional shoud rely on a verifyStake(), that checks
@@ -106,8 +124,10 @@ let handlers = {
 
           BEGIN STATE MODIFICATION
         */
-        
-        emitter.emit("order", newOrder.toJSON());
+
+        let dupOrder: any = newOrder.toJSON();
+        dupOrder.id = Hasher.hashOrder(newOrder);
+        emitter.emit("order", dupOrder); // broadcast order event
         state.number += 1;
 
         /*
@@ -115,7 +135,7 @@ let handlers = {
         */
 
         Logger.logEvent("Valid order received (in deliverTx)")
-        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`);
+        return Vote.valid(`Success: stake of '${recoveredAddr}' verified.`, dupOrder.id);
       } else {
         Logger.logEvent("Bad order post, no stake - rejected (deliverTx)")
         return Vote.invalid('Bad order maker - no stake.');

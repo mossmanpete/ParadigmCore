@@ -1,8 +1,9 @@
 /*
   =========================
-  Blind Star - codename (developent)
+  ParadigmCore: Blind Star
   server.ts @ {master}
   =========================
+
   @date_inital 24 September 2018
   @date_modified 24 September 2018
   @author Henry Harder
@@ -14,11 +15,12 @@ import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
 import * as cors from "cors";
+
 import { PayloadCipher } from "./PayloadCipher"; 
-import { Message } from "./Message";
+import { Message } from "./ExpressMessage";
 import { Logger } from "./Logger";
 
-import { API_PORT, VERSION, ABCI_HOST, ABCI_RPC_PORT} from "./config";
+import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "./config";
 
 let pe = new PayloadCipher({
     inputEncoding: 'utf8',
@@ -34,7 +36,7 @@ app.use(function (err, req, res, next) {
     Message.staticSendError(res, "Bad JSON format, check TX and try again.", 400);
 });
 
-app.post("/post", (req, res) => {
+app.post("/*", (req, res) => {
     let payloadStr: string;
     try {
         payloadStr = pe.encodeFromObject(req.body)
@@ -45,7 +47,7 @@ app.post("/post", (req, res) => {
     let options = {
         hostname: ABCI_HOST,
         port: ABCI_RPC_PORT,
-        path: `/broadcast_tx_sync?tx=\"${payloadStr}\"`
+        path: `/broadcast_tx_${TX_MODE}?tx=\"${payloadStr}\"`
     }
 
     http.get(options, function(getres) {
@@ -54,7 +56,7 @@ app.post("/post", (req, res) => {
         }
       
         getres.on("data", function(chunk) {
-          res.send(chunk);
+            res.send(chunk);
         });
 
       }).on('error', function(e) {

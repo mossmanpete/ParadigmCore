@@ -1,8 +1,9 @@
 /*
   =========================
-  Blind Star - codename (developent)
+  ParadigmCore: Blind Star
   PayloadCipher.ts @ {master}
   =========================
+
   @date_inital 21 September 2018
   @date_modified 24 September 2018
   @author Henry Harder

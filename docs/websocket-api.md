@@ -1,11 +1,11 @@
 # OrderStream WebSocket API
 One of the most fundemental pieces of the OrderStream network is the event-based orderbook. The primary way to subscribe to this event stream is via a node's WebSocket endpoint:
 ```
-ws://localhost:8080/
+ws://localhost:4242/
 ```
 If you are running a node, you can listen to the WS stream on localhost. Otherwise you must use a node that has expose it's WebSocket endpoint to the public. For example, the public Paradigm endpoint:
 ```
-ws://osd.paradigm.market/api/stream
+wss://bs1.paradigm.market/stream
 ```
 ## Stream Format
 
@@ -17,8 +17,9 @@ Raw messages will be strings, but calling `JSON.parse(msg)` will return objects 
 
 ```js
 {
-    "event": "new-order",
+    "event": "order",
     "timestamp": 1537905576,
+    "data-type": "JSON/string",
     "data": {
         "subContract": "0x...",
         "maker": "0x...",
@@ -27,7 +28,8 @@ Raw messages will be strings, but calling `JSON.parse(msg)` will return objects 
     }    
 }
 ```
-You can recover the order object client-side (node.js shown, can be adapted to browser):
+You can recover the order object client-side (node.js shown, can be adapted to browser) by subscribing to ParadigmCore's WebSocket endpoint (by default `localhost:4242`, but this should be proxied if used in production using a webserver that supports `WSS`):
+
 ```js
 let paradigm = new Paradigm();
 

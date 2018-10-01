@@ -1,8 +1,9 @@
 /*
   =========================
-  Blind Star - codename (developent)
+  ParadigmCore: Blind Star
   Vote.ts @ {master}
   =========================
+  
   @date_inital 24 September 2018
   @date_modified 24 September 2018
   @author Henry Harder
@@ -16,9 +17,10 @@ export class Vote {
         This class will be expanded with more errors for the
         different failure points in checkTx (and deliverTx).
     */
-    public static valid(message: string) {
+    public static valid(message: string, id: string) {
         return {
             code: 0,
+            info: `OrderID: ${id}`,
             log: message
         }
     }

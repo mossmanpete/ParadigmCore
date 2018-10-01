@@ -1,8 +1,9 @@
 /*
   =========================
-  Blind Star - codename (developent)
+  ParadigmCore: Blind Star
   state.ts @ {master}
   =========================
+  
   @date_inital 25 September 2018
   @date_modified 25 September 2018
   @author Henry Harder
