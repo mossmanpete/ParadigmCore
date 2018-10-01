@@ -44,9 +44,9 @@ npm run start OR node ./dist/index.js
 ## Use
 This part will be expanded on soon. The primary interface endpoint (currently is) exposed as:
 ```
-HTTP POST: localhost:3000/post
+HTTP POST: localhost:4243/post
 ```
-Where `request.body` is a JSON Paradigm order. This should be the primary point of contact with `ParadigmCore` for your application. The response from the server will tell you if the order was valid and accepted, and if so, the order hash that can be used to refrence it.
+Where `request.body` is a JSON Paradigm order. This should be the primary point of contact with `ParadigmCore` for your application. The response from the server will tell you if the order was valid and accepted, and if so, the order hash (`OrderID`) that can be used to refrence it.
 
 ## Contributing
 
