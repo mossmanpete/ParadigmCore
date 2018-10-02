@@ -5,7 +5,7 @@
   =========================
   
   @date_inital 24 September 2018
-  @date_modified 24 September 2018
+  @date_modified 2 October 2018
   @author Henry Harder
 
   A class to represent a vote based on the logic in 
@@ -20,8 +20,7 @@ export class Vote {
     public static valid(message: string, id: string) {
         return {
             code: 0,
-            info: `OrderID: ${id}`,
-            log: message
+            log: `OrderID: ${id}`
         }
     }
 

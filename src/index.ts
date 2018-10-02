@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 1 October 2018
+  @date_modified 2 October 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 
@@ -35,13 +35,14 @@ wss.on("connection", (ws) => {
   try {
     WebSocketMessage.sendMessage(ws, `Connected to the OrderStream network at ${new Date().toLocaleString()}`);
   } catch (err) {
-    Logger.logError("Error broadcasting websocket event.");
+    Logger.logError("Error on WebSocket connection.");
   }
 
   emitter.on("order", (order) => {
     try {
       WebSocketMessage.sendOrder(ws, order);
     } catch (err) {
+      console.log('after emitter: ' + err);
       Logger.logError("Error broadcasting websocket event.");
     }
   });
@@ -50,7 +51,7 @@ wss.on("connection", (ws) => {
     try {
       WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
     } catch (err) {
-      Logger.logError("Error broadcasting websocket event.");
+      Logger.logError("Error sending websocket response message.");
     }
   });
 });
@@ -90,7 +91,7 @@ let handlers = {
           the existing state for that address. 
         */
         Logger.logEvent(`Order added to mempool from: ${recoveredAddr}`);
-        return Vote.valid(`Stake verified, order added to mempool.`, "nil");
+        return Vote.valid(`Stake verified, order added to mempool.`, Hasher.hashOrder(newOrder));
       } else {
         Logger.logEvent("Bad order post, no stake - rejected (checkTx)")
         return Vote.invalid('Bad order maker - no stake.');

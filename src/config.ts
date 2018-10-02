@@ -5,12 +5,12 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 24 September 2018
+  @date_modified 2 October 2018
   @author Henry Harder
 
   Constants and configuration.
 */
-export const VERSION: string = "0.0.1a8"; // PC Version 
+export const VERSION: string = "0.0.2a2"; // PC Version 
 
 // endpoints for ABCI/RPC
 export const ABCI_HOST: string = "localhost";
@@ -26,4 +26,4 @@ export const IN_ENC: string = 'utf8'
 export const OUT_ENC: string = 'base64'
 
 // Transaction broadcast mode: async, sync, or commit
-export const TX_MODE: string = 'commit';
+export const TX_MODE: string = 'sync';
