@@ -19,6 +19,7 @@ import * as cors from "cors";
 import { PayloadCipher } from "./PayloadCipher"; 
 import { Message } from "./ExpressMessage";
 import { Logger } from "./Logger";
+import { messages as msg } from "./messages";
 
 import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "./config";
 
@@ -33,7 +34,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use(function (err, req, res, next) {
-    Message.staticSendError(res, "Bad JSON format, check TX and try again.", 400);
+    Message.staticSendError(res, msg.api.errors.badJSON, 400);
 });
 
 app.post("/*", (req, res) => {
@@ -41,7 +42,7 @@ app.post("/*", (req, res) => {
     try {
         payloadStr = pe.encodeFromObject(req.body)
     } catch (error) {
-        Message.staticSendError(res, "Error parsing order, check format and try again.", 400);
+        Message.staticSendError(res, msg.api.errors.parsing, 400);
     }
 
     let options = {
@@ -67,6 +68,6 @@ app.post("/*", (req, res) => {
 // to run in-process version, should we have `export function start(){app.listen(...)}` ???
 export function startAPIserver(): void {
     app.listen(API_PORT, () => {
-        Logger.logEvent(`API server started on port ${API_PORT}.`);
+        Logger.logEvent(msg.api.messages.servStart);
     });
 }

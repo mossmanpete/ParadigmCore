@@ -72,7 +72,9 @@ var testObj = {
 function test() {
     encodeAndDecodeFromObject();
 }
+
 test();
+
 function encodeAndDecodeFromObject() {
     console.log("====================\n");
     console.log("TESTING ENCODE FROM STRING\n");
