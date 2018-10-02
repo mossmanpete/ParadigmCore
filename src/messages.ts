@@ -1,4 +1,4 @@
-import { WS_PORT, ABCI_PORT } from "./config";
+import { WS_PORT, ABCI_PORT, API_PORT } from "./config";
 
 export let messages  = {
     websocket: {
@@ -26,6 +26,15 @@ export let messages  = {
             noStake:    "Order rejected: invalid poster or no poster stake.",
             verified:   "Order verified and broadcast via OrderStream event stream.",
             servStart:  `ABCI server started on port ${ABCI_PORT}.`
+        }
+    },
+    api: {
+        errors: {
+            badJSON: "Bad JSON format, check TX and try again.",
+            parsing: "Error parsing order, check format and try again."
+        },
+        messages: {
+            servStart: `API server started on port ${API_PORT}.`
         }
     }
 }
