@@ -5,7 +5,7 @@
   =========================
   
   @date_inital 24 September 2018
-  @date_modified 24 September 2018
+  @date_modified 2 October 2018
   @author Henry Harder
 
   A class to represent a vote based on the logic in 
@@ -17,11 +17,10 @@ export class Vote {
         This class will be expanded with more errors for the
         different failure points in checkTx (and deliverTx).
     */
-    public static valid(message: string, id: string) {
+    public static valid(id: string) {
         return {
             code: 0,
-            info: `OrderID: ${id}`,
-            log: message
+            log: `OrderID: ${id}`
         }
     }
 

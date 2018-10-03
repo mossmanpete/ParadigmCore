@@ -1,12 +1,13 @@
 {
   "name": "nodejs-orderstream",
-  "version": "0.0.2a1",
+  "version": "0.0.2a2",
   "description": "Node.js OrderStream implementation",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
     "start": "node ./dist/index.js",
-    "test": "tsc ./test/*.ts && echo 'Run tests from ./test'"
+    "test": "tsc ./test/*.ts && echo 'Run tests from ./test'",
+    "run": "tsc && node ./dist/index.js"
   },
   "repository": {
     "type": "git",
