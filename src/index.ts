@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 2 October 2018
+  @date_modified 3 October 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 
@@ -43,6 +43,7 @@ wss.on("connection", (ws) => {
     try {
       WebSocketMessage.sendOrder(ws, order);
     } catch (err) {
+      // console.log(err);
       Logger.logError(msg.websocket.errors.broadcast);
     }
   });

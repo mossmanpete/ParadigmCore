@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 24 September 2018
-  @date_modified 24 September 2018
+  @date_modified 3 October 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
@@ -65,7 +65,6 @@ app.post("/*", (req, res) => {
       });
 });
 
-// to run in-process version, should we have `export function start(){app.listen(...)}` ???
 export function startAPIserver(): void {
     app.listen(API_PORT, () => {
         Logger.logEvent(msg.api.messages.servStart);
