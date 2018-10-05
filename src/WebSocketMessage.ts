@@ -23,6 +23,7 @@ export class WebSocketMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`);
         } catch (error) {
+            console.log(error);
             throw new Error('Error sending WS event.');   
         } 
     }
