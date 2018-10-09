@@ -21,7 +21,11 @@ export class WebSocketMessage {
         }
 
         try {
-            ws.send(`${JSON.stringify(msg)}\n`);
+            ws.send(`${JSON.stringify(msg)}\n`, (err) => {
+                if(err != undefined){
+                    throw new Error("Error in ws.send(...)");
+                }
+            });
         } catch (error) {
             console.log(error);
             throw new Error('Error sending WS event.');   
@@ -37,7 +41,11 @@ export class WebSocketMessage {
         }
 
         try {
-            ws.send(`${JSON.stringify(msg)}\n`);
+            ws.send(`${JSON.stringify(msg)}\n`, (err) => {
+                if(err != undefined){
+                    throw new Error("Error in ws.send(...)");
+                }
+            });
         } catch (error) {
             console.log(error);
             throw new Error('Error sending WS event.');   
