@@ -44,7 +44,7 @@ wss.on("connection", (ws) => {
   emitter.on("order", (order) => {
     try {
       wss.clients.forEach(client => {
-        if (client.readyState === _ws.OPEN){
+        if ((client.readyState === 1) && (client === ws)){
           WebSocketMessage.sendOrder(client, order);
         }
       });
@@ -54,10 +54,14 @@ wss.on("connection", (ws) => {
   });
 
   ws.on('message', (msg) => {
-    try {
-      WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
-    } catch (err) {
-      Logger.logError(msg.websocket.errors.message);
+    if(msg === "close") { 
+      return ws.terminate()
+    } else {
+      try {
+        WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
+      } catch (err) {
+        Logger.logError(msg.websocket.errors.message);
+      }
     }
   });
 });
