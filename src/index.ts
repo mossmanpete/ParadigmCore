@@ -43,7 +43,7 @@ wss.on("connection", (ws) => {
     try {
       WebSocketMessage.sendOrder(ws, order);
     } catch (err) {
-      // console.log(err);
+      console.log('in emitter' + err);
       Logger.logError(msg.websocket.errors.broadcast);
     }
   });
