@@ -10,7 +10,7 @@
 
   Constants and configuration.
 */
-export const VERSION: string = "0.0.2a2"; // PC Version 
+export const VERSION: string = "0.0.2a3"; // PC Version 
 
 // endpoints for ABCI/RPC
 export const ABCI_HOST: string = "localhost";
