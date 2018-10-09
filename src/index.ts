@@ -44,7 +44,7 @@ wss.on("connection", (ws) => {
   emitter.on("order", (order) => {
     try {
       wss.clients.forEach(client => {
-        if (client !== ws && client.readyState == WebSocket.OPEN){
+        if (client !== ws && client.readyState == _ws.OPEN){
           WebSocketMessage.sendOrder(client, order);
         }
       });
