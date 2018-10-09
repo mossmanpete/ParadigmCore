@@ -1,3 +1,16 @@
+/*
+  =========================
+  ParadigmCore: Blind Star
+  messages.ts @ {master}
+  =========================
+
+  @date_inital 1 October 2018
+  @date_modified 9 October 2018
+  @author Henry Harder
+
+  Simple message object to store common ABCI and WS messages.
+*/
+
 import { WS_PORT, ABCI_PORT, API_PORT } from "./config";
 
 export let messages  = {

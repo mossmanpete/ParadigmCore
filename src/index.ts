@@ -25,9 +25,11 @@ import { Vote } from "./Vote";
 import { PayloadCipher } from "./PayloadCipher";
 import { WebSocketMessage } from "./WebSocketMessage";
 import { Hasher } from './Hasher';
+import { OrderTracker } from "./OrderTracker"
 
 let emitter = new EventEmitter(); // event emitter for WS
 let wss = new _ws.Server({ port: WS_PORT });
+let tracker = new OrderTracker(emitter);
 let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
 let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
@@ -129,7 +131,10 @@ let handlers = {
 
         let dupOrder: any = newOrder.toJSON();
         dupOrder.id = Hasher.hashOrder(newOrder);
-        emitter.emit("order", dupOrder); // broadcast order event
+
+        //emitter.emit("order", dupOrder); // broadcast order event
+        tracker.add(dupOrder); // add order to queue for broadcast
+
         state.number += 1;
 
         /*
@@ -147,6 +152,19 @@ let handlers = {
       Logger.logEvent(msg.abci.errors.format);
       return Vote.invalid(msg.abci.errors.format);
     }
+  },
+
+  commit: (_) => {
+    Logger.logEvent("Round ended, broadcasting orders.");
+
+    try {
+      tracker.triggerBroadcast();
+    } catch (err) {
+      // console.log(err)
+      Logger.logError("Error broadcasting TX in commit.")
+    }
+
+    return 
   }
 }
 
