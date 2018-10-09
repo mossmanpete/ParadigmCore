@@ -43,7 +43,11 @@ wss.on("connection", (ws) => {
 
   emitter.on("order", (order) => {
     try {
-      WebSocketMessage.sendOrder(ws, order);
+      wss.clients.forEach(client => {
+        if (client !== ws && client.readyState == WebSocket.OPEN){
+          WebSocketMessage.sendOrder(client, order);
+        }
+      });
     } catch (err) {
       console.log('in emitter' + err);
       Logger.logError(msg.websocket.errors.broadcast);
