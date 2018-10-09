@@ -164,7 +164,7 @@ let handlers = {
       Logger.logError("Error broadcasting TX in commit.")
     }
 
-    return 
+    return "done" // change to something more meaningful
   }
 }
 
