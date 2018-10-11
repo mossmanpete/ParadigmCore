@@ -19,15 +19,15 @@ import { EventEmitter } from "events";
 import { startAPIserver } from "./server";
 import { state } from "./state";
 import { messages as msg } from "./messages"
-import { ABCI_PORT, VERSION, WS_PORT } from "./config";
 import { Logger } from "./Logger";
 import { Vote } from "./Vote";
 import { PayloadCipher } from "./PayloadCipher";
 import { WebSocketMessage } from "./WebSocketMessage";
 import { Hasher } from './Hasher';
-import { OrderTracker } from "./OrderTracker"
+import { OrderTracker } from "./OrderTracker";
+import { ABCI_PORT, VERSION, WS_PORT } from "./config";
 
-let emitter = new EventEmitter(); // event emitter for WS
+let emitter = new EventEmitter(); // event emitter for WS broadcast
 let wss = new _ws.Server({ port: WS_PORT });
 let tracker = new OrderTracker(emitter);
 let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
@@ -55,7 +55,7 @@ wss.on("connection", (ws) => {
 
   ws.on('message', (msg) => {
     if(msg === "close") { 
-      return ws.terminate()
+      return ws.terminate();
     } else {
       try {
         WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
@@ -155,7 +155,7 @@ let handlers = {
         return Vote.invalid(msg.abci.messages.noStake);
       }
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       Logger.logEvent(msg.abci.errors.format);
       return Vote.invalid(msg.abci.errors.format);
     }
