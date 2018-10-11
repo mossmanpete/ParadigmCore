@@ -38,6 +38,7 @@ wss.on("connection", (ws) => {
   try {
     WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
   } catch (err) {
+    console.log("on connection: " + err);
     Logger.logError(msg.websocket.errors.connect);
   }
 
