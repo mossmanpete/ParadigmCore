@@ -23,6 +23,7 @@ export class WebSocketMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if(err != undefined){
+                    console.log("in ws.send: "+ err);
                     throw new Error("Error in ws.send(...)");
                 }
             }).catch((_) => { console.log('caught something') });
@@ -43,6 +44,7 @@ export class WebSocketMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if(err != undefined){
+                    console.log("in ws.send: "+ err);
                     throw new Error("Error in ws.send(...)");
                 }
             }).catch((_) => { console.log('caught something') });
