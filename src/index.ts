@@ -49,6 +49,7 @@ wss.on("connection", (ws) => {
         }
       });
     } catch (err) {
+      console.log(`Temporary log: ${err}`);
       Logger.logError(msg.websocket.errors.broadcast);
     }
   });
