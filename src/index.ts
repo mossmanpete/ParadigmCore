@@ -62,6 +62,7 @@ wss.on("connection", (ws) => {
       try {
         WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
       } catch (err) {
+        console.log(`Temporary log: ${err}`);
         Logger.logError(msg.websocket.errors.message);
       }
     }

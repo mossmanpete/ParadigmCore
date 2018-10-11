@@ -38,7 +38,7 @@ export class OrderTracker {
                 });
                 this.flush();
             } catch (err) {
-                // console.log(err)
+                console.log("in broadcast: " + err);
                 throw new Error("Error triggering event broadcast.");
             }
         } else {

@@ -34,7 +34,12 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use(function (err, req, res, next) {
-    Message.staticSendError(res, msg.api.errors.badJSON, 400);
+    try {
+        Message.staticSendError(res, msg.api.errors.badJSON, 400);
+    } catch (err) {
+        console.log(`Temporary log: ${err}`);
+        throw new Error("Error sending HTTP response.");
+    }
 });
 
 app.post("/*", (req, res) => {
@@ -42,6 +47,7 @@ app.post("/*", (req, res) => {
     try {
         payloadStr = pe.encodeFromObject(req.body)
     } catch (error) {
+        console.log(`Temporary log: ${error}`);
         Message.staticSendError(res, msg.api.errors.parsing, 400);
     }
 
