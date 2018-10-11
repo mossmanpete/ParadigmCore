@@ -28,7 +28,7 @@ export class WebSocketMessage {
                 }
             }).catch((_) => { console.log('caught something') });
         } catch (error) {
-            // console.log(error);
+            console.log("in sendmessage: " + error);
             throw new Error('Error sending WS event.');   
         } 
     }
@@ -49,7 +49,7 @@ export class WebSocketMessage {
                 }
             }).catch((_) => { console.log('caught something') });
         } catch (error) {
-            // console.log(error);
+            console.log("in sendOrder: " + error);
             throw new Error('Error sending WS event.');   
         } 
     }
