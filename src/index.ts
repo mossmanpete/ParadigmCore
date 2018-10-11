@@ -163,8 +163,8 @@ let handlers = {
     }
   },
 
-  commit: (_) => {
-    Logger.logEvent("Round ended, broadcasting orders.");
+  commit: (height) => {
+    Logger.logEvent(`Round #${height} ended, broadcasting orders.`);
 
     try {
       tracker.triggerBroadcast();
