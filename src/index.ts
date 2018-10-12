@@ -83,6 +83,12 @@ let handlers = {
     }
   },
 
+  beginBlock: (request) => {
+    Logger.logError('Current block proposed by: ' + request.header.proposerAddress.toString('hex'));
+
+    return {}
+  },
+
   checkTx: (request) => {
     let txObject;
 
