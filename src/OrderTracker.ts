@@ -14,8 +14,8 @@
 import { EventEmitter } from "events";
 
 export class OrderTracker {
-    private em: EventEmitter;
-    private orders: Array<object>;
+    private em: EventEmitter; // event emiter instance
+    private orders: Array<object>; // stores valid orders
 
     private flush() {
         this.orders = [];
@@ -34,13 +34,15 @@ export class OrderTracker {
         if(this.orders.length > 0){
             try {
                 this.orders.forEach(order => {
-                    this.em.emit("order", order)
+                    this.em.emit("order", order) // picked up by websocket server
                 });
+
                 this.flush();
+
             } catch (err) {
-                console.log("in broadcast: " + err);
                 throw new Error("Error triggering event broadcast.");
             }
+
         } else {
             return
         }

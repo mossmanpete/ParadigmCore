@@ -12,14 +12,13 @@
 */
 
 import { VERSION } from "./config";
-import * as colors from "colors/safe";
-
+import "colors";
 
 export class Logger {
-    public static logEvent(message): void{
-        console.log(`[ParadigmCore @ v${VERSION}: ${new Date().toLocaleString()}] ${colors.green("Event:")} ${message}`)
+    public static logEvent(message): void {
+        console.log(`[${"ParadigmCore".cyan.bold} @ v${VERSION}: ${new Date().toLocaleString()}] ${"Event:".green.bold} ${message}`)
     }
-    public static logError(message): void{
-        console.log(`[ParadigmCore @ v${VERSION}: ${new Date().toLocaleString()}] ${colors.red("Error:")}: ${message}`);
+    public static logError(message): void {
+        console.log(`[${"ParadigmCore".cyan.bold} @ v${VERSION}: ${new Date().toLocaleString()}] ${"Error:".red.bold} ${message}`)
     }
 }
