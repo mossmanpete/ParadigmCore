@@ -14,6 +14,7 @@
 import { EventEmitter } from "events";
 
 export class OrderTracker {
+    
     private em: EventEmitter; // event emiter instance
     private orders: Array<object>; // stores valid orders
 
