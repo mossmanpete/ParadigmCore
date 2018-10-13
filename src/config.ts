@@ -5,12 +5,14 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 2 October 2018
+  @date_modified 9 October 2018
   @author Henry Harder
 
   Constants and configuration.
 */
-export const VERSION: string = "0.0.2a3"; // PC Version 
+
+// major, minor, and sub version numbers
+export const VERSION: string = "0.2a5"; // PC Version 
 
 // endpoints for ABCI/RPC
 export const ABCI_HOST: string = "localhost";

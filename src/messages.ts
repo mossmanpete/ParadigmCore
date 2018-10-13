@@ -1,3 +1,16 @@
+/*
+  =========================
+  ParadigmCore: Blind Star
+  messages.ts @ {master}
+  =========================
+
+  @date_inital 1 October 2018
+  @date_modified 9 October 2018
+  @author Henry Harder
+
+  Simple message object to store common ABCI and WS messages.
+*/
+
 import { WS_PORT, ABCI_PORT, API_PORT } from "./config";
 
 export let messages  = {
@@ -22,9 +35,9 @@ export let messages  = {
                 checkTx:    "Incoming ABCI transaction in 'checkTx()'",
                 deliverTx:  "Incoming ABCI transaction in 'deliverTx()'"
             },
-            mempool:    "Order added to local mempool.",
-            noStake:    "Order rejected: invalid poster or no poster stake.",
-            verified:   "Order verified and broadcast via OrderStream event stream.",
+            mempool:    "New order added to local mempool.",
+            noStake:    "New order rejected: invalid poster or no poster stake.",
+            verified:   "New order verified and added to OrderStream queue.",
             servStart:  `ABCI server started on port ${ABCI_PORT}.`
         }
     },

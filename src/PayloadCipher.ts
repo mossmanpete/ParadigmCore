@@ -48,7 +48,7 @@ export class PayloadCipher {
             cpBuff = zlib.deflateSync(inBuff);
             outStr = cpBuff.toString(this.outEncoding)
         } catch (err) {
-            console.log(err) // debugging (REMOVE)
+            // console.log(err) // debugging (REMOVE)
             throw new Error("Error encoding payload.")
         }
         return outStr;
@@ -65,7 +65,7 @@ export class PayloadCipher {
             cpBuff = zlib.deflateSync(inBuff);
             outStr = cpBuff.toString(this.outEncoding)
         } catch (err) {
-            console.log(err) // debugging (REMOVE)
+            // console.log(err) // debugging (REMOVE)
             throw new Error("Error encoding payload.");
         }
         return outStr;
@@ -81,7 +81,7 @@ export class PayloadCipher {
             dcBuff = zlib.inflateSync(inBuff);
             outStr = dcBuff.toString(this.inEncoding);
         } catch (err) {
-            console.log(err) // debugging (REMOVE)
+            // console.log(err) // debugging (REMOVE)
             throw new Error("Error decoding payload.");
         }
         return outStr;
@@ -98,14 +98,14 @@ export class PayloadCipher {
             dcBuff = zlib.inflateSync(inBuff);
             outStr = dcBuff.toString(this.inEncoding);
         } catch (err) {
-            console.log(err) // debugging (REMOVE)
+            // console.log(err) // debugging (REMOVE)
             throw new Error("Error decoding payload.");
         }
         
         try {
             outObj = JSON.parse(outStr);
         } catch (err) {
-            console.log(err);
+            // console.log(err);
             throw new Error("Error creating object from JSON");
         }
 

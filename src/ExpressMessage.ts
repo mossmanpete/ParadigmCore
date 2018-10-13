@@ -26,7 +26,12 @@ export class Message {
             "processed": new Date().toLocaleString()
         }
 
-        res.status(error).send(json);
+        try{
+            res.status(error).send(json);
+        } catch (err) {
+            console.log("sending express msg: " + err);
+            throw new Error("Error sending Express message.");
+        }
     }
 
     public static staticSend(res: exp.Response, message: string): void {
@@ -35,7 +40,12 @@ export class Message {
             "processed": new Date().toLocaleString()
         }
 
-        res.status(200).send(json);
+        try{
+            res.status(200).send(json);
+        } catch (err) {
+            console.log("sending express msg: " + err);
+            throw new Error("Error sending Express message.");
+        }
     }
 
     constructor (response: exp.Response, message: string, error: number) {
@@ -51,7 +61,12 @@ export class Message {
     }
 
     public send(): void {
-        this.res.status(this.err).send(this.json);
+        try {
+            this.res.status(this.err).send(this.json);
+        } catch (err) {
+            console.log("sending express msg: " + err);
+            throw new Error("Error sending Express message.");
+        }
     }
 
     public toJSON(): object {
