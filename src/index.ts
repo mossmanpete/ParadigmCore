@@ -27,6 +27,8 @@ import { Hasher } from './Hasher';
 import { OrderTracker } from "./OrderTracker";
 import { ABCI_PORT, VERSION, WS_PORT } from "./config";
 
+Logger.logStart();
+
 let emitter = new EventEmitter(); // event emitter for WS broadcast
 let wss = new _ws.Server({ port: WS_PORT });
 let tracker = new OrderTracker(emitter);
@@ -84,7 +86,7 @@ let handlers = {
   },
 
   beginBlock: (request) => {
-    Logger.logError('Current block proposed by: ' + request.header.proposerAddress.toString('hex'));
+    Logger.newRound(request.header.height, request.header.proposerAddress.toString('hex'));
 
     return {}
   },
@@ -92,12 +94,10 @@ let handlers = {
   checkTx: (request) => {
     let txObject;
 
-    Logger.logEvent(msg.abci.messages.incoming.checkTx);
-
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      Logger.logEvent(msg.abci.errors.decompress);
+      Logger.logError(msg.abci.errors.decompress);
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
@@ -109,27 +109,25 @@ let handlers = {
           The above conditional shoud rely on a verifyStake(), that checks
           the existing state for that address. 
         */
-        Logger.logEvent(msg.abci.messages.mempool);
+        Logger.mempool(msg.abci.messages.mempool);
         return Vote.valid(Hasher.hashOrder(newOrder));
       } else {
-        Logger.logEvent(msg.abci.messages.noStake)
+        Logger.mempool(msg.abci.messages.noStake)
         return Vote.invalid(msg.abci.messages.noStake);
       }
     } catch (error) {
-      Logger.logEvent(msg.abci.errors.format);
+      Logger.mempool(msg.abci.errors.format);
       return Vote.invalid(msg.abci.errors.format);
     }
   },
 
   deliverTx: (request) => {
     let txObject;
-
-    Logger.logEvent(msg.abci.messages.incoming.deliverTx);
     
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      Logger.logEvent(msg.abci.errors.decompress)
+      Logger.logError(msg.abci.errors.decompress)
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
@@ -157,22 +155,20 @@ let handlers = {
           END STATE MODIFICATION
         */
 
-        Logger.logEvent(msg.abci.messages.verified)
+        Logger.consensus(msg.abci.messages.verified)
         return Vote.valid(dupOrder.id);
       } else {
-        Logger.logEvent(msg.abci.messages.noStake)
+        Logger.consensus(msg.abci.messages.noStake)
         return Vote.invalid(msg.abci.messages.noStake);
       }
     } catch (error) {
       // console.log(error);
-      Logger.logEvent(msg.abci.errors.format);
+      Logger.consensus(msg.abci.errors.format);
       return Vote.invalid(msg.abci.errors.format);
     }
   },
 
   commit: (_) => {
-    Logger.logEvent(`Round ended, broadcasting orders.`);
-
     try {
       tracker.triggerBroadcast();
     } catch (err) {

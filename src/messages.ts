@@ -35,9 +35,9 @@ export let messages  = {
                 checkTx:    "Incoming ABCI transaction in 'checkTx()'",
                 deliverTx:  "Incoming ABCI transaction in 'deliverTx()'"
             },
-            mempool:    "Order added to local mempool.",
-            noStake:    "Order rejected: invalid poster or no poster stake.",
-            verified:   "Order verified and broadcast via OrderStream event stream.",
+            mempool:    "New order added to local mempool.",
+            noStake:    "New order rejected: invalid poster or no poster stake.",
+            verified:   "New order verified and added to OrderStream queue.",
             servStart:  `ABCI server started on port ${ABCI_PORT}.`
         }
     },
