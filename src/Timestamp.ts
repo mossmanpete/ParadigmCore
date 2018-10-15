@@ -5,7 +5,6 @@ export class Timestamp extends Date {
 
     public logFormat() {
         
-        let ret = (`this.getMinutes()`)
-        return `[${this.getMonth()+1}-${this.getDate()}]${this.getHours()}:${this.getMinutes()}:${this.getSeconds()}.${this.getMilliseconds()}`
+        return `[${this.getMonth()+1}-${this.getDate()}]${this.getHours()}:${this.getMinutes()}:${this.getSeconds()}.${this.getMilliseconds().toString().slice(0,2)}`;
     }
 }
