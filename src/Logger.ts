@@ -12,24 +12,25 @@
 */
 
 import { VERSION } from "./config";
+import { Timestamp } from "./Timestamp"
 import "colors";
 
 export class Logger {
 
     public static logStart(): void {
-        console.log(`${'S'.magenta.bold} [${"PC".cyan.bold} v${VERSION.bold} @ ${Date.now().toString().yellow.italic}] Starting ${'ParadigmCore'.cyan.bold} (ALPHA) version ${VERSION.red.bold}`);
+        console.log(`${'S'.magenta} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] Starting ${'ParadigmCore (ALPHA)'.cyan.bold} version ${VERSION.red}`);
     }
 
     public static logEvent(message: string): void {
-        console.log(`${'I'.green.bold} [${"PC".cyan.bold} v${VERSION.bold} @ ${Date.now().toString().yellow.italic}] ${message}`)
+        console.log(`${'I'.green} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message}`)
     }
 
     public static logError(message: string): void {
-        console.log(`${'E'.white.bgRed} [${"PC".cyan.bold} v${VERSION.bold} @ ${Date.now().toString().yellow.italic}] ${message.red}`)
+        console.log(`${'E'.red} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message.red}`)
     }
 
     public static newRound(height: number, proposer: string): void {
-        Logger.logEvent(`${`Starting block #${height}:`.blue.bold} Validator ${proposer.bold} is proposer.`);
+        Logger.logEvent(`${`Starting block #${height}:`.blue} Validator ${proposer.bold} is proposer.`);
     }
 
     public static mempool(message: string){
@@ -37,6 +38,6 @@ export class Logger {
     }
 
     public static consensus(message: string){
-        Logger.logEvent(`${'Consensus:'.green.bold} ${message}`);
+        Logger.logEvent(`${'Consensus:'.bold} ${message}`);
     }
 }
