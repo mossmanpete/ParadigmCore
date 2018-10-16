@@ -25,16 +25,21 @@ import { PayloadCipher } from "./PayloadCipher";
 import { WebSocketMessage } from "./WebSocketMessage";
 import { Hasher } from './Hasher';
 import { OrderTracker } from "./OrderTracker";
-import { ABCI_PORT, VERSION, WS_PORT } from "./config";
+import { StakeRebalancer } from './StakeRebalancer';
+
+import { ABCI_PORT, VERSION, WS_PORT, WEB3_PROVIDER, STAKE_PERIOD } from "./config";
+
+let paradigm = new _pjs(); // new paradigm instance
+let Order = paradigm.Order;
+let emitter = new EventEmitter(); // event emitter for WS broadcast
+let wss = new _ws.Server({ port: WS_PORT });
 
 Logger.logStart();
 
-let emitter = new EventEmitter(); // event emitter for WS broadcast
-let wss = new _ws.Server({ port: WS_PORT });
 let tracker = new OrderTracker(emitter);
 let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
-let paradigm = new _pjs(); // new paradigm instance
-let Order = paradigm.Order;
+let rebalancer = new StakeRebalancer({ provider: WEB3_PROVIDER, periodLength: STAKE_PERIOD });
+
 
 wss.on("connection", (ws) => {
   try {
@@ -86,7 +91,12 @@ let handlers = {
   },
 
   beginBlock: (request) => {
-    Logger.newRound(request.header.height, request.header.proposerAddress.toString('hex'));
+    let currHeight = request.header.height;
+    let currProposer = request.header.proposerAddress.toString('hex');
+
+    rebalancer.proposer = currProposer; // setter method
+
+    Logger.newRound(currHeight, currProposer);
 
     return {}
   },
