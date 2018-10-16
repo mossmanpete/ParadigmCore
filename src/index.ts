@@ -25,17 +25,16 @@ import { PayloadCipher } from "./PayloadCipher";
 import { WebSocketMessage } from "./WebSocketMessage";
 import { Hasher } from './Hasher';
 import { OrderTracker } from "./OrderTracker";
-// import { StakeRebalancer } from './StakeRebalancer';
+import { StakeRebalancer } from './StakeRebalancer';
 
-import { ABCI_PORT, VERSION, WS_PORT, WEB3_PROVIDER, STAKE_PERIOD, STAKE_CONTRACT_ADDR, STAKE_CONTRACT_ABI } from "./config";
+import { ABCI_PORT, VERSION, WS_PORT, WEB3_PROVIDER, STAKE_CONTRACT_ADDR, STAKE_CONTRACT_ABI, PERIOD_LENGTH, PERIOD_LIMIT } from "./config";
 
 let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
 let emitter = new EventEmitter(); // event emitter for WS broadcast
 let wss = new _ws.Server({ port: WS_PORT });
 
-Logger.logStart();
-
+let rebalancer;
 let tracker = new OrderTracker(emitter);
 let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
 
@@ -43,7 +42,7 @@ wss.on("connection", (ws) => {
   try {
     WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
   } catch (err) {
-    Logger.logError(msg.websocket.errors.connect);
+    Logger.websocketErr(msg.websocket.errors.connect);
   }
 
   emitter.on("order", (order) => {
@@ -54,7 +53,7 @@ wss.on("connection", (ws) => {
         }
       });
     } catch (err) {
-      Logger.logError(msg.websocket.errors.broadcast);
+      Logger.websocketErr(msg.websocket.errors.broadcast);
     }
   });
 
@@ -65,14 +64,14 @@ wss.on("connection", (ws) => {
       try {
         WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
       } catch (err) {
-        Logger.logError(msg.websocket.errors.message);
+        Logger.websocketErr(msg.websocket.errors.message);
       }
     }
   });
 });
 
 wss.on('listening', (_) => {
-  Logger.logEvent(msg.websocket.messages.servStart);
+  Logger.websocketEvt(msg.websocket.messages.servStart);
 });
 
 let handlers = {
@@ -89,7 +88,7 @@ let handlers = {
     let currHeight = request.header.height;
     let currProposer = request.header.proposerAddress.toString('hex');
 
-    // rebalancer.proposer = currProposer; // setter method
+    rebalancer.newOrderStreamBlock(currHeight, currProposer);
 
     Logger.newRound(currHeight, currProposer);
 
@@ -102,7 +101,7 @@ let handlers = {
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      Logger.logError(msg.abci.errors.decompress);
+      Logger.mempoolErr(msg.abci.errors.decompress);
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
@@ -121,7 +120,7 @@ let handlers = {
         return Vote.invalid(msg.abci.messages.noStake);
       }
     } catch (error) {
-      Logger.mempool(msg.abci.errors.format);
+      Logger.mempoolErr(msg.abci.errors.format);
       return Vote.invalid(msg.abci.errors.format);
     }
   },
@@ -132,7 +131,7 @@ let handlers = {
     try {
       txObject = cipher.ABCIdecode(request.tx);
     } catch (error) {
-      Logger.logError(msg.abci.errors.decompress)
+      Logger.consensusErr(msg.abci.errors.decompress)
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
@@ -168,7 +167,7 @@ let handlers = {
       }
     } catch (error) {
       // console.log(error);
-      Logger.consensus(msg.abci.errors.format);
+      Logger.consensusErr(msg.abci.errors.format);
       return Vote.invalid(msg.abci.errors.format);
     }
   },
@@ -185,7 +184,22 @@ let handlers = {
   }
 }
 
-abci(handlers).listen(ABCI_PORT, () => {
-  Logger.logEvent(msg.abci.messages.servStart);
-  startAPIserver();
-});
+async function start(){
+  Logger.logStart();
+
+  rebalancer = await StakeRebalancer.create({
+    provider: WEB3_PROVIDER,
+    periodLength: PERIOD_LENGTH,
+    periodLimit: PERIOD_LIMIT,
+    stakeContractAddr: STAKE_CONTRACT_ADDR,
+    stakeContractABI: STAKE_CONTRACT_ABI
+  })
+
+  abci(handlers).listen(ABCI_PORT, () => {
+    Logger.consensus(msg.abci.messages.servStart);
+    startAPIserver();
+  });
+}
+
+start();
+

@@ -44,7 +44,8 @@ export let messages  = {
     api: {
         errors: {
             badJSON: "Bad JSON format, check TX and try again.",
-            parsing: "Error parsing order, check format and try again."
+            parsing: "Error parsing order, check format and try again.",
+            response: "Error sending HTTP response."
         },
         messages: {
             servStart: `API server started on port ${API_PORT}.`

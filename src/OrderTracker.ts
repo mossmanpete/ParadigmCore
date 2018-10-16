@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 9 October 2018
-  @date_modified 9 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
   
   Class to store valid orders and trigger broadcast upon consensus round completion.
@@ -37,9 +37,7 @@ export class OrderTracker {
                 this.orders.forEach(order => {
                     this.em.emit("order", order) // picked up by websocket server
                 });
-
                 this.flush();
-
             } catch (err) {
                 throw new Error("Error triggering event broadcast.");
             }

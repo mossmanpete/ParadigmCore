@@ -22,6 +22,8 @@
 
 let Web3 = require('web3');
 import Contract from "web3/eth/contract";
+
+import { Logger } from "./Logger";
 import { EventEmitter } from "web3/types";
 
 export class StakeRebalancer {
@@ -33,9 +35,6 @@ export class StakeRebalancer {
 
     private currentOsHeight: number; // current OrderStream height
     private currentProposer: string; // pub key of current block proposer
-
-    private stakeMadeEmitter: EventEmitter;
-    private stakeRemovedEmitter: EventEmitter;
 
     private stakingContract: Contract; // initialized staking contract
     private stakeABI: Array<object>; // staking contract ABI
@@ -77,16 +76,18 @@ export class StakeRebalancer {
         this.web3 = new Web3(new Web3.providers.WebsocketProvider(this.web3provider)); // initialize Web3 instance 
 
         this.startingEthHeight = await this.web3.eth.getBlockNumber();
-        this.currentEthHeight = this.startingEthHeight;
-
-        this.periodStartHeight = this.currentEthHeight;
-        this.periodEndHeight = this.periodStartHeight + this.periodLength;
         
         this.stakingContract = new this.web3.eth.Contract(
             this.stakeABI, this.stakeAddr);
         
-        console.log("initialized. starting block is: "+ this.startingEthHeight);
         this.subscribe();
+
+        this.currentEthHeight = this.startingEthHeight.valueOf();
+        this.periodStartHeight = this.currentEthHeight.valueOf();
+        this.periodEndHeight = this.periodStartHeight.valueOf() + this.periodLength.valueOf();
+
+        Logger.rebalancer("Initialized. Starting block is: "+ this.startingEthHeight);
+        Logger.rebalancer("First round ends at block: " + this.periodEndHeight);
     }
 
     /**
@@ -104,7 +105,7 @@ export class StakeRebalancer {
         this.periodCounter = 0;
 
         this.periodStakers = [];
-        this.periodLength = options.periodLength; // establish rebalance period length
+        this.periodLength = options.periodLength; // establish period length
 
         this.web3provider = options.provider;
         this.stakeAddr = options.stakeContractAddr;
@@ -112,72 +113,95 @@ export class StakeRebalancer {
     }
 
     /**
-     * Getter method that returns current block proposer
+     * proposer (public getter): Getter that returns current block proposer
      */
     get proposer(): string {
         return this.currentProposer;
     }
 
     /**
-     * Setter method to establish current proposer, and increase TM height
-     * Should be called in `beginBlock()`
-     * @param proposer {string}: new proposer pub key
+     * ethereumHeight (public getter): Returns current ethereum height
      */
-    set proposer(proposer: string){
-        this.currentProposer = proposer;
-        this.currentOsHeight += 1; // increase height by 1
-
-        // below is for debugging
-        console.log(`Current height: ${this.currentOsHeight}`);
-        console.log(`Current proposer: ${this.currentProposer}`);
-    }
-
-    /**
-     * Returns current ethereum height (for syncing)
-     */
-    get ethereumHeight(){
+    get ethereumHeight(): number {
         return this.currentEthHeight;
     }
 
     /**
-     * subscribe (instance method): subscribe to the various needed ethereum events
+     * periodNumber (public getter) 
      */
-    private subscribe(): void {
-        this.stakingContract.events.StakeMade(
-            { fromBlock: 0 }, this.handleStakeEvent);
-
-        this.stakingContract.events.StakeRemoved(
-            { fromBlock: 0 }, this.handleStakeEvent);
-        
-        this.web3.eth.subscribe('newBlockHeaders', this.handleBlockEvent);
+    get periodNumber(): number {
+        return this.periodCounter;
     }
 
     /**
-     * handleBlockEvent (instance method): handler method for new Ethereum blocks,
-     * checks if the round has ended, and triggers an ABCI transaction if needed.
+     * newOrderStreamBlock (public instance method): Should be called when a new
+     * OrderStream block is begun, so the ABCI application should call from 
+     * BeginBlock().
+     * 
+     * @param height {number} the new OrderStream network block height
+     * @param proposer {string} the proposer for the new OS round
+     */
+    public newOrderStreamBlock(height: number, proposer: string): void {
+        this.currentOsHeight = height;
+        this.currentProposer = proposer;
+
+        Logger.rebalancer(`srb: new os block ${height} and proposer ${proposer}`)
+    }
+
+    /**
+     * subscribe (private instance method): Subscribe to the various needed 
+     * Ethereum events via Web3 connection.
+     */
+    private subscribe(): void {
+        this.stakingContract.events.StakeMade(
+            { fromBlock: this.startingEthHeight }, this.handleStakeEvent);
+
+         this.stakingContract.events.StakeRemoved(
+            { fromBlock: this.startingEthHeight }, this.handleStakeEvent);
+        
+        this.web3.eth.subscribe('newBlockHeaders', this.handleBlockEvent);
+        
+        return null
+    }
+
+    /**
+     * handleBlockEvent (private instance method): Handler method for new 
+     * Ethereum blocks, and checks if the round has ended, and triggers an
+     * ABCI transaction if needed.
+     * 
+     * For some reason this doesn't work unless it is an ES6 arrow function.
      * 
      * @param err {object} error object from web3 call
      * @param res {object} response object from web3 call
      */
-    private handleBlockEvent(err: any, res: any): void {
+    private handleBlockEvent = (err: any, res: any) => {
         if(err != null) {
-            console.log("bad event");
-            return
+            console.log("bad event: " + err);
+            return null
         }
 
         this.currentEthHeight = res.number;
-        console.log(`new ethereum block: ${res.number}`);
+        Logger.rebalancer(`New ethereum block: ${res.number}`);
+        Logger.rebalancer(`Period #${this.periodCounter} ends @ ${this.periodEndHeight}`);
 
         if(res.number >= this.periodEndHeight){
+            Logger.rebalancer('round should end now.');
             // construct mapping
             this.makeABCItransaction();
         }
     }
 
-    private handleStakeEvent(err: any, res: any): void {
+    /**
+     * handleStakeEvent (private instance method): This method is the event 
+     * handler for stake events (both StakeMade and StakeRemoved). We may want
+     * to split this into two functions.
+     * 
+     * Again, not sure why it doesn't work if it is not an ES6 arrow function.
+     */
+    private handleStakeEvent = (err: any, res: any) => {
         if(err != null) {
-            console.log("bad stake");
-            return
+            console.log("bad stake: " + err);
+            return null
         }
 
         let staker = res.returnValues.staker;
@@ -188,60 +212,53 @@ export class StakeRebalancer {
         if((blockNo >= this.periodStartHeight) && (blockNo <= this.periodEndHeight)){
             if(eventType == 'StakeMade'){
                 console.log('stakemade event');
-                this.periodStakers.push({
-                    staker : amount 
-                });
+                let stakeObj = {}
+                stakeObj[staker] = amount;
+                this.periodStakers.push(stakeObj); // push to mapping
+
             } else if(eventType == 'StakeRemoved'){
                 console.log('stakeremoved event');
                 // what should happen if the stake is removed?
             }
         } else {
             // logic if event was outside period bounds
+            console.log('** else block reached');
         }
-        
-        // for debugging - remove
-        console.log(`@block #${blockNo} stake made by ${staker}`);
     }
 
     /**
-     * resetPeriod (instance method): should be called at some point during the slew
-     * of "new rebalance period" methods.
-     * 
-     * @param height {number} the starting height for the next stake period
+     * resetPeriod (private instance method): should be called at some point
+     * during the inevitable slew of "new rebalance period" methods.
      */
-    private resetPeriod(height: number) { // reset mappings
+    private resetPeriod() { // reset mappings
         // this.currentEthHeight = height; // should only be updated by block handler?
         // set round starting height
 
+        console.log('reseting period');
+
+        
         this.rawMapping = {};
         this.outMapping = {}; // eventually create objects
 
-        // this.periodBalance = 0; // reset staked balance to 0
+        // // this.periodBalance = 0; // reset staked balance to 0
         this.periodCounter += 1; // new stake period
         this.periodStartHeight = this.currentEthHeight;
-        this.periodEndHeight = this.periodStartHeight + this.periodLength; 
+        this.periodEndHeight = this.periodStartHeight + this.periodLength;
+        
+        console.log("new period starting:")
+        console.log(`... starts @ ${this.periodStartHeight}`);
+        console.log(`... ends @ ${this.periodEndHeight}`);
+        console.log(`... current block: ${this.currentEthHeight}`);
     }
     
     /**
-     * newOrderStreamBlock (instance method): should be called when a new OrderStream block
-     * is begin, so the ABCI application should call from BeginBlock()
-     * 
-     * @param height {number} the new OrderStream network block height
-     */
-    private newOrderStreamBlock(height: number): void {
-        this.currentOsHeight = height;
-
-        // or 
-
-        // this.currentOsHeight += 1; 
-    }
-
-    /**
-     * makeABCItransaction (instance method): submit mapping as ABCI rebalance transaction.
+     * makeABCItransaction (private instance method): submit mapping as ABCI rebalance transaction.
      * Should be called at the end of a rebalance period. 
      */
     private makeABCItransaction(): void {
         console.log("making abci transaction (lol)");
+        console.log(this.periodStakers);
+        this.resetPeriod();
         return
     }
 }

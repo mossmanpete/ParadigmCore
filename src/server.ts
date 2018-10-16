@@ -37,8 +37,7 @@ app.use(function (err, req, res, next) {
     try {
         Message.staticSendError(res, msg.api.errors.badJSON, 400);
     } catch (err) {
-        console.log(`Temporary log: ${err}`);
-        throw new Error("Error sending HTTP response.");
+        Logger.apiErr(msg.api.errors.response);
     }
 });
 
@@ -47,7 +46,7 @@ app.post("/*", (req, res) => {
     try {
         payloadStr = pe.encodeFromObject(req.body)
     } catch (error) {
-        console.log(`Temporary log: ${error}`);
+        Logger.apiErr(msg.api.errors.parsing);
         Message.staticSendError(res, msg.api.errors.parsing, 400);
     }
 
@@ -73,6 +72,6 @@ app.post("/*", (req, res) => {
 
 export function startAPIserver(): void {
     app.listen(API_PORT, () => {
-        Logger.logEvent(msg.api.messages.servStart);
+        Logger.apiEvt(msg.api.messages.servStart);
     });
 }

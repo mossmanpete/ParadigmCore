@@ -18,6 +18,6 @@ export class Timestamp extends Date {
 
     public logFormat() {
         
-        return `[${this.getMonth()+1}-${this.getDate()}]${this.getHours()}:${this.getMinutes()}:${this.getSeconds()}.${this.getMilliseconds().toString().slice(0,2)}`;
+        return `${Math.floor(Date.now()/1000).toString()}.${Date.now().toString().slice(-3)}`;
     }
 }

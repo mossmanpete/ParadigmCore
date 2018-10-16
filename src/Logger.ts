@@ -37,7 +37,39 @@ export class Logger {
         Logger.logEvent(`${'Mempool:'.magenta.bold} ${message}`);
     }
 
+    public static mempoolErr(message: string){
+        Logger.logError(`${'Mempool'.magenta.bold} ${'Error:'.red} ${message}`);
+    }
+
     public static consensus(message: string){
-        Logger.logEvent(`${'Consensus:'.bold} ${message}`);
+        Logger.logEvent(`${'Consensus:'.cyan} ${message}`);
+    }
+
+    public static consensusErr(message: string){
+        Logger.logError(`${'Consensus'.cyan} ${'Error:'.red} ${message}`);
+    }
+
+    public static rebalancer(message: string){
+        Logger.logEvent(`${'Rebalancer:'.green} ${message}`);
+    }
+
+    public static rebalancerErr(message: string){
+        Logger.logError(`${'Rebalancer'.green} ${'Error:'.red} ${message}`);
+    }
+
+    public static websocketEvt(message: string){
+        Logger.logEvent(`${'WebSocket:'.red} ${message}`);
+    }
+
+    public static websocketErr(message: string){
+        Logger.logError(`${'WebSocket'.red} ${'Error:'.red} ${message}`);
+    }
+
+    public static apiEvt(message: string){
+        Logger.logEvent(`${'API Server:'.yellow} ${message}`);
+    }
+
+    public static apiErr(message: string){
+        Logger.logError(`${'API Server'.yellow} ${'Error:'.red} ${message}`);
     }
 }
