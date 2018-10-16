@@ -303,9 +303,17 @@ export class StakeRebalancer {
      * Should be called at the end of a rebalance period. 
      */
     private makeABCItransaction(): void {
+        let txObject = {
+            type: "Rebalance",
+            data: this.outMapping
+        }
+
         console.log("making abci transaction (lol)");
         console.log(`Raw mapping: ${JSON.stringify(this.rawMapping)}`);
         console.log(`Out mapping: ${JSON.stringify(this.outMapping)}`);
+
+        // actually send transaction to 
+
         this.resetPeriod();
         return
     }

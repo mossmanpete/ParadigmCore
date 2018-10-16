@@ -9,6 +9,8 @@
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
+
+  @10-16: TODO: support StreamBroadcast type
 */
 
 import * as express from "express";
@@ -44,7 +46,10 @@ app.use(function (err, req, res, next) {
 app.post("/*", (req, res) => {
     let payloadStr: string;
     try {
-        payloadStr = pe.encodeFromObject(req.body)
+        payloadStr = pe.encodeFromObject({
+            type: "OrderBroadcast",
+            data: req.body
+        });
     } catch (error) {
         Logger.apiErr(msg.api.errors.parsing);
         Message.staticSendError(res, msg.api.errors.parsing, 400);

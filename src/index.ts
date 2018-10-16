@@ -105,23 +105,40 @@ let handlers = {
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    try {      
-      let newOrder = new Order(txObject);
-      let recoveredAddr = newOrder.recoverPoster();
-      if (typeof(recoveredAddr) === "string"){
-        /*
-          The above conditional shoud rely on a verifyStake(), that checks
-          the existing state for that address. 
-        */
-        Logger.mempool(msg.abci.messages.mempool);
-        return Vote.valid(Hasher.hashOrder(newOrder));
-      } else {
-        Logger.mempool(msg.abci.messages.noStake)
-        return Vote.invalid(msg.abci.messages.noStake);
+    if(txObject.type === "OrderBroadcast"){
+      // tx type is OrderBroadcast
+
+      console.log('we got an order boys')
+      try {      
+        let newOrder = new Order(txObject.data);
+        let recoveredAddr = newOrder.recoverPoster();
+        if (typeof(recoveredAddr) === "string"){
+          /*
+            The above conditional shoud rely on a verifyStake(), that checks
+            the existing state for that address. 
+          */
+          Logger.mempool(msg.abci.messages.mempool);
+          return Vote.valid(Hasher.hashOrder(newOrder));
+        } else {
+          Logger.mempool(msg.abci.messages.noStake)
+          return Vote.invalid(msg.abci.messages.noStake);
+        }
+      } catch (error) {
+        Logger.mempoolErr(msg.abci.errors.format);
+        return Vote.invalid(msg.abci.errors.format);
       }
-    } catch (error) {
-      Logger.mempoolErr(msg.abci.errors.format);
-      return Vote.invalid(msg.abci.errors.format);
+
+    } else if(txObject.type === 'Rebalance'){
+      // tx type is Rebalance
+
+      console.log("we got NOT an order");
+      return Vote.invalid("not implemented");
+
+    } else {
+      // tx type doesn't match OrderBroadcast or Rebalance
+
+      console.log("unknown transaction type");
+      return Vote.invalid("not implemented");
     }
   },
 
@@ -135,40 +152,57 @@ let handlers = {
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    try {      
-      let newOrder = new Order(txObject);
-      let recoveredAddr = newOrder.recoverPoster();
 
-      if (typeof(recoveredAddr) === "string"){ 
-        /*
-          The above conditional shoud rely on a verifyStake(), that checks
-          the existing state for that address. 
+    if(txObject.type === "OrderBroadcast"){
+      // tx type is OrderBroadcast
+      
+      console.log("orderbroadcast in delivertx");
+      try {      
+        let newOrder = new Order(txObject.data);
+        let recoveredAddr = newOrder.recoverPoster();
 
-          BEGIN STATE MODIFICATION
-        */
+        if (typeof(recoveredAddr) === "string"){ 
+          /*
+            The above conditional shoud rely on a verifyStake(), that checks
+            the existing state for that address. 
 
-        let dupOrder: any = newOrder.toJSON();
-        dupOrder.id = Hasher.hashOrder(newOrder);
+            BEGIN STATE MODIFICATION
+          */
 
-        //emitter.emit("order", dupOrder); // broadcast order event
-        tracker.add(dupOrder); // add order to queue for broadcast
+          let dupOrder: any = newOrder.toJSON();
+          dupOrder.id = Hasher.hashOrder(newOrder);
 
-        state.number += 1;
+          //emitter.emit("order", dupOrder); // broadcast order event
+          tracker.add(dupOrder); // add order to queue for broadcast
 
-        /*
-          END STATE MODIFICATION
-        */
+          state.number += 1;
 
-        Logger.consensus(msg.abci.messages.verified)
-        return Vote.valid(dupOrder.id);
-      } else {
-        Logger.consensus(msg.abci.messages.noStake)
-        return Vote.invalid(msg.abci.messages.noStake);
+          /*
+            END STATE MODIFICATION
+          */
+
+          Logger.consensus(msg.abci.messages.verified)
+          return Vote.valid(dupOrder.id);
+        } else {
+          Logger.consensus(msg.abci.messages.noStake)
+          return Vote.invalid(msg.abci.messages.noStake);
+        }
+      } catch (error) {
+        // console.log(error);
+        Logger.consensusErr(msg.abci.errors.format);
+        return Vote.invalid(msg.abci.errors.format);
       }
-    } catch (error) {
-      // console.log(error);
-      Logger.consensusErr(msg.abci.errors.format);
-      return Vote.invalid(msg.abci.errors.format);
+
+    } else if(txObject.type === "Rebalance"){
+      // tx type is Rebalance
+
+      console.log("we got NOT an order");
+      return Vote.invalid("not implemented");
+    } else {
+      // tx type does not match Rebalance or OrderBroadcast
+
+      console.log("unknown tx type");
+      return Vote.invalid("not implemented");
     }
   },
 
