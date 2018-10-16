@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 3 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   Main ABCI application supporting the OrderStream network. 
@@ -25,9 +25,9 @@ import { PayloadCipher } from "./PayloadCipher";
 import { WebSocketMessage } from "./WebSocketMessage";
 import { Hasher } from './Hasher';
 import { OrderTracker } from "./OrderTracker";
-import { StakeRebalancer } from './StakeRebalancer';
+// import { StakeRebalancer } from './StakeRebalancer';
 
-import { ABCI_PORT, VERSION, WS_PORT, WEB3_PROVIDER, STAKE_PERIOD } from "./config";
+import { ABCI_PORT, VERSION, WS_PORT, WEB3_PROVIDER, STAKE_PERIOD, STAKE_CONTRACT_ADDR, STAKE_CONTRACT_ABI } from "./config";
 
 let paradigm = new _pjs(); // new paradigm instance
 let Order = paradigm.Order;
@@ -38,14 +38,11 @@ Logger.logStart();
 
 let tracker = new OrderTracker(emitter);
 let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
-let rebalancer = new StakeRebalancer({ provider: WEB3_PROVIDER, periodLength: STAKE_PERIOD });
-
 
 wss.on("connection", (ws) => {
   try {
     WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
   } catch (err) {
-    console.log("on connection: " + err);
     Logger.logError(msg.websocket.errors.connect);
   }
 
@@ -57,7 +54,6 @@ wss.on("connection", (ws) => {
         }
       });
     } catch (err) {
-      console.log(`Temporary log: ${err}`);
       Logger.logError(msg.websocket.errors.broadcast);
     }
   });
@@ -69,7 +65,6 @@ wss.on("connection", (ws) => {
       try {
         WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
       } catch (err) {
-        console.log(`Temporary log: ${err}`);
         Logger.logError(msg.websocket.errors.message);
       }
     }
@@ -94,7 +89,7 @@ let handlers = {
     let currHeight = request.header.height;
     let currProposer = request.header.proposerAddress.toString('hex');
 
-    rebalancer.proposer = currProposer; // setter method
+    // rebalancer.proposer = currProposer; // setter method
 
     Logger.newRound(currHeight, currProposer);
 
