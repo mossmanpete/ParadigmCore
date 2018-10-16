@@ -14,7 +14,7 @@ import { List } from "underscore";
 */
 
 // major, minor, and sub version numbers
-export const VERSION: string = "0.2a6"; // PC Version 
+export const VERSION: string = "0.0.3"; // PC Version 
 
 // configuration for Ethereum peg and rebalancer
 export const WEB3_PROVIDER: string = "wss://kovan.infura.io/ws";
