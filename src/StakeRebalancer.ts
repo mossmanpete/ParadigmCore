@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 15 October 2018
-  @date_modified 15 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   UNSTABLE! UNSTABLE! UNSTABLE! UNSTABLE!
@@ -22,9 +22,7 @@
 
 let Web3 = require('web3');
 import Contract from "web3/eth/contract";
-
 import { Logger } from "./Logger";
-import { EventEmitter } from "web3/types";
 
 export class StakeRebalancer {
     private web3provider: string;
@@ -49,10 +47,7 @@ export class StakeRebalancer {
 
     private periodStartHeight: number; // eth starting height for period
     private periodEndHeight: number; // eth end height for period
-    private periodBalance: number; // staked balance for period (in wei)
     private periodLimit: number; // number of transactions allowed per period
-
-    private periodStakers: Array<object>; // array of (addr:stake)
 
     /**
      * StakeRebalancer static constructor: 
@@ -101,33 +96,36 @@ export class StakeRebalancer {
         /**
          * May want to revisit assuming current OS height is 0 on initialization
          */
-        this.currentOsHeight = 0; // start at 0
+        
+        this.rawMapping = {};
+        this.outMapping = {};
+
+        this.currentOsHeight = 0; // see above comment
         this.periodCounter = 0;
 
-        this.periodStakers = [];
         this.periodLength = options.periodLength; // establish period length
-
+        this.periodLimit = options.periodLimit;
         this.web3provider = options.provider;
         this.stakeAddr = options.stakeContractAddr;
         this.stakeABI = options.stakeContractABI;
     }
 
     /**
-     * proposer (public getter): Getter that returns current block proposer
+     * proposer (public getter): Getter that returns current block proposer.
      */
     get proposer(): string {
         return this.currentProposer;
     }
 
     /**
-     * ethereumHeight (public getter): Returns current ethereum height
+     * ethereumHeight (public getter): Returns current ethereum height.
      */
     get ethereumHeight(): number {
         return this.currentEthHeight;
     }
 
     /**
-     * periodNumber (public getter) 
+     * periodNumber (public getter): Returns the current rebalance period.
      */
     get periodNumber(): number {
         return this.periodCounter;
@@ -154,10 +152,10 @@ export class StakeRebalancer {
      */
     private subscribe(): void {
         this.stakingContract.events.StakeMade(
-            { fromBlock: this.startingEthHeight }, this.handleStakeEvent);
+            { fromBlock: 0 /*this.startingEthHeight*/ }, this.handleStakeEvent);
 
          this.stakingContract.events.StakeRemoved(
-            { fromBlock: this.startingEthHeight }, this.handleStakeEvent);
+            { fromBlock: 0 /*this.startingEthHeight*/ }, this.handleStakeEvent);
         
         this.web3.eth.subscribe('newBlockHeaders', this.handleBlockEvent);
         
@@ -186,7 +184,7 @@ export class StakeRebalancer {
 
         if(res.number >= this.periodEndHeight){
             Logger.rebalancer('round should end now.');
-            // construct mapping
+            this.constructOutputMapping();
             this.makeABCItransaction();
         }
     }
@@ -204,25 +202,56 @@ export class StakeRebalancer {
             return null
         }
 
-        let staker = res.returnValues.staker;
-        let amount = res.returnValues.amount;
-        let blockNo = res.blockNumber;
         let eventType = res.event;
+        let staker = res.returnValues.staker;
+        let amount = parseInt(res.returnValues.amount);
+        // let blockNo = parseInt(res.blockNumber);
+        
+        // if((blockNo >= this.periodStartHeight) && (blockNo <= this.periodEndHeight)){
 
-        if((blockNo >= this.periodStartHeight) && (blockNo <= this.periodEndHeight)){
-            if(eventType == 'StakeMade'){
-                console.log('stakemade event');
-                let stakeObj = {}
-                stakeObj[staker] = amount;
-                this.periodStakers.push(stakeObj); // push to mapping
+        if(eventType == 'StakeMade'){
+            console.log('stakemade event');
 
-            } else if(eventType == 'StakeRemoved'){
-                console.log('stakeremoved event');
-                // what should happen if the stake is removed?
+            if(this.rawMapping[staker] === undefined){
+                this.rawMapping[staker] = amount; // push to mapping
+                return
+
+            } else if(typeof(this.rawMapping[staker]) === 'number') {
+                this.rawMapping[staker] += amount; // increase staked balance
+                return 
+
+            } else {
+                console.log("@226 this shouldn't happen");
+                return
             }
-        } else {
-            // logic if event was outside period bounds
-            console.log('** else block reached');
+
+        } else if(eventType == 'StakeRemoved'){
+            console.log('stakeremoved event');
+
+            if(this.rawMapping[staker] === undefined){
+                // the case where a removing staker is not in the mapping
+                delete this.rawMapping[staker];
+                return
+
+            } else if(typeof(this.rawMapping[staker]) === 'number') {
+                
+                if(this.rawMapping[staker] <= amount){
+                    // the case where a staker removes their whole stake
+                    delete this.rawMapping[staker];
+                    return
+
+                } else if(this.rawMapping[staker] > amount){
+                    // the case where a staker removes an amount less than their stake
+                    this.rawMapping[staker] -= amount;
+                    return
+
+                } else {
+                    console.log('@251 this should not be reached');
+                }
+            } else {
+                console.log("@254 this shouldn't happen");
+                return
+            }
         }
     }
 
@@ -231,13 +260,8 @@ export class StakeRebalancer {
      * during the inevitable slew of "new rebalance period" methods.
      */
     private resetPeriod() { // reset mappings
-        // this.currentEthHeight = height; // should only be updated by block handler?
-        // set round starting height
-
         console.log('reseting period');
 
-        
-        this.rawMapping = {};
         this.outMapping = {}; // eventually create objects
 
         // // this.periodBalance = 0; // reset staked balance to 0
@@ -250,6 +274,29 @@ export class StakeRebalancer {
         console.log(`... ends @ ${this.periodEndHeight}`);
         console.log(`... current block: ${this.currentEthHeight}`);
     }
+
+    private constructOutputMapping(): void {
+        let stakeBalance = 0;
+        Object.keys(this.rawMapping).forEach((addr, _) => {
+            if(typeof(this.rawMapping[addr]) === 'number'){
+                stakeBalance += this.rawMapping[addr];
+            } else {
+                console.log("@296 skipping non-number value");
+            }
+        });
+
+        Object.keys(this.rawMapping).forEach((addr, _) => {
+            if(typeof(this.rawMapping[addr]) === 'number'){
+                this.outMapping[addr] = {
+                    OrderBroadcastLimit: Math.floor(
+                        (this.rawMapping[addr]/stakeBalance)*this.periodLimit),
+                    StreamBroadcastLimit: 1
+                }
+            } else {
+                console.log("@308 skipping non-number value");
+            }
+        });
+    }
     
     /**
      * makeABCItransaction (private instance method): submit mapping as ABCI rebalance transaction.
@@ -257,7 +304,8 @@ export class StakeRebalancer {
      */
     private makeABCItransaction(): void {
         console.log("making abci transaction (lol)");
-        console.log(this.periodStakers);
+        console.log(`Raw mapping: ${JSON.stringify(this.rawMapping)}`);
+        console.log(`Out mapping: ${JSON.stringify(this.outMapping)}`);
         this.resetPeriod();
         return
     }
