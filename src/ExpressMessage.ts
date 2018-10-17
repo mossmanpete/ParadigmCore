@@ -1,7 +1,7 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  Message.ts @ {master}
+  Message.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 19 August 2018

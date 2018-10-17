@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  PayloadCipher.ts @ {master}
+  PayloadCipher.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 21 September 2018
-  @date_modified 24 September 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   Compression and encoding.

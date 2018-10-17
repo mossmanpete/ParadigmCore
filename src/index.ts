@@ -1,7 +1,7 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  index.ts @ {master}
+  index.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 12 September 2018

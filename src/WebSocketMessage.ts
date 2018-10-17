@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  WebSocketMessage.ts @ {dev}
+  WebSocketMessage.ts @ {rebalance-refactor}
   =========================
   
   @date_inital 27 August 2018
-  @date_modified 1 October 2018
+  @date_modified 16October 2018
   @author Henry Harder
 
   Simple class for creating and sending JSON messages using WebSocket.
@@ -23,12 +23,10 @@ export class WebSocketMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if(err != undefined){
-                    console.log("in ws.send: "+ err);
                     throw new Error("Error in ws.send(...)");
                 }
             });/*.catch((_) => { console.log('caught something') });*/
         } catch (error) {
-            console.log("in sendmessage: " + error);
             throw new Error('Error sending WS event.');   
         } 
     }
@@ -44,12 +42,10 @@ export class WebSocketMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if(err != undefined){
-                    console.log("in ws.send: "+ err);
                     throw new Error("Error in ws.send(...)");
                 }
             });/*.catch((_) => { console.log('caught something') });*/
         } catch (error) {
-            console.log("in sendOrder: " + error);
             throw new Error('Error sending WS event.');   
         } 
     }

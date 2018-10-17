@@ -1,7 +1,7 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  StakeRebalancer.ts @ {master}
+  StakeRebalancer.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 15 October 2018

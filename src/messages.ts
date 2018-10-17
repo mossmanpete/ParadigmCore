@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  messages.ts @ {master}
+  messages.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 1 October 2018
-  @date_modified 9 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   Simple message object to store common ABCI and WS messages.

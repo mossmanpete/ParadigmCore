@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  Vote.ts @ {master}
+  Vote.ts @ {rebalance-refactor}
   =========================
   
   @date_inital 24 September 2018
-  @date_modified 2 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   A class to represent a vote based on the logic in 

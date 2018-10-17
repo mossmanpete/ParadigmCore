@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  server.ts @ {master}
+  server.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 24 September 2018
-  @date_modified 3 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.

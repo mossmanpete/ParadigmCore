@@ -1,13 +1,11 @@
-import { List } from "underscore";
-
 /*
   =========================
   ParadigmCore: Blind Star
-  config.ts @ {master}
+  config.ts @ {rebalance-refactor}
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 9 October 2018
+  @date_modified 16 October 2018
   @author Henry Harder
 
   Constants and configuration.
