@@ -33,7 +33,7 @@ let handlers; // ABCI handler functions
  * @param emitter {EventEmitter} global event emitter for tracking orders
  * @param port {number} port to use for the ABCI application
  */
-async function start(_emitter, _state) {
+async function start(_emitter, _state, _client) {
     try {
         state = _state;
         handlers = {
@@ -49,7 +49,9 @@ async function start(_emitter, _state) {
             periodLength: config_1.PERIOD_LENGTH,
             periodLimit: config_1.PERIOD_LIMIT,
             stakeContractAddr: config_1.STAKE_CONTRACT_ADDR,
-            stakeContractABI: config_1.STAKE_CONTRACT_ABI
+            stakeContractABI: config_1.STAKE_CONTRACT_ABI,
+            tendermintRpcHost: config_1.ABCI_HOST,
+            tendermintRpcPort: config_1.ABCI_RPC_PORT
         });
         //abci(handlers).listen(ABCI_PORT, () => {
         //    Logger.consensus(msg.abci.messages.servStart);
@@ -58,10 +60,9 @@ async function start(_emitter, _state) {
         Logger_1.Logger.consensus(messages_1.messages.abci.messages.servStart);
     }
     catch (err) {
-        // TODO: change to exceptions
-        return 1; // not okay
+        throw new Error('Error initializing ABCI application.');
     }
-    return 0; // okay
+    return;
 }
 exports.start = start;
 function info(_) {
@@ -113,7 +114,16 @@ function checkTx(request) {
     }
     else if (txObject.type === 'Rebalance') {
         // tx type is Rebalance
-        console.log("we got a rebalance event");
+        Logger_1.Logger.mempool("we got a rebalance event");
+        if ((state.round.number === 0) && (txObject.data.round.number === 1)) {
+            // should only be triggered by the first rebalance TX
+            Logger_1.Logger.mempool('first state update pass mempool');
+            return Vote_1.Vote.valid(); // vote to accept state
+        }
+        else if (state.round.number === txObject.data.round.number - 1) {
+            Logger_1.Logger.mempool('subsequent state update pass mempool');
+            return Vote_1.Vote.valid();
+        }
         return Vote_1.Vote.invalid("not implemented");
     }
     else {
@@ -147,7 +157,7 @@ function deliverTx(request) {
                 dupOrder.id = Hasher_1.Hasher.hashOrder(newOrder);
                 //emitter.emit("order", dupOrder); // broadcast order event
                 tracker.add(dupOrder); // add order to queue for broadcast
-                state.number += 1;
+                state.counter += 1;
                 /*
                   END STATE MODIFICATION
                 */
@@ -167,7 +177,44 @@ function deliverTx(request) {
     }
     else if (txObject.type === "Rebalance") {
         // tx type is Rebalance
-        console.log("we got a rebalance event");
+        Logger_1.Logger.consensus("we got a rebalance event");
+        if ((state.round.number === 0) && (txObject.data.round.number === 1)) {
+            // should only be triggered by the first rebalance TX
+            state.round.number = 1;
+            state.round.startsAt = txObject.data.round.startsAt;
+            state.round.endsAt = txObject.data.round.endsAt;
+            state.mapping = txObject.data.mapping;
+            Logger_1.Logger.consensus("Accepted parameters for first staking round.");
+            Logger_1.Logger.consensus(JSON.stringify(state));
+            return Vote_1.Vote.valid(); // vote to accept state
+        }
+        else if (state.round.number > 0) {
+            if (txObject.data.round.number === (state.round.number + 1)) {
+                let roundInfo = rebalancer.getConstructedMapping();
+                let validFor = roundInfo.validFor;
+                let localMapping = roundInfo.mapping;
+                console.log(`current state round: ${state.round.number}`);
+                console.log(`new proposal is for: ${txObject.data.round.number}`);
+                console.log(`local mapping valid: ${validFor}`);
+                if (JSON.stringify(localMapping) === JSON.stringify(txObject.data.mapping)) {
+                    state.round.number = txObject.data.round.number;
+                    state.round.startsAt = txObject.data.round.startsAt;
+                    state.round.endsAt = txObject.data.round.endsAt;
+                    state.mapping = txObject.data.mapping;
+                    Logger_1.Logger.consensus(`New state accepted (for round #${state.round.number})`);
+                    return Vote_1.Vote.valid();
+                }
+                else {
+                    Logger_1.Logger.consensusErr(`W: Rejected. New state does not match local mapping.`);
+                    return Vote_1.Vote.invalid();
+                }
+            }
+            else {
+                Logger_1.Logger.consensusErr(`W: Rejected. New state for wrong round.`);
+                return Vote_1.Vote.invalid();
+            }
+        }
+        Logger_1.Logger.consensusErr("E. You probably shouldn't see this.");
         return Vote_1.Vote.invalid("not implemented");
     }
     else {
@@ -178,10 +225,24 @@ function deliverTx(request) {
 }
 function commit(request) {
     try {
+        if ((state.round.startsAt > 0) && (rebalancer.getPeriodNumber() + 1 === state.round.number)) {
+            console.log(`@commit:`);
+            console.log(`... state round: ${state.round.number}`);
+            console.log(`... curr period: ${rebalancer.getPeriodNumber()}`);
+            Logger_1.Logger.consensus("Starting next stake round.");
+            let newRound = state.round.number; // correct???
+            let newStart = state.round.startsAt;
+            let newEnd = state.round.endsAt;
+            rebalancer.synchronize(newRound, newStart, newEnd);
+            console.log('done calling sync. here is the state:');
+            console.log(JSON.stringify(state));
+        } /*else {
+          console.log('@267 what should be here?');
+        }*/
         tracker.triggerBroadcast();
     }
     catch (err) {
-        // console.log(err)
+        // console.log(err);
         Logger_1.Logger.logError("Error broadcasting TX in commit.");
     }
     return "done"; // change to something more meaningful

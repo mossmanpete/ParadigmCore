@@ -13,5 +13,11 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.state = {
-    number: 0
+    round: {
+        number: 0,
+        startsAt: 0,
+        endsAt: 0
+    },
+    mapping: {},
+    orderCounter: 0
 };

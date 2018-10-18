@@ -28,7 +28,8 @@ export let messages  = {
     abci: {
         errors: {
             decompress: "Bad order object: error decompressing transaction.",
-            format:     "Bad order object: invalid Paradigm order format."   
+            format:     "Bad order object: invalid Paradigm order format.",
+            fatal:      "Fatal error initializing application."   
         },
         messages: {
             incoming:   {
@@ -45,9 +46,11 @@ export let messages  = {
         errors: {
             badJSON: "Bad JSON format, check TX and try again.",
             parsing: "Error parsing order, check format and try again.",
-            response: "Error sending HTTP response."
+            response: "Error sending HTTP response.",
+            fatal: "Fatal error starting API server."
         },
         messages: {
+            starting: "Starting HTTP API server...",
             servStart: `API server started on port ${API_PORT}.`
         }
     },

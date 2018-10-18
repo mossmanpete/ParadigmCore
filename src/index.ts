@@ -23,7 +23,7 @@ import { state } from "./state/state";
 import { start } from "./abci/handlers";
 import { startAPIserver } from "./net/server";
 
-import { WS_PORT, TM_HOME, ABCI_HOST, ABCI_RPC_PORT } from "./config";
+import { WS_PORT, TM_HOME, ABCI_HOST, ABCI_RPC_PORT, API_PORT } from "./config";
 
 let wss: _ws.Server;
 let emitter: EventEmitter;
@@ -41,7 +41,9 @@ let node: any; // Tendermint node instance
                 laddr: `tcp://${ABCI_HOST}:${ABCI_RPC_PORT}`
             }
         });
+
     } catch (error) {
+        console.log(error);
         Logger.consensusErr("Fatal error starting Tendermint core.");
         process.exit();
     }
@@ -58,31 +60,29 @@ let node: any; // Tendermint node instance
         process.exit();
     }
 
-    // Start HTTP API server
-    Logger.apiEvt("Starting HTTP API server...");
-    try {
-        startAPIserver();
+    // Start ABCI application
+    try{
+        await start(emitter, state, node.rpc);
+        Logger.consensus("Waiting for Tendermint to synchronize...")
+        await node.synced();
+        Logger.consensus("Tendermint initialized and syncronized.");
     } catch (error) {
-        Logger.apiErr('Fatal error starting API server.')
+        Logger.logError(msg.abci.errors.fatal)
         process.exit();
     }
 
-    // Start ABCI application
-    let code = await start(emitter, state);
-
-    if(code != 0){
-        Logger.logError("Fatal error initializing application.")
+    // Start HTTP API server
+    Logger.apiEvt("Starting HTTP API server...");
+    try {
+        await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
+    } catch (error) {
+        Logger.apiErr(msg.api.errors.fatal)
         process.exit();
     }
 
     /**
      * Begin WebSocket handler implementation (below)
      */
-
-    //wss.on("listening", (_) => {
-    //    console.log('hola');
-    //    Logger.websocketEvt(msg.websocket.messages.servStart);
-    //});
 
     wss.on("connection", (ws) => {
         try {

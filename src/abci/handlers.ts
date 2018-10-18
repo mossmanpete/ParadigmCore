@@ -23,20 +23,16 @@ import { EventEmitter } from "events";
 import { StakeRebalancer } from "../async/StakeRebalancer";
 
 import { messages as msg } from "../util/messages";
-
 import { 
     VERSION, ABCI_PORT, WEB3_PROVIDER, PERIOD_LENGTH, 
-    PERIOD_LIMIT, STAKE_CONTRACT_ADDR, STAKE_CONTRACT_ABI 
+    PERIOD_LIMIT, STAKE_CONTRACT_ADDR, STAKE_CONTRACT_ABI, ABCI_HOST, ABCI_RPC_PORT 
 } from "../config";
 
-
 let Order = new Paradigm().Order;
-
 let tracker: OrderTracker; // used to broadcast orders
 let rebalancer: StakeRebalancer; // construct and submit mapping
 let state: any; // network rate-limit state
 let handlers: object; // ABCI handler functions
-
 
 /**
  * start (exported function): Initialize and start the ABCI application.
@@ -44,7 +40,7 @@ let handlers: object; // ABCI handler functions
  * @param emitter {EventEmitter} global event emitter for tracking orders
  * @param port {number} port to use for the ABCI application
  */
-export async function start(_emitter: EventEmitter, _state: object){
+export async function start(_emitter: EventEmitter, _state: object, _client: any){
     try {
         state = _state;
 
@@ -63,9 +59,10 @@ export async function start(_emitter: EventEmitter, _state: object){
             periodLength: PERIOD_LENGTH,
             periodLimit: PERIOD_LIMIT,
             stakeContractAddr: STAKE_CONTRACT_ADDR,
-            stakeContractABI: STAKE_CONTRACT_ABI
+            stakeContractABI: STAKE_CONTRACT_ABI,
+            tendermintRpcHost: ABCI_HOST,
+            tendermintRpcPort: ABCI_RPC_PORT
         });
-
 
         //abci(handlers).listen(ABCI_PORT, () => {
         //    Logger.consensus(msg.abci.messages.servStart);
@@ -75,10 +72,9 @@ export async function start(_emitter: EventEmitter, _state: object){
         Logger.consensus(msg.abci.messages.servStart);
 
     } catch (err) {
-        // TODO: change to exceptions
-        return 1; // not okay
+      throw new Error('Error initializing ABCI application.');
     }
-    return 0; // okay
+    return
 }
 
 function info(_){
@@ -135,10 +131,18 @@ function checkTx(request){
 
     } else if(txObject.type === 'Rebalance'){
       // tx type is Rebalance
+      Logger.mempool("we got a rebalance event");
 
-      console.log("we got a rebalance event");
+      if((state.round.number === 0) && (txObject.data.round.number === 1)){
+        // should only be triggered by the first rebalance TX
+        Logger.mempool('first state update pass mempool');
+        return Vote.valid(); // vote to accept state
+      } else if (state.round.number === txObject.data.round.number - 1){
+        Logger.mempool('subsequent state update pass mempool');
+        return Vote.valid();
+      }
+
       return Vote.invalid("not implemented");
-
     } else {
       // tx type doesn't match OrderBroadcast or Rebalance
 
@@ -179,7 +183,7 @@ function deliverTx(request){
           //emitter.emit("order", dupOrder); // broadcast order event
           tracker.add(dupOrder); // add order to queue for broadcast
 
-          state.number += 1;
+          state.counter += 1;
 
           /*
             END STATE MODIFICATION
@@ -200,7 +204,47 @@ function deliverTx(request){
     } else if(txObject.type === "Rebalance"){
       // tx type is Rebalance
 
-      console.log("we got a rebalance event");
+      Logger.consensus("we got a rebalance event");
+      if((state.round.number === 0) && (txObject.data.round.number === 1)){
+        // should only be triggered by the first rebalance TX
+
+        state.round.number = 1;
+        state.round.startsAt = txObject.data.round.startsAt;
+        state.round.endsAt = txObject.data.round.endsAt;
+
+        state.mapping = txObject.data.mapping;
+
+        Logger.consensus("Accepted parameters for first staking round.");
+        return Vote.valid(); // vote to accept state
+
+      } else if (state.round.number > 0) {
+        if (txObject.data.round.number === (state.round.number + 1)) {
+          let roundInfo = rebalancer.getConstructedMapping();
+          let validFor = roundInfo.validFor;
+          let localMapping = roundInfo.mapping;
+
+          if (JSON.stringify(localMapping) === JSON.stringify(txObject.data.mapping)){
+
+            state.round.number = txObject.data.round.number;
+            state.round.startsAt = txObject.data.round.startsAt;
+            state.round.endsAt = txObject.data.round.endsAt;
+
+            state.mapping = txObject.data.mapping;
+
+            Logger.consensus(`New state accepted (for round #${state.round.number})`);
+            return Vote.valid();
+          } else {
+            Logger.consensusErr(`W: Rejected. New state does not match local mapping.`);
+            return Vote.invalid();
+          }
+          
+        } else {
+          Logger.consensusErr(`W: Rejected. New state for wrong round.`);
+          return Vote.invalid();
+        }
+      }
+
+      Logger.consensusErr("E. You probably shouldn't see this.");
       return Vote.invalid("not implemented");
     } else {
       // tx type does not match Rebalance or OrderBroadcast
@@ -212,10 +256,25 @@ function deliverTx(request){
 
 function commit(request){
     try {
-        tracker.triggerBroadcast();
+      if((state.round.startsAt > 0) && (rebalancer.getPeriodNumber() + 1 === state.round.number)){
+      
+        let newRound = state.round.number; // correct???
+        let newStart = state.round.startsAt;
+        let newEnd = state.round.endsAt;
+        
+        rebalancer.synchronize(newRound, newStart, newEnd);
+
+        console.log('done calling sync. here is the state:')
+        console.log(JSON.stringify(state));
+
+      } /*else {
+        console.log('@267 what should be here?');
+      }*/
+      
+      tracker.triggerBroadcast();
     } catch (err) {
-        // console.log(err)
-        Logger.logError("Error broadcasting TX in commit.")
+      // console.log(err);
+      Logger.logError("Error broadcasting TX in commit.")
     }
     
     return "done" // change to something more meaningful

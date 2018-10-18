@@ -18,6 +18,7 @@ import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
 import cors = require('cors');
+let { RpcClient } = require('tendermint');
 
 import { PayloadCipher } from "../crypto/PayloadCipher"; 
 import { Message } from "../net/ExpressMessage";
@@ -27,6 +28,7 @@ import { messages as msg } from "../util/messages";
 
 import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "../config";
 
+let client: any; // tendermint client for RPC
 let app = express();
 
 app.use(cors());
@@ -52,6 +54,14 @@ app.post("/*", (req, res) => {
         Message.staticSendError(res, msg.api.errors.parsing, 400);
     }
 
+    client.broadcastTxSync({tx:payloadStr}).then(r => {
+        res.send(r);
+    }).catch(e => {
+        console.log(e);
+        Message.staticSendError(res, e.message, 500);
+    });
+
+    /*
     let options = {
         hostname: ABCI_HOST,
         port: ABCI_RPC_PORT,
@@ -70,10 +80,19 @@ app.post("/*", (req, res) => {
       }).on('error', function(e) {
         Message.staticSendError(res, e.message, 500);
       });
+      */
 });
 
-export function startAPIserver(): void {
-    app.listen(API_PORT, () => {
-        Logger.apiEvt(msg.api.messages.servStart);
-    });
+//export function startAPIserver(host, rpcPort, apiPort): void {
+export async function startAPIserver(host, rpcPort, apiPort) {
+    try {
+        client = RpcClient(`ws://localhost:26657`);      
+        await app.listen(apiPort) /*, () => {
+            Logger.apiEvt(msg.api.messages.servStart);
+        });*/
+        Logger.apiEvt(msg.api.messages.servStart)
+        return
+    } catch (err) {
+        throw new Error('Error starting API server');
+    }
 }

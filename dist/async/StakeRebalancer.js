@@ -22,15 +22,17 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 let Web3 = require('web3');
+let { RpcClient } = require('tendermint');
 const Logger_1 = require("../util/Logger");
+const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const messages_1 = require("../util/messages");
 class StakeRebalancer {
     /**
      * StakeRebalancer constructor:
      *  - you should initialize new StakeRebalancer objects with the static
-     *    method StakeRebalancer.create(...options)
+     *    generator `StakeRebalancer.create(...options)`
      *
-     * @param options {object} DONT USE! See .create(...)
+     * @param options {object} DONT USE! See .create(...) generator
      */
     constructor(options) {
         /**
@@ -49,11 +51,21 @@ class StakeRebalancer {
         this.handleBlockEvent = (err, res) => {
             if (err != null) {
                 Logger_1.Logger.rebalancerErr(messages_1.messages.rebalancer.errors.badBlockEvent);
+                console.log(err);
                 return;
             }
-            this.currentEthHeight = res.number;
             Logger_1.Logger.rebalancer(`New Ethereum block, height ${res.number}`, this.periodCounter);
-            if (res.number >= this.periodEndHeight) {
+            this.currentEthHeight = res.number;
+            if ((res.number >= this.startingEthHeight) && this.periodCounter === 0) {
+                console.log('1st abci transact');
+                this.periodStartHeight = res.number;
+                this.periodEndHeight = res.number + this.periodLength;
+                this.makeABCItransaction();
+            }
+            if ((res.number >= this.periodEndHeight) && this.periodCounter >= 1) {
+                console.log('2nd (or more) abci transact');
+                this.periodStartHeight = res.number;
+                this.periodEndHeight = res.number + this.periodLength;
                 this.constructOutputMapping();
                 this.makeABCItransaction();
             }
@@ -68,6 +80,7 @@ class StakeRebalancer {
         this.handleStakeEvent = (err, res) => {
             if (err != null) {
                 Logger_1.Logger.rebalancerErr(messages_1.messages.rebalancer.errors.badStakeEvent);
+                console.log(err);
                 return;
             }
             let eventType = res.event;
@@ -129,6 +142,8 @@ class StakeRebalancer {
         this.web3provider = options.provider;
         this.stakeAddr = options.stakeContractAddr;
         this.stakeABI = options.stakeContractABI;
+        this.tmHost = options.tendermintRpcHost;
+        this.tmPort = options.tendermintRpcPort;
     }
     /**
      * StakeRebalancer static constructor:
@@ -141,6 +156,8 @@ class StakeRebalancer {
      *  - options.periodLimit {number} number of transactions allowed per period
      *  - options.stakeContractAddr {string} address of the staking contract to reference
      *  - options.stakeContractABI {array} JSON ABI for staking contract
+     *  - options.tendermintRpcHost {string} Tendermint RPC host for client
+     *  - options.tendermintRpcPort {number} Tendermint RPC port for client
      */
     static async create(options) {
         let rebalancer = new StakeRebalancer(options);
@@ -153,34 +170,67 @@ class StakeRebalancer {
         this.stakingContract = new this.web3.eth.Contract(this.stakeABI, this.stakeAddr);
         this.subscribe();
         this.currentEthHeight = this.startingEthHeight.valueOf();
-        this.periodStartHeight = this.currentEthHeight.valueOf();
-        this.periodEndHeight = this.periodStartHeight.valueOf() + this.periodLength.valueOf();
+        // # this.periodStartHeight = this.currentEthHeight.valueOf();
+        // # this.periodEndHeight = this.periodStartHeight.valueOf() + this.periodLength.valueOf();
         Logger_1.Logger.rebalancer("Initialized. Current Ethereum height: " + this.startingEthHeight, this.periodCounter);
-        Logger_1.Logger.rebalancer("First round ends at Ethereum height: " + this.periodEndHeight, this.periodCounter);
+        // # Logger.rebalancer("First round ends at Ethereum height: "+this.periodEndHeight, this.periodCounter);
     }
     /**
-     * proposer (public getter): Getter that returns current block proposer.
+     * getProposer (public instance method): Getter that returns current block proposer.
      */
-    get proposer() {
+    getProposer() {
         return this.currentProposer;
     }
     /**
-     * ethereumHeight (public getter): Returns current ethereum height.
+     * getEthereumHeight (public instance method): Returns current ethereum height.
      */
-    get ethereumHeight() {
+    getEthereumHeight() {
         return this.currentEthHeight;
     }
     /**
-     * periodNumber (public getter): Returns the current rebalance period.
+     * getPeriodNumber (public instance method): Returns the current rebalance period.
      */
-    get periodNumber() {
+    getPeriodNumber() {
         return this.periodCounter;
     }
     /**
-     * currentOSheight (public getter): Returns the current OS height.
+     * getOrderStreamHeight (public instance method): Returns the current OS height.
      */
-    get orderStreamHeight() {
+    getOrderStreamHeight() {
         return this.currentOsHeight;
+    }
+    /**
+     * getConstructedMapping (public instance method):
+     */
+    getConstructedMapping() {
+        return {
+            validFor: this.periodCounter,
+            mapping: this.outMapping
+        };
+    }
+    /**
+     * synchronize (public instance method): Use in ABCI commit() to update
+     * when a new state is accepted, and it's time to move to the next round.
+     *
+     * @param round {number} accepted new stake round (incrementing)
+     * @param startsAt {number} accepted starting block for new period
+     * @param endsAt {number} accepted ending block for new period
+     */
+    synchronize(round, startsAt, endsAt) {
+        if (!(round > this.periodCounter)) {
+            Logger_1.Logger.rebalancerErr("Warning: New round should be greater than current round.");
+        }
+        else if (round !== (this.periodCounter + 1)) {
+            Logger_1.Logger.rebalancerErr("Warning: New round is more than 1 ahead of current.");
+        }
+        this.periodCounter = round;
+        this.periodEndHeight = endsAt;
+        this.periodStartHeight = startsAt;
+        console.log(`just synced:`);
+        console.log(`... count: ${round}`);
+        console.log(`... ends: ${endsAt}`);
+        console.log(`... starts: ${startsAt}`);
+        this.outMapping = {};
     }
     /**
      * newOrderStreamBlock (public instance method): Should be called when a new
@@ -213,9 +263,9 @@ class StakeRebalancer {
         Logger_1.Logger.rebalancer("Round ended.", this.periodCounter);
         this.outMapping = {}; // eventually create classes
         // // this.periodBalance = 0; // reset staked balance to 0
-        this.periodCounter += 1; // new stake period
-        this.periodStartHeight = this.currentEthHeight;
-        this.periodEndHeight = this.periodStartHeight + this.periodLength;
+        // this.periodCounter += 1; // new stake period
+        // this.periodStartHeight = this.currentEthHeight;
+        // this.periodEndHeight = this.periodStartHeight + this.periodLength;
         Logger_1.Logger.rebalancer("New period starting:", this.periodCounter);
         Logger_1.Logger.rebalancer(`... starts @ ${this.periodStartHeight}`, this.periodCounter);
         Logger_1.Logger.rebalancer(`... ends @ ${this.periodEndHeight}`, this.periodCounter);
@@ -242,18 +292,26 @@ class StakeRebalancer {
      * Should be called at the end of a rebalance period.
      */
     makeABCItransaction() {
+        if (this.tmClient === undefined || this.tmClient == null) {
+            this.tmClient = RpcClient(`ws://${this.tmHost}:${this.tmPort}`);
+        }
         let txObject = {
             type: "Rebalance",
             data: {
-                round: this.periodCounter + 1,
+                round: {
+                    number: this.periodCounter + 1,
+                    startsAt: this.periodStartHeight,
+                    endsAt: this.periodEndHeight
+                },
                 mapping: this.outMapping
             }
         };
-        console.log("$$$ Making abci transaction (lol)");
+        console.log("$$$ Making abci transaction:");
         console.log(`$$$ Raw mapping: ${JSON.stringify(this.rawMapping)}`);
         console.log(`$$$ Out mapping: ${JSON.stringify(this.outMapping)}`);
-        // actually send transaction to ABCI here
-        this.resetPeriod();
+        console.log(`$$$ Transaction: ${JSON.stringify(txObject)}`);
+        let payloadStr = PayloadCipher_1.PayloadCipher.encodeFromObject(txObject);
+        this.tmClient.broadcastTxSync({ tx: payloadStr }).catch(e => console.log(e));
         return;
     }
 }

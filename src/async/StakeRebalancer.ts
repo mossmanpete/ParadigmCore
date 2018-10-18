@@ -21,13 +21,21 @@
 */
 
 let Web3 = require('web3');
+let { RpcClient } = require('tendermint');
+
 import Contract from "web3/eth/contract";
 import { Logger } from "../util/Logger";
+import { PayloadCipher } from "../crypto/PayloadCipher";
 import { messages as msg } from "../util/messages";
+import { URL } from "url";
 
 export class StakeRebalancer {
     private web3provider: string; // web3 provider URI
     private web3: any; // web3 instance
+
+    private tmClient: any; // tendermint client for RPC
+    private tmHost: string; // tendermint RPC host
+    private tmPort: number; // tendermint RPC port
 
     private currentEthHeight: number; // current Ethereum height (updates)
     private startingEthHeight: number; // height of Ethereum on initialization
@@ -60,7 +68,9 @@ export class StakeRebalancer {
      *  - options.periodLength {number} length of rebalance period in Ethereum blocks
      *  - options.periodLimit {number} number of transactions allowed per period
      *  - options.stakeContractAddr {string} address of the staking contract to reference 
-     *  - options.stakeContractABI {array} JSON ABI for staking contract 
+     *  - options.stakeContractABI {array} JSON ABI for staking contract
+     *  - options.tendermintRpcHost {string} Tendermint RPC host for client
+     *  - options.tendermintRpcPort {number} Tendermint RPC port for client 
      */
     static async create(options: any) {
         let rebalancer = new StakeRebalancer(options);
@@ -79,19 +89,19 @@ export class StakeRebalancer {
         this.subscribe();
 
         this.currentEthHeight = this.startingEthHeight.valueOf();
-        this.periodStartHeight = this.currentEthHeight.valueOf();
-        this.periodEndHeight = this.periodStartHeight.valueOf() + this.periodLength.valueOf();
+        // # this.periodStartHeight = this.currentEthHeight.valueOf();
+        // # this.periodEndHeight = this.periodStartHeight.valueOf() + this.periodLength.valueOf();
 
         Logger.rebalancer("Initialized. Current Ethereum height: "+this.startingEthHeight, this.periodCounter);
-        Logger.rebalancer("First round ends at Ethereum height: "+this.periodEndHeight, this.periodCounter);
+        // # Logger.rebalancer("First round ends at Ethereum height: "+this.periodEndHeight, this.periodCounter);
     }
 
     /**
      * StakeRebalancer constructor: 
      *  - you should initialize new StakeRebalancer objects with the static
-     *    method StakeRebalancer.create(...options)
+     *    generator `StakeRebalancer.create(...options)`
      * 
-     * @param options {object} DONT USE! See .create(...)
+     * @param options {object} DONT USE! See .create(...) generator
      */
     private constructor(options: any){
         /**
@@ -109,34 +119,73 @@ export class StakeRebalancer {
         this.web3provider = options.provider;
         this.stakeAddr = options.stakeContractAddr;
         this.stakeABI = options.stakeContractABI;
+        this.tmHost = options.tendermintRpcHost;
+        this.tmPort = options.tendermintRpcPort;
     }
 
     /**
-     * proposer (public getter): Getter that returns current block proposer.
+     * getProposer (public instance method): Getter that returns current block proposer.
      */
-    get proposer(): string {
+    public getProposer(): string {
         return this.currentProposer;
     }
 
     /**
-     * ethereumHeight (public getter): Returns current ethereum height.
+     * getEthereumHeight (public instance method): Returns current ethereum height.
      */
-    get ethereumHeight(): number {
+    public getEthereumHeight(): number {
         return this.currentEthHeight;
     }
 
     /**
-     * periodNumber (public getter): Returns the current rebalance period.
+     * getPeriodNumber (public instance method): Returns the current rebalance period.
      */
-    get periodNumber(): number {
+    public getPeriodNumber(): number {
         return this.periodCounter;
     }
 
     /**
-     * currentOSheight (public getter): Returns the current OS height.
+     * getOrderStreamHeight (public instance method): Returns the current OS height.
      */
-    get orderStreamHeight(): number {
+    public getOrderStreamHeight(): number {
         return this.currentOsHeight;
+    }
+
+    /**
+     * getConstructedMapping (public instance method):
+     */
+    public getConstructedMapping(): any {
+        return {
+            validFor: this.periodCounter,
+            mapping: this.outMapping
+        }
+    }
+
+    /**
+     * synchronize (public instance method): Use in ABCI commit() to update
+     * when a new state is accepted, and it's time to move to the next round.
+     * 
+     * @param round {number} accepted new stake round (incrementing)
+     * @param startsAt {number} accepted starting block for new period
+     * @param endsAt {number} accepted ending block for new period
+     */
+    public synchronize(round: number, startsAt: number, endsAt: number){
+        if(!(round > this.periodCounter)){
+            Logger.rebalancerErr("Warning: New round should be greater than current round.");
+        } else if (round !== (this.periodCounter + 1)) {
+            Logger.rebalancerErr("Warning: New round is more than 1 ahead of current.");
+        }
+
+        this.periodCounter = round;
+        this.periodEndHeight = endsAt;
+        this.periodStartHeight = startsAt;
+
+        console.log(`just synced:`);
+        console.log(`... count: ${round}`);
+        console.log(`... ends: ${endsAt}`);
+        console.log(`... starts: ${startsAt}`);
+
+        this.outMapping = {};
     }
 
     /**
@@ -161,7 +210,7 @@ export class StakeRebalancer {
         this.stakingContract.events.StakeMade(
             { fromBlock: 0 /*this.startingEthHeight*/ }, this.handleStakeEvent);
 
-         this.stakingContract.events.StakeRemoved(
+        this.stakingContract.events.StakeRemoved(
             { fromBlock: 0 /*this.startingEthHeight*/ }, this.handleStakeEvent);
         
         this.web3.eth.subscribe('newBlockHeaders', this.handleBlockEvent);
@@ -181,13 +230,24 @@ export class StakeRebalancer {
     private handleBlockEvent = (err: any, res: any) => {
         if(err != null) {
             Logger.rebalancerErr(msg.rebalancer.errors.badBlockEvent);
+            console.log(err);
             return;
         }
 
-        this.currentEthHeight = res.number;
         Logger.rebalancer(`New Ethereum block, height ${res.number}`, this.periodCounter);
+        this.currentEthHeight = res.number;
 
-        if(res.number >= this.periodEndHeight){
+        if((res.number >= this.startingEthHeight) && this.periodCounter === 0){
+            console.log('1st abci transact');
+            this.periodStartHeight = res.number;
+            this.periodEndHeight = res.number + this.periodLength;
+            this.makeABCItransaction();
+        }
+
+        if((res.number >= this.periodEndHeight) && this.periodCounter >= 1){
+            console.log('2nd (or more) abci transact');
+            this.periodStartHeight = res.number;
+            this.periodEndHeight = res.number + this.periodLength;
             this.constructOutputMapping();
             this.makeABCItransaction();
         }
@@ -203,16 +263,14 @@ export class StakeRebalancer {
     private handleStakeEvent = (err: any, res: any) => {
         if(err != null) {
             Logger.rebalancerErr(msg.rebalancer.errors.badStakeEvent);
+            console.log(err);
             return;
         }
 
         let eventType = res.event;
         let staker = res.returnValues.staker;
         let amount = parseInt(res.returnValues.amount);
-        // let blockNo = parseInt(res.blockNumber);
         
-        // if((blockNo >= this.periodStartHeight) && (blockNo <= this.periodEndHeight)){
-
         if(eventType == 'StakeMade'){
             if(this.rawMapping[staker] === undefined){
                 this.rawMapping[staker] = amount; // push to mapping
@@ -235,7 +293,6 @@ export class StakeRebalancer {
                 return
 
             } else if(typeof(this.rawMapping[staker]) === 'number') {
-                
                 if(this.rawMapping[staker] <= amount){
                     // the case where a staker removes their whole stake
                     delete this.rawMapping[staker];
@@ -257,26 +314,6 @@ export class StakeRebalancer {
                 return
             }
         }
-    }
-
-    /**
-     * resetPeriod (private instance method): should be called at some point
-     * during the inevitable slew of "new rebalance period" methods.
-     */
-    private resetPeriod() { // reset mappings
-        Logger.rebalancer("Round ended.", this.periodCounter);
-
-        this.outMapping = {}; // eventually create classes
-
-        // // this.periodBalance = 0; // reset staked balance to 0
-        this.periodCounter += 1; // new stake period
-        this.periodStartHeight = this.currentEthHeight;
-        this.periodEndHeight = this.periodStartHeight + this.periodLength;
-        
-        Logger.rebalancer("New period starting:", this.periodCounter)
-        Logger.rebalancer(`... starts @ ${this.periodStartHeight}`, this.periodCounter);
-        Logger.rebalancer(`... ends @ ${this.periodEndHeight}`, this.periodCounter);
-        Logger.rebalancer(`... current block: ${this.currentEthHeight}`, this.periodCounter);
     }
 
     private constructOutputMapping(): void {
@@ -303,21 +340,29 @@ export class StakeRebalancer {
      * Should be called at the end of a rebalance period. 
      */
     private makeABCItransaction(): void {
+        if(this.tmClient === undefined || this.tmClient == null){
+            this.tmClient = RpcClient(`ws://${this.tmHost}:${this.tmPort}`);
+        }
+
         let txObject = {
             type: "Rebalance",
             data: {
-                round: this.periodCounter + 1, // should this be +1 or +0???
+                round: {
+                    number: this.periodCounter + 1, // should this be +1 or +0???
+                    startsAt: this.periodStartHeight,
+                    endsAt: this.periodEndHeight
+                }, 
                 mapping: this.outMapping
             }
         }
 
-        console.log("$$$ Making abci transaction (lol)");
+        console.log("$$$ Making abci transaction:");
         console.log(`$$$ Raw mapping: ${JSON.stringify(this.rawMapping)}`);
         console.log(`$$$ Out mapping: ${JSON.stringify(this.outMapping)}`);
+        console.log(`$$$ Transaction: ${JSON.stringify(txObject)}`);
 
-        // actually send transaction to ABCI here
-
-        this.resetPeriod();
+        let payloadStr = PayloadCipher.encodeFromObject(txObject);
+        this.tmClient.broadcastTxSync({tx:payloadStr}).catch(e => console.log(e));
         return
     }
 }

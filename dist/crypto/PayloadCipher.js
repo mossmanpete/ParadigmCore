@@ -91,18 +91,8 @@ class PayloadCipher {
             ABCIdecode is used in the ABCI application to decode the
             input buffer
         */
-        let inStr = inBuff.toString('utf8');
-        let outArr = [];
-        for (let i = 0; i < inStr.length; i++) {
-            if (inStr.charAt(i) == " ") {
-                outArr.push('+'); // "+" gets lost somewhere 
-                // TODO: find where this happens
-            }
-            else {
-                outArr.push(inStr.charAt(i));
-            }
-        }
-        return PayloadCipher.decodeToObject(outArr.join(''));
+        let inStr = inBuff.toString(this.outEncoding);
+        return PayloadCipher.decodeToObject(inStr);
     }
 }
 PayloadCipher.inEncoding = config_1.IN_ENC; // encoding for in/output of orders, default utf8

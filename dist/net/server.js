@@ -16,14 +16,14 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
-const http = require("http");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+let { RpcClient } = require('tendermint');
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/messages");
-const config_1 = require("../config");
+let client; // tendermint client for RPC
 let app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -47,25 +47,45 @@ app.post("/*", (req, res) => {
         Logger_1.Logger.apiErr(messages_1.messages.api.errors.parsing);
         ExpressMessage_1.Message.staticSendError(res, messages_1.messages.api.errors.parsing, 400);
     }
-    let options = {
-        hostname: config_1.ABCI_HOST,
-        port: config_1.ABCI_RPC_PORT,
-        path: `/broadcast_tx_${config_1.TX_MODE}?tx=\"${payloadStr}\"`
-    };
-    http.get(options, function (getres) {
-        if (res.statusCode != 200) {
-            ExpressMessage_1.Message.staticSendError(res, "Internal server error.", 500);
-        }
-        getres.on("data", function (chunk) {
-            res.send(chunk);
-        });
-    }).on('error', function (e) {
+    client.broadcastTxSync({ tx: payloadStr }).then(r => {
+        res.send(r);
+    }).catch(e => {
+        console.log(e);
         ExpressMessage_1.Message.staticSendError(res, e.message, 500);
     });
+    /*
+    let options = {
+        hostname: ABCI_HOST,
+        port: ABCI_RPC_PORT,
+        path: `/broadcast_tx_${TX_MODE}?tx=\"${payloadStr}\"`
+    }
+
+    http.get(options, function(getres) {
+        if(res.statusCode != 200){
+            Message.staticSendError(res, "Internal server error.", 500);
+        }
+      
+        getres.on("data", function(chunk) {
+            res.send(chunk);
+        });
+
+      }).on('error', function(e) {
+        Message.staticSendError(res, e.message, 500);
+      });
+      */
 });
-function startAPIserver() {
-    app.listen(config_1.API_PORT, () => {
+//export function startAPIserver(host, rpcPort, apiPort): void {
+async function startAPIserver(host, rpcPort, apiPort) {
+    try {
+        client = RpcClient(`ws://localhost:26657`);
+        await app.listen(apiPort); /*, () => {
+            Logger.apiEvt(msg.api.messages.servStart);
+        });*/
         Logger_1.Logger.apiEvt(messages_1.messages.api.messages.servStart);
-    });
+        return;
+    }
+    catch (err) {
+        throw new Error('Error starting API server');
+    }
 }
 exports.startAPIserver = startAPIserver;
