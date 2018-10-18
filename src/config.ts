@@ -24,6 +24,7 @@ export const STAKE_CONTRACT_ABI: Array<object> = [{"constant":true,"inputs":[{"n
 // endpoints for ABCI/RPC
 export const ABCI_HOST: string = "localhost";
 export const ABCI_RPC_PORT: number = 26657;
+export const TM_HOME: string = `${process.env.HOME}/.tendermint`;
 
 // public/private ports for ABCI, RPC, and WS servers
 export const ABCI_PORT: number = 26658;

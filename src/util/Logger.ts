@@ -11,7 +11,7 @@
   Simple Logger class to handle logs to STDOUT.
 */
 
-import { VERSION } from "./config";
+import { VERSION } from "../config";
 import { Timestamp } from "./Timestamp"
 import "colors";
 
@@ -49,8 +49,8 @@ export class Logger {
         Logger.logError(`${'Consensus'.cyan} ${'Error:'.red} ${message}`);
     }
 
-    public static rebalancer(message: string){
-        Logger.logEvent(`${'Rebalancer:'.green} ${message}`);
+    public static rebalancer(message: string, round: number){
+        Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
     }
 
     public static rebalancerErr(message: string){

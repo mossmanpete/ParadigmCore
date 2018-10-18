@@ -10,25 +10,22 @@
 
   HTTP server to enable incoming orders to be recieved as POST requests.
 
-  @10-16: TODO: support StreamBroadcast type
+  @10-16: TODO: support StreamBroadcast type.
+  @10-17: TODO: use npm 'tendermint' package to send ABCI transactions.
 */
 
 import * as express from "express";
 import * as http from "http";
 import * as bodyParser from "body-parser";
-import * as cors from "cors";
+import cors = require('cors');
 
-import { PayloadCipher } from "./PayloadCipher"; 
-import { Message } from "./ExpressMessage";
-import { Logger } from "./Logger";
-import { messages as msg } from "./messages";
+import { PayloadCipher } from "../crypto/PayloadCipher"; 
+import { Message } from "../net/ExpressMessage";
 
-import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "./config";
+import { Logger } from "../util/Logger";
+import { messages as msg } from "../util/messages";
 
-let pe = new PayloadCipher({
-    inputEncoding: 'utf8',
-    outputEncoding: 'base64'
-});
+import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "../config";
 
 let app = express();
 
@@ -46,7 +43,7 @@ app.use(function (err, req, res, next) {
 app.post("/*", (req, res) => {
     let payloadStr: string;
     try {
-        payloadStr = pe.encodeFromObject({
+        payloadStr = PayloadCipher.encodeFromObject({
             type: "OrderBroadcast",
             data: req.body
         });

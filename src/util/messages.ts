@@ -11,7 +11,7 @@
   Simple message object to store common ABCI and WS messages.
 */
 
-import { WS_PORT, ABCI_PORT, API_PORT } from "./config";
+import { WS_PORT, ABCI_PORT, API_PORT } from "../config";
 
 export let messages  = {
     websocket: {
@@ -49,6 +49,13 @@ export let messages  = {
         },
         messages: {
             servStart: `API server started on port ${API_PORT}.`
+        }
+    },
+    rebalancer: {
+        errors: {
+            fatalStake: "Fatal error encountered processing stake event.",
+            badStakeEvent: "Bad stake event.",
+            badBlockEvent: "Bad block event."
         }
     }
 }
