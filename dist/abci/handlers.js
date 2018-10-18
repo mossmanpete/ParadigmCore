@@ -1,4 +1,16 @@
 "use strict";
+/*
+  =========================
+  ParadigmCore: Blind Star
+  handlers.ts @ {rebalance-refactor}
+  =========================
+
+  @date_inital 16 September 2018
+  @date_modified 17 October 2018
+  @author Henry Harder
+
+  ABCI handler functions and state-transition logic.
+*/
 Object.defineProperty(exports, "__esModule", { value: true });
 const Paradigm = require("paradigm.js");
 const abci = require("abci");

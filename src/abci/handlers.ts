@@ -1,3 +1,16 @@
+/* 
+  =========================
+  ParadigmCore: Blind Star
+  handlers.ts @ {rebalance-refactor}
+  =========================
+
+  @date_inital 16 September 2018
+  @date_modified 17 October 2018
+  @author Henry Harder
+
+  ABCI handler functions and state-transition logic. 
+*/
+
 import * as Paradigm from "paradigm.js";
 import * as abci from "abci";
 

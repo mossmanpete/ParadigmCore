@@ -1,3 +1,16 @@
+/* 
+  =========================
+  ParadigmCore: Blind Star
+  index.ts @ {rebalance-refactor}
+  =========================
+
+  @date_inital 12 September 2018
+  @date_modified 17 October 2018
+  @author Henry Harder
+
+  Entry point and startup script for ParadigmCore. 
+*/
+
 import * as _ws from "ws";
 import * as tendermint from "tendermint-node";
 

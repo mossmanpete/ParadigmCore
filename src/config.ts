@@ -5,14 +5,14 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 16 October 2018
+  @date_modified 17 October 2018
   @author Henry Harder
 
   Constants and configuration.
 */
 
 // major, minor, and sub version numbers
-export const VERSION: string = "0.0.3"; // PC Version 
+export const VERSION: string = "0.0.3a1"; // PC Version 
 
 // configuration for Ethereum peg and rebalancer
 export const WEB3_PROVIDER: string = "wss://kovan.infura.io/ws";
