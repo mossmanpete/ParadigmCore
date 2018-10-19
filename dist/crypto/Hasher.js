@@ -13,7 +13,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
   Class for preparing and creating OrderID's via salted hash.
 */
 const hash = require("object-hash");
+const Logger_1 = require("../util/Logger");
 class Hasher {
+    /**
+     * hashOrder (public static method) Generate the hash of an order to be used as
+     * the OrderID.
+     *
+     * @param order {paradigm.Order} A Paradigm order object to be hashed
+     */
     static hashOrder(order) {
         let hashPrep = {
             "subContract": order.subContract,
@@ -21,11 +28,32 @@ class Hasher {
             "makerValues": order.makerValues
         };
         try {
-            let hashedOrder = hash(hashPrep);
-            return hashedOrder;
+            let orderHash = hash(hashPrep);
+            return orderHash;
         }
         catch (error) {
-            throw new Error("Error hashing order.");
+            throw new Error("Error generating order hash.");
+        }
+    }
+    /**
+     * hashState (public static method) Generate the hash of the state.
+     *
+     * @param state {State} the current state object
+     */
+    static hashState(state) {
+        let hashPrep = {
+            "roundNumber": state.round.number,
+            "startHeight": state.round.startsAt,
+            "endHeight": state.round.endsAt,
+            "rateMapping": state.mapping
+        };
+        try {
+            let stateHash = hash(hashPrep);
+            return stateHash;
+        }
+        catch (error) {
+            Logger_1.Logger.logError("(Temporary log) Error generating state hash.");
+            throw new Error("Error generating state hash.");
         }
     }
 }

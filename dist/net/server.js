@@ -23,6 +23,8 @@ const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/messages");
+let Paradigm = require('paradigm-connect');
+let paradigm = new Paradigm();
 let client; // tendermint client for RPC
 let app = express();
 app.use(cors());

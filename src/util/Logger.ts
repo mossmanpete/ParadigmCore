@@ -29,6 +29,10 @@ export class Logger {
         console.log(`${'E'.red} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message.red}`)
     }
 
+    public static logWarning(message: string): void {
+        console.log(`${'W'.yellow} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message}`)
+    }
+
     public static newRound(height: number, proposer: string): void {
         Logger.logEvent(`${`Starting block #${height}:`.blue} Validator ${proposer.bold} is proposer.`);
     }
@@ -47,6 +51,10 @@ export class Logger {
 
     public static consensusErr(message: string){
         Logger.logError(`${'Consensus'.cyan} ${'Error:'.red} ${message}`);
+    }
+
+    public static consensusWarn(message: string){
+        Logger.logError(`${'Consensus'.cyan} ${'Warning:'.red} ${message}`);
     }
 
     public static rebalancer(message: string, round: number){

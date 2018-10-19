@@ -86,14 +86,12 @@ export class StakeRebalancer {
         this.stakingContract = new this.web3.eth.Contract(
             this.stakeABI, this.stakeAddr);
         
-        this.subscribe();
+        // this.subscribe(); // => moving to public method start
 
         this.currentEthHeight = this.startingEthHeight.valueOf();
-        // # this.periodStartHeight = this.currentEthHeight.valueOf();
-        // # this.periodEndHeight = this.periodStartHeight.valueOf() + this.periodLength.valueOf();
 
         Logger.rebalancer("Initialized. Current Ethereum height: "+this.startingEthHeight, this.periodCounter);
-        // # Logger.rebalancer("First round ends at Ethereum height: "+this.periodEndHeight, this.periodCounter);
+        return;
     }
 
     /**
@@ -121,6 +119,14 @@ export class StakeRebalancer {
         this.stakeABI = options.stakeContractABI;
         this.tmHost = options.tendermintRpcHost;
         this.tmPort = options.tendermintRpcPort;
+    }
+
+    /**
+     * start (public instance method): Start listening to Ethereum events. Should be called
+     * after Tendermint and the ABCI application are initialized.
+     */
+    public start(): void{
+        this.subscribe();
     }
 
     /**
@@ -172,20 +178,19 @@ export class StakeRebalancer {
     public synchronize(round: number, startsAt: number, endsAt: number){
         if(!(round > this.periodCounter)){
             Logger.rebalancerErr("Warning: New round should be greater than current round.");
+            Logger.rebalancerErr("Warning: Node may be out of state with network.");
         } else if (round !== (this.periodCounter + 1)) {
-            Logger.rebalancerErr("Warning: New round is more than 1 ahead of current.");
+            Logger.rebalancerErr("Warning: New round is not exactly 1 ahead of current.");
+            Logger.rebalancerErr("Warning: Node may be out of state with network.");
         }
 
         this.periodCounter = round;
         this.periodEndHeight = endsAt;
         this.periodStartHeight = startsAt;
 
-        console.log(`just synced:`);
-        console.log(`... count: ${round}`);
-        console.log(`... ends: ${endsAt}`);
-        console.log(`... starts: ${startsAt}`);
-
         this.outMapping = {};
+
+        Logger.rebalancer(`New staking period begins at ETH block #${startsAt}, ends at ETH block #${endsAt}.`, round);
     }
 
     /**
@@ -234,20 +239,26 @@ export class StakeRebalancer {
             return;
         }
 
-        Logger.rebalancer(`New Ethereum block, height ${res.number}`, this.periodCounter);
+        Logger.rebalancer(`New Ethereum block found at height ${res.number}`, this.periodCounter);
         this.currentEthHeight = res.number;
 
         if((res.number >= this.startingEthHeight) && this.periodCounter === 0){
-            console.log('1st abci transact');
+            // Logic for initial staking period proposal
+
             this.periodStartHeight = res.number;
             this.periodEndHeight = res.number + this.periodLength;
+            Logger.rebalancer("Proposing initial staking period parameters.",this.periodCounter);
+            this.constructOutputMapping();
             this.makeABCItransaction();
         }
 
         if((res.number >= this.periodEndHeight) && this.periodCounter >= 1){
-            console.log('2nd (or more) abci transact');
+            // Logic for all subsequent staking period proposals
+            
             this.periodStartHeight = res.number;
             this.periodEndHeight = res.number + this.periodLength;
+            
+            Logger.rebalancer("Proposing parameters for new staking period.",this.periodCounter);
             this.constructOutputMapping();
             this.makeABCItransaction();
         }
@@ -258,7 +269,10 @@ export class StakeRebalancer {
      * handler for stake events (both StakeMade and StakeRemoved). We may want
      * to split this into two functions.
      * 
-     * Again, not sure why it doesn't work if it is not an ES6 arrow function.
+     * Because this is a callback function, it is anonymous (ES6 arrow)
+     * 
+     * @param err {Error} error from stake subscription callback
+     * @param res {object} event object from Ethereum RPC
      */
     private handleStakeEvent = (err: any, res: any) => {
         if(err != null) {
@@ -268,64 +282,76 @@ export class StakeRebalancer {
         }
 
         let eventType = res.event;
-        let staker = res.returnValues.staker;
+        let staker = res.returnValues.staker.toLowerCase();
         let amount = parseInt(res.returnValues.amount);
         
         if(eventType == 'StakeMade'){
             if(this.rawMapping[staker] === undefined){
                 this.rawMapping[staker] = amount; // push to mapping
-                return
+                return;
 
             } else if(typeof(this.rawMapping[staker]) === 'number') {
                 this.rawMapping[staker] += amount; // increase staked balance
-                return 
+                return;
 
             } else {
                 Logger.rebalancerErr(msg.rebalancer.errors.fatalStake);
                 process.exit();
-                return
+                return;
             }
 
         } else if(eventType == 'StakeRemoved'){
             if(this.rawMapping[staker] === undefined){
                 // the case where a removing staker is not in the mapping
+
                 delete this.rawMapping[staker];
-                return
+                return;
 
             } else if(typeof(this.rawMapping[staker]) === 'number') {
                 if(this.rawMapping[staker] <= amount){
                     // the case where a staker removes their whole stake
+
                     delete this.rawMapping[staker];
-                    return
+                    return;
 
                 } else if(this.rawMapping[staker] > amount){
                     // the case where a staker removes an amount less than their stake
+
                     this.rawMapping[staker] -= amount;
-                    return
+                    return;
 
                 } else {
                     Logger.rebalancerErr(msg.rebalancer.errors.fatalStake);
                     process.exit();
-                    return
+                    return;
                 }
             } else {
                 Logger.rebalancerErr(msg.rebalancer.errors.fatalStake);
                 process.exit();
-                return
+                return;
             }
         }
     }
 
     private constructOutputMapping(): void {
-        let stakeBalance = 0;
+        let stakeBalance = 0; // amount staked
+        let stakeCounter = 0; // number of stakers
+
         Object.keys(this.rawMapping).forEach((addr, _) => {
-            if(typeof(this.rawMapping[addr]) === 'number'){
+            if(
+                (this.rawMapping.hasOwnProperty(addr)) &&
+                (typeof(this.rawMapping[addr]) === 'number')){
+                    
                 stakeBalance += this.rawMapping[addr];
             }
+            stakeCounter += 1;
         });
 
         Object.keys(this.rawMapping).forEach((addr, _) => {
-            if(typeof(this.rawMapping[addr]) === 'number'){
+            if(
+                (this.rawMapping.hasOwnProperty(addr)) &&
+                (typeof(this.rawMapping[addr]) === 'number')){
+                
                 this.outMapping[addr] = {
                     orderBroadcastLimit: Math.floor(
                         (this.rawMapping[addr]/stakeBalance)*this.periodLimit),
@@ -333,6 +359,8 @@ export class StakeRebalancer {
                 }
             }
         });
+
+        Logger.rebalancer(`Number of stakers this period: ${stakeCounter}`, this.periodCounter);
     }
     
     /**
@@ -356,13 +384,16 @@ export class StakeRebalancer {
             }
         }
 
-        console.log("$$$ Making abci transaction:");
-        console.log(`$$$ Raw mapping: ${JSON.stringify(this.rawMapping)}`);
-        console.log(`$$$ Out mapping: ${JSON.stringify(this.outMapping)}`);
-        console.log(`$$$ Transaction: ${JSON.stringify(txObject)}`);
+        // console.log("$$$ Making abci transaction:");
+        // console.log(`$$$ Raw mapping: ${JSON.stringify(this.rawMapping)}`);
+        // console.log(`$$$ Out mapping: ${JSON.stringify(this.outMapping)}`);
+        // console.log(`$$$ Transaction: ${JSON.stringify(txObject)}`);
 
         let payloadStr = PayloadCipher.encodeFromObject(txObject);
-        this.tmClient.broadcastTxSync({tx:payloadStr}).catch(e => console.log(e));
-        return
+        this.tmClient.broadcastTxSync({tx:payloadStr}).catch((_) => {
+            Logger.rebalancerErr("Error encountered while executing local ABCI transaction.");
+        });
+
+        return;
     }
 }

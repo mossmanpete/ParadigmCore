@@ -20,7 +20,7 @@ import { messages as msg } from "./util/messages";
 import { EventEmitter } from "events";
 
 import { state } from "./state/state";
-import { start } from "./abci/handlers";
+import { startMain, startRebalancer } from "./abci/handlers";
 import { startAPIserver } from "./net/server";
 
 import { WS_PORT, TM_HOME, ABCI_HOST, ABCI_RPC_PORT, API_PORT } from "./config";
@@ -42,6 +42,8 @@ let node: any; // Tendermint node instance
             }
         });
 
+        // node.stdout.pipe(process.stdout);
+
     } catch (error) {
         console.log(error);
         Logger.consensusErr("Fatal error starting Tendermint core.");
@@ -54,7 +56,7 @@ let node: any; // Tendermint node instance
         wss = new _ws.Server({ port: WS_PORT }, () => {
             Logger.websocketEvt(msg.websocket.messages.servStart);
         });
-        emitter = new EventEmitter();
+        emitter = new EventEmitter(); // parent event emitter
     } catch (error) {
         Logger.websocketErr("Fatal error starting WebSocket server.");
         process.exit();
@@ -62,12 +64,17 @@ let node: any; // Tendermint node instance
 
     // Start ABCI application
     try{
-        await start(emitter, state, node.rpc);
-        Logger.consensus("Waiting for Tendermint to synchronize...")
+        await startMain(state, emitter);
+        Logger.consensus("Waiting for Tendermint to synchronize...");
+
         await node.synced();
         Logger.consensus("Tendermint initialized and syncronized.");
+
+        // start state rebalancer sub-process AFTER sync
+        await startRebalancer();
+        Logger.rebalancer("Stake rebalancer activated. Subscribed to Ethereum events.", 0);
     } catch (error) {
-        Logger.logError(msg.abci.errors.fatal)
+        Logger.logError(msg.abci.errors.fatal);
         process.exit();
     }
 
@@ -116,5 +123,5 @@ let node: any; // Tendermint node instance
         });
     });
 
-    Logger.logEvent("Initialization complete.");
+    Logger.logEvent("Initialization complete, begining new block production.");
 })();

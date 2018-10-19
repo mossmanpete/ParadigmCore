@@ -13,17 +13,24 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 class OrderTracker {
+    constructor(emitter) {
+        this.activated = false;
+        this.em = emitter;
+        this.orders = [];
+    }
     flush() {
         this.orders = [];
     }
-    constructor(emitter) {
-        this.em = emitter;
-        this.orders = [];
+    activate() {
+        this.activated = true;
+        return this.activated;
     }
     add(order) {
         this.orders.push(order);
     }
     triggerBroadcast() {
+        if (!this.activated)
+            return; // do not broadcast if not in sync
         if (this.orders.length > 0) {
             try {
                 this.orders.forEach(order => {

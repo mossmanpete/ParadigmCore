@@ -18,6 +18,8 @@ export class OrderTracker {
     private em: EventEmitter; // event emiter instance
     private orders: Array<object>; // stores valid orders
 
+    private activated: boolean = false;
+
     private flush() {
         this.orders = [];
     }
@@ -27,11 +29,18 @@ export class OrderTracker {
         this.orders = [];
     }
 
+    public activate(): boolean {
+        this.activated = true;
+        return this.activated;
+    }
+
     public add(order: object){
         this.orders.push(order);
     }
 
     public triggerBroadcast() {
+        if(!this.activated) return; // do not broadcast if not in sync
+
         if(this.orders.length > 0){
             try {
                 this.orders.forEach(order => {
@@ -43,7 +52,7 @@ export class OrderTracker {
             }
 
         } else {
-            return
+            return;
         }
     }
 }

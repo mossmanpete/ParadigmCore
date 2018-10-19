@@ -26,7 +26,8 @@ import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/messages";
 
-import { API_PORT, ABCI_HOST, ABCI_RPC_PORT, TX_MODE} from "../config";
+let Paradigm = require('paradigm-connect');
+let paradigm = new Paradigm();
 
 let client: any; // tendermint client for RPC
 let app = express();
@@ -43,6 +44,7 @@ app.use(function (err, req, res, next) {
 });
 
 app.post("/*", (req, res) => {
+
     let payloadStr: string;
     try {
         payloadStr = PayloadCipher.encodeFromObject({

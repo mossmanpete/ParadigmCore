@@ -25,6 +25,9 @@ class Logger {
     static logError(message) {
         console.log(`${'E'.red} [${"PC".cyan} v${config_1.VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message.red}`);
     }
+    static logWarning(message) {
+        console.log(`${'W'.yellow} [${"PC".cyan} v${config_1.VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message}`);
+    }
     static newRound(height, proposer) {
         Logger.logEvent(`${`Starting block #${height}:`.blue} Validator ${proposer.bold} is proposer.`);
     }
@@ -39,6 +42,9 @@ class Logger {
     }
     static consensusErr(message) {
         Logger.logError(`${'Consensus'.cyan} ${'Error:'.red} ${message}`);
+    }
+    static consensusWarn(message) {
+        Logger.logError(`${'Consensus'.cyan} ${'Warning:'.red} ${message}`);
     }
     static rebalancer(message, round) {
         Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
