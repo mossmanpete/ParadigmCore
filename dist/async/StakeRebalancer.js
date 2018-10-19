@@ -2,14 +2,14 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  StakeRebalancer.ts @ {rebalance-refactor}
+  StakeRebalancer.ts @ {master}
   =========================
 
   @date_inital 15 October 2018
-  @date_modified 16 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
-  UNSTABLE! UNSTABLE! UNSTABLE! UNSTABLE!
+  UNSTABLE! UNSTABLE! UNSTABLE! UNSTABLE! (Okay not THAT unstable, but be careful)
 
   This class enables nodes to construct a rate-limit mapping of address:limit for each access
   control period on Ethereum (rebalance period). At the end of each listening period, it will
@@ -28,22 +28,20 @@ const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const messages_1 = require("../util/messages");
 class StakeRebalancer {
     /**
-     * StakeRebalancer constructor:
+     * StakeRebalancer constructor (do not use):
      *  - you should initialize new StakeRebalancer objects with the static
      *    generator `StakeRebalancer.create(...options)`
      *
      * @param options {object} DONT USE! See .create(...) generator
      */
     constructor(options) {
-        /**
-         * May want to revisit assuming current OS height is 0 on initialization
-         */
+        // May want to revisit assuming current OS height is 0 on initialization
         /**
          * handleBlockEvent (private instance method): Handler method for new
          * Ethereum blocks, and checks if the round has ended, and triggers an
          * ABCI transaction if needed.
          *
-         * For some reason this doesn't work unless it is an ES6 arrow function.
+         * Because this is a callback, it must be anonymous (ES6 arrow)
          *
          * @param err {object} error object from web3 call
          * @param res {object} response object from web3 call
@@ -137,20 +135,20 @@ class StakeRebalancer {
                 }
             }
         };
+        this.web3provider = options.provider;
         this.rawMapping = {};
         this.outMapping = {};
         this.currentOsHeight = 0; // see above comment
         this.periodCounter = 0;
         this.periodLength = options.periodLength; // establish period length
         this.periodLimit = options.periodLimit;
-        this.web3provider = options.provider;
         this.stakeAddr = options.stakeContractAddr;
         this.stakeABI = options.stakeContractABI;
         this.tmHost = options.tendermintRpcHost;
         this.tmPort = options.tendermintRpcPort;
     }
     /**
-     * StakeRebalancer static constructor:
+     * StakeRebalancer static generator:
      *  - you should initialize new StakeRebalancer objects with the static
      *    method StakeRebalancer.create(...options)
      *
@@ -172,7 +170,6 @@ class StakeRebalancer {
         this.web3 = new Web3(new Web3.providers.WebsocketProvider(this.web3provider)); // initialize Web3 instance 
         this.startingEthHeight = await this.web3.eth.getBlockNumber();
         this.stakingContract = new this.web3.eth.Contract(this.stakeABI, this.stakeAddr);
-        // this.subscribe(); // => moving to public method start
         this.currentEthHeight = this.startingEthHeight.valueOf();
         Logger_1.Logger.rebalancer("Initialized. Current Ethereum height: " + this.startingEthHeight, this.periodCounter);
         return;
@@ -283,6 +280,7 @@ class StakeRebalancer {
             }
         });
         Logger_1.Logger.rebalancer(`Number of stakers this period: ${stakeCounter}`, this.periodCounter);
+        return;
     }
     /**
      * makeABCItransaction (private instance method): submit mapping as ABCI rebalance transaction.
@@ -303,13 +301,12 @@ class StakeRebalancer {
                 mapping: this.outMapping
             }
         };
-        // console.log("$$$ Making abci transaction:");
-        // console.log(`$$$ Raw mapping: ${JSON.stringify(this.rawMapping)}`);
-        // console.log(`$$$ Out mapping: ${JSON.stringify(this.outMapping)}`);
-        // console.log(`$$$ Transaction: ${JSON.stringify(txObject)}`);
+        // encode transaction
         let payloadStr = PayloadCipher_1.PayloadCipher.encodeFromObject(txObject);
-        this.tmClient.broadcastTxSync({ tx: payloadStr }).catch((_) => {
+        // execute local ABCI transaction
+        this.tmClient.broadcastTxSync({ tx: payloadStr }).catch((err) => {
             Logger_1.Logger.rebalancerErr("Error encountered while executing local ABCI transaction.");
+            console.log(`(temporary) Error encountered: ${err}`);
         });
         return;
     }

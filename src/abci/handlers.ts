@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 16 September 2018
-  @date_modified 17 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   ABCI handler functions and state-transition logic. 
@@ -115,7 +115,8 @@ function checkTx(request){
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    if(txObject.type === "OrderBroadcast"){ // tx type is OrderBroadcast
+    if(txObject.type === "OrderBroadcast"){ 
+      // TX type is OrderBroadcast
 
       try {
         let newOrder = new Order(txObject.data);

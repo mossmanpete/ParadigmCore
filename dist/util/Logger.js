@@ -2,11 +2,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  Logger.ts @ {rebalance-refactor}
+  Logger.ts @ {master}
   =========================
 
   @date_inital 25 September 2018
-  @date_modified 16 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   Simple Logger class to handle logs to STDOUT.

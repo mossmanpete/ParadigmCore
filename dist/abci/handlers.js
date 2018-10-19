@@ -31,6 +31,7 @@ let handlers; // ABCI handler functions
  * start (exported function): Initialize and start the ABCI application.
  *
  * @param _state {object} initial network state
+ * @param emitter {EventEmitter} emitter to attach to OrderTracker
  */
 async function startMain(_state, emitter) {
     try {
@@ -77,7 +78,7 @@ async function startRebalancer() {
 exports.startRebalancer = startRebalancer;
 function info(_) {
     return {
-        data: 'Stake Verification App',
+        data: 'ParadigmCore ABCI Application',
         version: config_1.VERSION,
         lastBlockHeight: 0,
         lastBlockAppHash: Buffer.alloc(0)
@@ -86,7 +87,7 @@ function info(_) {
 function beginBlock(request) {
     let currHeight = request.header.height;
     let currProposer = request.header.proposerAddress.toString('hex');
-    // rebalancer.newOrderStreamBlock(currHeight, currProposer);
+    rebalancer.newOrderStreamBlock(currHeight, currProposer);
     Logger_1.Logger.newRound(currHeight, currProposer);
     return {};
 }
@@ -105,17 +106,18 @@ function checkTx(request) {
             let recoveredAddr = newOrder.recoverPoster().toLowerCase();
             console.log(`(temporary) Recovered address: ${recoveredAddr}`);
             if (state.mapping.hasOwnProperty(recoveredAddr)) {
+                // if staker has an entry in state
                 Logger_1.Logger.mempool(messages_1.messages.abci.messages.mempool);
                 return Vote_1.Vote.valid(Hasher_1.Hasher.hashOrder(newOrder));
             }
             else {
+                // no stake in mapping
                 Logger_1.Logger.mempool(messages_1.messages.abci.messages.noStake);
-                // return Vote.invalid(msg.abci.messages.noStake);
-                return Vote_1.Vote.invalid(recoveredAddr);
+                return Vote_1.Vote.invalid(messages_1.messages.abci.messages.noStake);
             }
         }
         catch (error) {
-            console.log(error); // temporary
+            // eror constructing order
             Logger_1.Logger.mempoolErr(messages_1.messages.abci.errors.format);
             return Vote_1.Vote.invalid(messages_1.messages.abci.errors.format);
         }
@@ -153,7 +155,7 @@ function deliverTx(request) {
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
     if (txObject.type === "OrderBroadcast") {
-        // Tx type is OrderBroadcast
+        // TX type is OrderBroadcast
         try {
             let newOrder = new Order(txObject.data);
             let recoveredAddr = newOrder.recoverPoster().toLowerCase();
@@ -195,6 +197,7 @@ function deliverTx(request) {
             return Vote_1.Vote.valid("Accepted parameters for first staking period.");
         }
         else if (state.round.number > 0) {
+            // TODO: decide if there is a better way to write these conditions
             if (txObject.data.round.number === (state.round.number + 1)) {
                 let roundInfo = rebalancer.getConstructedMapping();
                 let validFor = roundInfo.validFor;
@@ -221,6 +224,8 @@ function deliverTx(request) {
                 return Vote_1.Vote.invalid();
             }
         }
+        // TODO: should this be included in an else block?
+        // Or is it safe to assume this block will not be reached otherwise?
         Logger_1.Logger.consensusErr("State is potentially corrupt. May affect node's ability to reach consensus.");
         return Vote_1.Vote.invalid();
     }

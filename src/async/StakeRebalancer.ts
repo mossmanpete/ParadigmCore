@@ -85,7 +85,6 @@ export class StakeRebalancer {
         this.stakingContract = new this.web3.eth.Contract(
             this.stakeABI, this.stakeAddr);
         
-
         this.currentEthHeight = this.startingEthHeight.valueOf();
 
         Logger.rebalancer("Initialized. Current Ethereum height: "+this.startingEthHeight, this.periodCounter);
@@ -387,8 +386,9 @@ export class StakeRebalancer {
         let payloadStr = PayloadCipher.encodeFromObject(txObject);
 
         // execute local ABCI transaction
-        this.tmClient.broadcastTxSync({tx:payloadStr}).catch((_) => {
+        this.tmClient.broadcastTxSync({tx:payloadStr}).catch((err) => {
             Logger.rebalancerErr("Error encountered while executing local ABCI transaction.");
+            console.log(`(temporary) Error encountered: ${err}`);
         });
 
         return;
