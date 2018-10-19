@@ -33,7 +33,9 @@ npm run build OR tsc
 ```
 You can just run `tsc` if the default `tsconfig.json` is used.
 
-## Run
+## Run (this section is being updated)
+UPDATE: Tendermint now runs in-process with ParadigmCore, you do not need to run a separate Tendermint node anymore.
+
 To run, you must have a tendermint node runing on the same machine on the expected port. With tendermint's binary installed, run:
 ```
 tendermint node

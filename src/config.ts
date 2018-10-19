@@ -1,14 +1,16 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  config.ts @ {rebalance-refactor}
+  config.ts @ {master}
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 17 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   Constants and configuration.
+
+  @10-19 TODO: switch to environment variables and a .env file
 */
 
 // major, minor, and sub version numbers

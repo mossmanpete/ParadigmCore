@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  OrderTracker.ts @ {rebalance-refactor}
+  OrderTracker.ts @ {master}
   =========================
 
   @date_inital 9 October 2018
-  @date_modified 16 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
   
   Class to store valid orders and trigger broadcast upon consensus round completion.

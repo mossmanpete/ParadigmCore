@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  Message.ts @ {rebalance-refactor}
+  Message.ts @ {master}
   =========================
 
   @date_inital 19 August 2018
-  @date_modified 24 September 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   Simple class for creating and sending JSON messages using ExpressJS.

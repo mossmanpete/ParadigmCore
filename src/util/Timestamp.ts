@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  Timestamp.ts @ {rebalance-refactor}
+  Timestamp.ts @ {master}
   =========================
   
   @date_inital 10 October 2018
-  @date_modified 16 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   Dumb class for creating a log timestamp.

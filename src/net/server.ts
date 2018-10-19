@@ -1,33 +1,28 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  server.ts @ {rebalance-refactor}
+  server.ts @ {master}
   =========================
 
   @date_inital 24 September 2018
-  @date_modified 16 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
 
   @10-16: TODO: support StreamBroadcast type.
-  @10-17: TODO: use npm 'tendermint' package to send ABCI transactions.
 */
 
+let { RpcClient } = require('tendermint');
 import * as express from "express";
-import * as http from "http";
 import * as bodyParser from "body-parser";
 import cors = require('cors');
-let { RpcClient } = require('tendermint');
 
 import { PayloadCipher } from "../crypto/PayloadCipher"; 
 import { Message } from "../net/ExpressMessage";
 
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/messages";
-
-let Paradigm = require('paradigm-connect');
-let paradigm = new Paradigm();
 
 let client: any; // tendermint client for RPC
 let app = express();
@@ -62,36 +57,13 @@ app.post("/*", (req, res) => {
         console.log(e);
         Message.staticSendError(res, e.message, 500);
     });
-
-    /*
-    let options = {
-        hostname: ABCI_HOST,
-        port: ABCI_RPC_PORT,
-        path: `/broadcast_tx_${TX_MODE}?tx=\"${payloadStr}\"`
-    }
-
-    http.get(options, function(getres) {
-        if(res.statusCode != 200){
-            Message.staticSendError(res, "Internal server error.", 500);
-        }
-      
-        getres.on("data", function(chunk) {
-            res.send(chunk);
-        });
-
-      }).on('error', function(e) {
-        Message.staticSendError(res, e.message, 500);
-      });
-      */
 });
 
-//export function startAPIserver(host, rpcPort, apiPort): void {
 export async function startAPIserver(host, rpcPort, apiPort) {
     try {
-        client = RpcClient(`ws://localhost:26657`);      
-        await app.listen(apiPort) /*, () => {
-            Logger.apiEvt(msg.api.messages.servStart);
-        });*/
+        client = RpcClient(`ws://${host}:${rpcPort}`);      
+        
+        await app.listen(apiPort);
         Logger.apiEvt(msg.api.messages.servStart)
         return
     } catch (err) {
