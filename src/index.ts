@@ -112,7 +112,7 @@ let node: any; // Tendermint node instance
         
         ws.on('message', (message) => {
             if(message === "close") { 
-                return ws.terminate();
+                return ws.close();
             } else {
                 try {
                     WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
