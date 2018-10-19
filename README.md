@@ -1,6 +1,6 @@
 # ParadigmCore (alpha)
 
-![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.2a5-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg)](./LICENSE) [![Chat Server](https://img.shields.io/badge/chat%20server-join!-red.svg)](https://chat.paradigm.market/)
 
 ## Introduction
@@ -33,7 +33,9 @@ npm run build OR tsc
 ```
 You can just run `tsc` if the default `tsconfig.json` is used.
 
-## Run
+## Run (this section is being updated)
+UPDATE: Tendermint now runs in-process with ParadigmCore, you do not need to run a separate Tendermint node anymore.
+
 To run, you must have a tendermint node runing on the same machine on the expected port. With tendermint's binary installed, run:
 ```
 tendermint node

@@ -1,3 +1,4 @@
+"use strict";
 /*
   =========================
   ParadigmCore: Blind Star
@@ -5,82 +6,74 @@
   =========================
 
   @date_inital 19 August 2018
-  @date_modified 24 September 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   Simple class for creating and sending JSON messages using ExpressJS.
 */
-
-import * as exp from "express";
-
-export class Message {
-    private err: number;
-    private msg: string;
-    private json: object;
-    private res: exp.Response;
-
-    public static staticSendError(res: exp.Response, message: string, error: number): void {
+Object.defineProperty(exports, "__esModule", { value: true });
+class Message {
+    static staticSendError(res, message, error) {
         let json = {
             "error": error,
             "message": message,
             "processed": new Date().toLocaleString()
-        }
-
-        try{
+        };
+        try {
             res.status(error).send(json);
-        } catch (err) {
+        }
+        catch (err) {
             console.log("sending express msg: " + err);
             throw new Error("Error sending Express message.");
         }
     }
-
-    public static staticSend(res: exp.Response, message: string): void {
+    static staticSend(res, message) {
         let json = {
             "message": message,
             "processed": new Date().toLocaleString()
-        }
-
-        try{
+        };
+        try {
             res.status(200).send(json);
-        } catch (err) {
+        }
+        catch (err) {
             console.log("sending express msg: " + err);
             throw new Error("Error sending Express message.");
         }
     }
-
-    constructor (response: exp.Response, message: string, error: number) {
-        if(error != null){
+    constructor(response, message, error) {
+        if (error != null) {
             this.err = error;
-        } else {
+        }
+        else {
             this.err = 200;
         }
-
         this.res = response;
         this.msg = message;
         this.json = this.toJSON();
     }
-
-    public send(): void {
+    send() {
         try {
             this.res.status(this.err).send(this.json);
-        } catch (err) {
+        }
+        catch (err) {
             console.log("sending express msg: " + err);
             throw new Error("Error sending Express message.");
         }
     }
-
-    public toJSON(): object {
-        if (this.err != 200){
+    toJSON() {
+        if (this.err != 200) {
             return {
                 "error": this.err,
                 "message": this.msg,
                 "processed": new Date().toLocaleString()
-            }
-        } else {
+            };
+        }
+        else {
             return {
                 "message": this.msg,
                 "processed": new Date().toLocaleString()
-            }
+            };
         }
     }
 }
+exports.Message = Message;

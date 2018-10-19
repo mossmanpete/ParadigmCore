@@ -1,186 +1,127 @@
-/*
+/* 
   =========================
   ParadigmCore: Blind Star
   index.ts @ {master}
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 3 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
-  Main ABCI application supporting the OrderStream network. 
+  Entry point and startup script for ParadigmCore. 
 */
 
-import * as abci from 'abci';
 import * as _ws from "ws";
-import * as _pjs from "paradigm.js";
+import * as tendermint from "tendermint-node";
 
+import { Logger } from "./util/Logger";
+import { WebSocketMessage } from "./net/WebSocketMessage";
+import { messages as msg } from "./util/messages";
 import { EventEmitter } from "events";
-import { startAPIserver } from "./server";
-import { state } from "./state";
-import { messages as msg } from "./messages"
-import { Logger } from "./Logger";
-import { Vote } from "./Vote";
-import { PayloadCipher } from "./PayloadCipher";
-import { WebSocketMessage } from "./WebSocketMessage";
-import { Hasher } from './Hasher';
-import { OrderTracker } from "./OrderTracker";
-import { ABCI_PORT, VERSION, WS_PORT } from "./config";
 
-Logger.logStart();
+import { state } from "./state/state";
+import { startMain, startRebalancer } from "./abci/handlers";
+import { startAPIserver } from "./net/server";
 
-let emitter = new EventEmitter(); // event emitter for WS broadcast
-let wss = new _ws.Server({ port: WS_PORT });
-let tracker = new OrderTracker(emitter);
-let cipher = new PayloadCipher({ inputEncoding: 'utf8', outputEncoding: 'base64' });
-let paradigm = new _pjs(); // new paradigm instance
-let Order = paradigm.Order;
+import { WS_PORT, TM_HOME, ABCI_HOST, ABCI_RPC_PORT, API_PORT } from "./config";
 
-wss.on("connection", (ws) => {
-  try {
-    WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
-  } catch (err) {
-    console.log("on connection: " + err);
-    Logger.logError(msg.websocket.errors.connect);
-  }
+let wss: _ws.Server;
+let emitter: EventEmitter;
+let node: any; // Tendermint node instance
 
-  emitter.on("order", (order) => {
+(async function() {
+    Logger.logStart();
+
+    // Configure and start Tendermint core
+    Logger.consensus("Starting Tendermint Core...");
     try {
-      wss.clients.forEach(client => {
-        if ((client.readyState === 1) && (client === ws)){
-          WebSocketMessage.sendOrder(client, order);
+        await tendermint.init(TM_HOME);
+        node = tendermint.node(TM_HOME, {
+            rpc: {
+                laddr: `tcp://${ABCI_HOST}:${ABCI_RPC_PORT}`
+            }
+        });
+
+        // node.stdout.pipe(process.stdout); // pipe tendermint logs to STDOUT
+
+    } catch (error) {
+        console.log(error);
+        Logger.consensusErr("Fatal error starting Tendermint core.");
+        process.exit();
+    }
+
+    // Start WebSocket server
+    Logger.websocketEvt("Starting WebSocket server...");
+    try {
+        wss = new _ws.Server({ port: WS_PORT }, () => {
+            Logger.websocketEvt(msg.websocket.messages.servStart);
+        });
+        emitter = new EventEmitter(); // parent event emitter
+    } catch (error) {
+        Logger.websocketErr("Fatal error starting WebSocket server.");
+        process.exit();
+    }
+
+    // Start ABCI application
+    try{
+        await startMain(state, emitter);
+        Logger.consensus("Waiting for Tendermint to synchronize...");
+
+        await node.synced();
+        Logger.consensus("Tendermint initialized and syncronized.");
+
+        // start state rebalancer sub-process AFTER sync
+        await startRebalancer();
+        Logger.rebalancer("Stake rebalancer activated. Subscribed to Ethereum events.", 0);
+    } catch (error) {
+        Logger.logError(msg.abci.errors.fatal);
+        process.exit();
+    }
+
+    // Start HTTP API server
+    Logger.apiEvt("Starting HTTP API server...");
+    try {
+        await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
+    } catch (error) {
+        Logger.apiErr(msg.api.errors.fatal)
+        process.exit();
+    }
+
+    /**
+     * Begin WebSocket handler implementation (below)
+     */
+
+    wss.on("connection", (ws) => {
+        try {
+            WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
+        } catch (err) {
+            Logger.websocketErr(msg.websocket.errors.connect);
         }
-      });
-    } catch (err) {
-      console.log(`Temporary log: ${err}`);
-      Logger.logError(msg.websocket.errors.broadcast);
-    }
-  });
-
-  ws.on('message', (msg) => {
-    if(msg === "close") { 
-      return ws.terminate();
-    } else {
-      try {
-        WebSocketMessage.sendMessage(ws, `Unknown command '${msg}.'`);
-      } catch (err) {
-        console.log(`Temporary log: ${err}`);
-        Logger.logError(msg.websocket.errors.message);
-      }
-    }
-  });
-});
-
-wss.on('listening', (_) => {
-  Logger.logEvent(msg.websocket.messages.servStart);
-});
-
-let handlers = {
-  info: (_) => {
-    return {
-      data: 'Stake Verification App',
-      version: VERSION,
-      lastBlockHeight: 0,
-      lastBlockAppHash: Buffer.alloc(0)
-    }
-  },
-
-  beginBlock: (request) => {
-    Logger.newRound(request.header.height, request.header.proposerAddress.toString('hex'));
-
-    return {}
-  },
-
-  checkTx: (request) => {
-    let txObject;
-
-    try {
-      txObject = cipher.ABCIdecode(request.tx);
-    } catch (error) {
-      Logger.logError(msg.abci.errors.decompress);
-      return Vote.invalid(msg.abci.errors.decompress);
-    }
-
-    try {      
-      let newOrder = new Order(txObject);
-      let recoveredAddr = newOrder.recoverPoster();
-      if (typeof(recoveredAddr) === "string"){
-        /*
-          The above conditional shoud rely on a verifyStake(), that checks
-          the existing state for that address. 
-        */
-        Logger.mempool(msg.abci.messages.mempool);
-        return Vote.valid(Hasher.hashOrder(newOrder));
-      } else {
-        Logger.mempool(msg.abci.messages.noStake)
-        return Vote.invalid(msg.abci.messages.noStake);
-      }
-    } catch (error) {
-      Logger.mempool(msg.abci.errors.format);
-      return Vote.invalid(msg.abci.errors.format);
-    }
-  },
-
-  deliverTx: (request) => {
-    let txObject;
     
-    try {
-      txObject = cipher.ABCIdecode(request.tx);
-    } catch (error) {
-      Logger.logError(msg.abci.errors.decompress)
-      return Vote.invalid(msg.abci.errors.decompress);
-    }
+        emitter.on("order", (order) => {
+            try {
+                wss.clients.forEach(client => {
+                    if ((client.readyState === 1) && (client === ws)){
+                        WebSocketMessage.sendOrder(client, order);
+                    }
+                });
+            } catch (err) {
+                Logger.websocketErr(msg.websocket.errors.broadcast);
+            }
+        });
+        
+        ws.on('message', (message) => {
+            if(message === "close") { 
+                return ws.close();
+            } else {
+                try {
+                    WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
+                } catch (err) {
+                    Logger.websocketErr(msg.websocket.errors.message);
+                }
+            }
+        });
+    });
 
-    try {      
-      let newOrder = new Order(txObject);
-      let recoveredAddr = newOrder.recoverPoster();
-
-      if (typeof(recoveredAddr) === "string"){ 
-        /*
-          The above conditional shoud rely on a verifyStake(), that checks
-          the existing state for that address. 
-
-          BEGIN STATE MODIFICATION
-        */
-
-        let dupOrder: any = newOrder.toJSON();
-        dupOrder.id = Hasher.hashOrder(newOrder);
-
-        //emitter.emit("order", dupOrder); // broadcast order event
-        tracker.add(dupOrder); // add order to queue for broadcast
-
-        state.number += 1;
-
-        /*
-          END STATE MODIFICATION
-        */
-
-        Logger.consensus(msg.abci.messages.verified)
-        return Vote.valid(dupOrder.id);
-      } else {
-        Logger.consensus(msg.abci.messages.noStake)
-        return Vote.invalid(msg.abci.messages.noStake);
-      }
-    } catch (error) {
-      // console.log(error);
-      Logger.consensus(msg.abci.errors.format);
-      return Vote.invalid(msg.abci.errors.format);
-    }
-  },
-
-  commit: (_) => {
-    try {
-      tracker.triggerBroadcast();
-    } catch (err) {
-      // console.log(err)
-      Logger.logError("Error broadcasting TX in commit.")
-    }
-
-    return "done" // change to something more meaningful
-  }
-}
-
-abci(handlers).listen(ABCI_PORT, () => {
-  Logger.logEvent(msg.abci.messages.servStart);
-  startAPIserver();
-});
+    Logger.logEvent("Initialization complete, begining new block production.");
+})();

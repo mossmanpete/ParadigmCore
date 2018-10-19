@@ -2,7 +2,8 @@
     "compilerOptions": {
         "outDir": "./dist",
         "baseUrl": "./",
-        "target": "es6",
+        "lib": ["es2017"],
+        "target": "es2017",
         "module": "commonjs"
     },
     "include":[

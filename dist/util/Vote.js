@@ -1,3 +1,4 @@
+"use strict";
 /*
   =========================
   ParadigmCore: Blind Star
@@ -5,29 +6,29 @@
   =========================
   
   @date_inital 24 September 2018
-  @date_modified 2 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
-  A class to represent a vote based on the logic in 
+  A class to represent a vote based on the logic in
   checkTx() and deliverTx().
 */
-
-export class Vote { 
+Object.defineProperty(exports, "__esModule", { value: true });
+class Vote {
     /*
         This class will be expanded with more errors for the
         different failure points in checkTx (and deliverTx).
     */
-    public static valid(id: string) {
+    static valid(id) {
         return {
             code: 0,
             log: `OrderID: ${id}`
-        }
+        };
     }
-
-    public static invalid(message: string) {
+    static invalid(message) {
         return {
             code: 1,
             log: message
-        }
+        };
     }
 }
+exports.Vote = Vote;

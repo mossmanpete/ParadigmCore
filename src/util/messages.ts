@@ -5,13 +5,13 @@
   =========================
 
   @date_inital 1 October 2018
-  @date_modified 9 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   Simple message object to store common ABCI and WS messages.
 */
 
-import { WS_PORT, ABCI_PORT, API_PORT } from "./config";
+import { WS_PORT, ABCI_PORT, API_PORT } from "../config";
 
 export let messages  = {
     websocket: {
@@ -28,26 +28,37 @@ export let messages  = {
     abci: {
         errors: {
             decompress: "Bad order object: error decompressing transaction.",
-            format:     "Bad order object: invalid Paradigm order format."   
+            format:     "Bad order object: invalid Paradigm order format.",
+            fatal:      "Fatal error initializing application."   
         },
         messages: {
             incoming:   {
                 checkTx:    "Incoming ABCI transaction in 'checkTx()'",
                 deliverTx:  "Incoming ABCI transaction in 'deliverTx()'"
             },
-            mempool:    "New order added to local mempool.",
+            mempool:    "New order passed mempool verification (checkTx).",
             noStake:    "New order rejected: invalid poster or no poster stake.",
-            verified:   "New order verified and added to OrderStream queue.",
+            verified:   "New order verified and added to OrderStream queue (deliverTx).",
             servStart:  `ABCI server started on port ${ABCI_PORT}.`
         }
     },
     api: {
         errors: {
             badJSON: "Bad JSON format, check TX and try again.",
-            parsing: "Error parsing order, check format and try again."
+            parsing: "Error parsing order, check format and try again.",
+            response: "Error sending HTTP response.",
+            fatal: "Fatal error starting API server."
         },
         messages: {
+            starting: "Starting HTTP API server...",
             servStart: `API server started on port ${API_PORT}.`
+        }
+    },
+    rebalancer: {
+        errors: {
+            fatalStake: "Fatal error encountered processing stake event.",
+            badStakeEvent: "Bad stake event.",
+            badBlockEvent: "Bad block event."
         }
     }
 }
