@@ -107,13 +107,12 @@ function checkTx(request){
       return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    if(txObject.type === "OrderBroadcast"){
-      // tx type is OrderBroadcast
+    if(txObject.type === "OrderBroadcast"){ // tx type is OrderBroadcast
 
       try {      
         let newOrder = new Order(txObject.data);
         let recoveredAddr = newOrder.recoverPoster();
-        if (typeof(recoveredAddr) === "string"){
+        if (state.mapping[recoveredAddr].orderBroadcastLimit > 0){
           /*
             The above conditional shoud rely on a verifyStake(), that checks
             the existing state for that address. 
@@ -129,8 +128,8 @@ function checkTx(request){
         return Vote.invalid(msg.abci.errors.format);
       }
 
-    } else if(txObject.type === 'Rebalance'){
-      // tx type is Rebalance
+    } else if(txObject.type === 'Rebalance'){ // tx type is Rebalance
+      
       Logger.mempool("we got a rebalance event");
 
       if((state.round.number === 0) && (txObject.data.round.number === 1)){
@@ -169,21 +168,18 @@ function deliverTx(request){
         let newOrder = new Order(txObject.data);
         let recoveredAddr = newOrder.recoverPoster();
 
-        if (typeof(recoveredAddr) === "string"){ 
+        if (state.mapping[recoveredAddr].orderBroadcastLimit > 0){ 
           /*
-            The above conditional shoud rely on a verifyStake(), that checks
-            the existing state for that address. 
-
             BEGIN STATE MODIFICATION
           */
 
-          let dupOrder: any = newOrder.toJSON();
-          dupOrder.id = Hasher.hashOrder(newOrder);
+          let dupOrder: any = newOrder.toJSON(); // create copy of order
+          dupOrder.id = Hasher.hashOrder(newOrder); // append OrderID
 
-          //emitter.emit("order", dupOrder); // broadcast order event
+          state.mapping[recoveredAddr].orderBroadcastLimit -= 1; // decrease quota by 1
+          state.counter += 1; // add 1 to total number of orders
+
           tracker.add(dupOrder); // add order to queue for broadcast
-
-          state.counter += 1;
 
           /*
             END STATE MODIFICATION

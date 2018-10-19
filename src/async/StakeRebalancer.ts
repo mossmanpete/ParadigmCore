@@ -327,9 +327,9 @@ export class StakeRebalancer {
         Object.keys(this.rawMapping).forEach((addr, _) => {
             if(typeof(this.rawMapping[addr]) === 'number'){
                 this.outMapping[addr] = {
-                    OrderBroadcastLimit: Math.floor(
+                    orderBroadcastLimit: Math.floor(
                         (this.rawMapping[addr]/stakeBalance)*this.periodLimit),
-                    StreamBroadcastLimit: 1
+                    streamBroadcastLimit: 1
                 }
             }
         });
