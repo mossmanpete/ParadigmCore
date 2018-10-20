@@ -1,4 +1,4 @@
-/* 
+/*
   =========================
   ParadigmCore: Blind Star
   index.ts @ {master}
@@ -29,6 +29,10 @@ let wss: _ws.Server;
 let emitter: EventEmitter;
 let node: any; // Tendermint node instance
 
+/**
+ * This function executes immediately upon this file being executed. It is
+ * responsible for starting all dependant modules.
+ */
 (async function() {
     Logger.logStart();
 
@@ -64,6 +68,7 @@ let node: any; // Tendermint node instance
 
     // Start ABCI application
     try{
+        // start main ParadigmCore logic 
         await startMain(state, emitter);
         Logger.consensus("Waiting for Tendermint to synchronize...");
 
@@ -79,8 +84,8 @@ let node: any; // Tendermint node instance
     }
 
     // Start HTTP API server
-    Logger.apiEvt("Starting HTTP API server...");
     try {
+        Logger.apiEvt("Starting HTTP API server...");
         await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
     } catch (error) {
         Logger.apiErr(msg.api.errors.fatal)
@@ -89,16 +94,18 @@ let node: any; // Tendermint node instance
 
     /**
      * Begin WebSocket handler implementation (below)
+     * 
+     * TODO: move this to another file
      */
 
-    wss.on("connection", (ws) => {
+    wss.on("connection", ws => {
         try {
             WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
         } catch (err) {
             Logger.websocketErr(msg.websocket.errors.connect);
         }
     
-        emitter.on("order", (order) => {
+        emitter.on("order", order => {
             try {
                 wss.clients.forEach(client => {
                     if ((client.readyState === 1) && (client === ws)){
@@ -110,15 +117,11 @@ let node: any; // Tendermint node instance
             }
         });
         
-        ws.on('message', (message) => {
+        ws.on('message', message => {
             if(message === "close") { 
                 return ws.close();
             } else {
-                try {
-                    WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
-                } catch (err) {
-                    Logger.websocketErr(msg.websocket.errors.message);
-                }
+                WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
             }
         });
     });

@@ -54,6 +54,7 @@ export async function startMain(_state: object, emitter: EventEmitter){
 
         tracker = new OrderTracker(emitter);
 
+        // TODO: pass in options from index.ts
         rebalancer = await StakeRebalancer.create({
           provider: WEB3_PROVIDER,
           periodLength: PERIOD_LENGTH,
