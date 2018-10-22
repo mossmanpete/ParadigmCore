@@ -388,10 +388,10 @@ export class StakeRebalancer {
         // execute local ABCI transaction
         this.tmClient.broadcastTxSync({tx:payloadStr}).then((res) => {
             Logger.rebalancer("Rebalance transaction executed.", this.periodCounter);
-            console.log(`(temporary) Response from TX: ${res}`);
+            console.log(`(temporary) Response from TX: ${JSON.stringify(res)}`);
         }).catch((err) => {
             Logger.rebalancerErr("Error encountered while executing local ABCI transaction.");
-            console.log(`(temporary) Error encountered: ${err}`);
+            console.log(`(temporary) Error encountered: ${JSON.stringify(err)}`);
         });
 
         return;
