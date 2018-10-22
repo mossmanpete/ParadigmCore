@@ -6,7 +6,7 @@
   =========================
 
   @date_inital 16 September 2018
-  @date_modified 17 October 2018
+  @date_modified 19 October 2018
   @author Henry Harder
 
   ABCI handler functions and state-transition logic.
@@ -25,7 +25,8 @@ const config_1 = require("../config");
 let Order = new Paradigm().Order;
 let tracker; // used to broadcast orders
 let rebalancer; // construct and submit mapping
-let state; // network rate-limit state
+let dState; // deliverTx state
+let cState; // commit state
 let handlers; // ABCI handler functions
 /**
  * start (exported function): Initialize and start the ABCI application.
@@ -33,9 +34,10 @@ let handlers; // ABCI handler functions
  * @param _state {object} initial network state
  * @param emitter {EventEmitter} emitter to attach to OrderTracker
  */
-async function startMain(_state, emitter) {
+async function startMain(deliverState, commitState, emitter) {
     try {
-        state = _state;
+        dState = deliverState;
+        cState = commitState;
         handlers = {
             info: info,
             beginBlock: beginBlock,
@@ -44,6 +46,7 @@ async function startMain(_state, emitter) {
             commit: commit
         };
         tracker = new OrderTracker_1.OrderTracker(emitter);
+        // TODO: pass in options from index.ts
         rebalancer = await StakeRebalancer_1.StakeRebalancer.create({
             provider: config_1.WEB3_PROVIDER,
             periodLength: config_1.PERIOD_LENGTH,
@@ -100,12 +103,13 @@ function checkTx(request) {
         Logger_1.Logger.mempoolErr(messages_1.messages.abci.errors.decompress);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
-    if (txObject.type === "OrderBroadcast") { // tx type is OrderBroadcast
+    if (txObject.type === "OrderBroadcast") {
+        // TX type is OrderBroadcast
         try {
             let newOrder = new Order(txObject.data);
             let recoveredAddr = newOrder.recoverPoster().toLowerCase();
             console.log(`(temporary) Recovered address: ${recoveredAddr}`);
-            if (state.mapping.hasOwnProperty(recoveredAddr)) {
+            if (cState.mapping.hasOwnProperty(recoveredAddr)) {
                 // if staker has an entry in state
                 Logger_1.Logger.mempool(messages_1.messages.abci.messages.mempool);
                 return Vote_1.Vote.valid(Hasher_1.Hasher.hashOrder(newOrder));
@@ -123,18 +127,16 @@ function checkTx(request) {
         }
     }
     else if (txObject.type === 'Rebalance') { // tx type is Rebalance
-        if ((state.round.number === 0) && (txObject.data.round.number === 1)) {
+        if ((cState.round.number === 0) && (txObject.data.round.number === 1)) {
             // This is the condition to accept the first rebalance transaction
             // that sets the initial staking period.
             Logger_1.Logger.mempool('Initial rebalance proposal accepted.');
             return Vote_1.Vote.valid(); // vote to accept state
         }
-        else if (state.round.number === txObject.data.round.number - 1) {
+        else if (cState.round.number === txObject.data.round.number - 1) {
             // Condition to see if the proposal is for the next staking period
             Logger_1.Logger.mempool('Rebalance proposal accepted.');
             return Vote_1.Vote.valid('Rebalance proposal accepted.');
-        }
-        else {
         }
         Logger_1.Logger.mempool('Invalid rebalance proposal rejected.');
         return Vote_1.Vote.invalid("Invalid rebalance proposal rejected.");
@@ -159,16 +161,20 @@ function deliverTx(request) {
         try {
             let newOrder = new Order(txObject.data);
             let recoveredAddr = newOrder.recoverPoster().toLowerCase();
-            if (state.mapping[recoveredAddr].orderBroadcastLimit > 0) {
+            if (dState.mapping[recoveredAddr].orderBroadcastLimit > 0) {
                 // Condition to see if poster has sufficient quota for order broadcast
                 let dupOrder = newOrder.toJSON(); // create copy of order
                 dupOrder.id = Hasher_1.Hasher.hashOrder(newOrder); // append OrderID
+                console.log(`... before (delivertx) cState: ${JSON.stringify(cState)}`);
+                console.log(`... before (delivertx) dState: ${JSON.stringify(dState)}\n`);
                 // Begin state modification
-                state.mapping[recoveredAddr].orderBroadcastLimit -= 1; // decrease quota by 1
-                state.orderCounter += 1; // add 1 to total number of orders
+                dState.mapping[recoveredAddr].orderBroadcastLimit -= 1; // decrease quota by 1
+                dState.orderCounter += 1; // add 1 to total number of orders
                 // End state modification
+                console.log(`... after (delivertx) cState: ${JSON.stringify(cState)}`);
+                console.log(`... after (delivertx) dState: ${JSON.stringify(dState)}\n`);
                 tracker.add(dupOrder); // add order to queue for broadcast
-                Logger_1.Logger.consensus(`(Temporary log) Poster remaining quota:${state.mapping[recoveredAddr].orderBroadcastLimit}`);
+                Logger_1.Logger.consensus(`(Temporary log) Poster remaining quota:${dState.mapping[recoveredAddr].orderBroadcastLimit}`);
                 Logger_1.Logger.consensus(messages_1.messages.abci.messages.verified);
                 return Vote_1.Vote.valid(dupOrder.id);
             }
@@ -185,20 +191,20 @@ function deliverTx(request) {
     }
     else if (txObject.type === "Rebalance") {
         // Rate-limit mapping rebalance proposal transaction type logic
-        if ((state.round.number === 0) && (txObject.data.round.number === 1)) {
+        if ((dState.round.number === 0) && (txObject.data.round.number === 1)) {
             // Should only be triggered by the first rebalance TX
             // Begin state modification
-            state.round.number += 1;
-            state.round.startsAt = txObject.data.round.startsAt;
-            state.round.endsAt = txObject.data.round.endsAt;
-            state.mapping = txObject.data.mapping;
+            dState.round.number += 1;
+            dState.round.startsAt = txObject.data.round.startsAt;
+            dState.round.endsAt = txObject.data.round.endsAt;
+            dState.mapping = txObject.data.mapping;
             // End state modification
             Logger_1.Logger.consensus("Accepted parameters for first staking period.");
             return Vote_1.Vote.valid("Accepted parameters for first staking period.");
         }
-        else if (state.round.number > 0) {
+        else if (dState.round.number > 0) {
             // TODO: decide if there is a better way to write these conditions
-            if (txObject.data.round.number === (state.round.number + 1)) {
+            if (txObject.data.round.number === (dState.round.number + 1)) {
                 let roundInfo = rebalancer.getConstructedMapping();
                 let validFor = roundInfo.validFor;
                 let localMapping = roundInfo.mapping;
@@ -206,12 +212,12 @@ function deliverTx(request) {
                     // Condition will be true if proposed mapping matches the one
                     // constructed by the node voting on the proposal. 
                     // Begin state modification
-                    state.round.number = txObject.data.round.number;
-                    state.round.startsAt = txObject.data.round.startsAt;
-                    state.round.endsAt = txObject.data.round.endsAt;
-                    state.mapping = txObject.data.mapping;
+                    dState.round.number = txObject.data.round.number;
+                    dState.round.startsAt = txObject.data.round.startsAt;
+                    dState.round.endsAt = txObject.data.round.endsAt;
+                    dState.mapping = txObject.data.mapping;
                     // End state modification
-                    Logger_1.Logger.consensus(`State proposal accepted for staking period #${state.round.number}`);
+                    Logger_1.Logger.consensus(`State proposal accepted for staking period #${dState.round.number}`);
                     return Vote_1.Vote.valid();
                 }
                 else {
@@ -221,7 +227,7 @@ function deliverTx(request) {
             }
             else {
                 Logger_1.Logger.consensusWarn(`Warning: Rejected. Proposal is for for wrong staking period.`);
-                return Vote_1.Vote.invalid();
+                return Vote_1.Vote.invalid("Invalid rebalance proposal rejected.");
             }
         }
         // TODO: should this be included in an else block?
@@ -237,21 +243,37 @@ function deliverTx(request) {
 }
 function commit(request) {
     let stateHash; // stores the hash of current state
+    console.log(`d starts at: ${dState.round.startsAt}`);
+    console.log(`c starts at: ${dState.round.startsAt}\n`);
+    console.log(`... (pr) dState: ${Hasher_1.Hasher.hashState(dState)}`);
+    console.log(`... (pr) cState: ${Hasher_1.Hasher.hashState(cState)}\n`);
     try {
-        if ((state.round.startsAt > 0) && (rebalancer.getPeriodNumber() + 1 === state.round.number)) {
-            let newRound = state.round.number;
-            let newStart = state.round.startsAt;
-            let newEnd = state.round.endsAt;
+        // if ((state.round.startsAt > 0) && (rebalancer.getPeriodNumber() + 1 === state.round.number)) {
+        if (dState.round.number > cState.round.number) { //&& (rebalancer.getPeriodNumber() + 1 === state.round.number)) {
+            if (dState.round.startsAt > (cState.round.startsAt + 1)) {
+                Logger_1.Logger.consensusWarn("This round deliverTx state is more than 1 period ahead of commited state.");
+            }
+            let newRound = dState.round.number;
+            let newStart = dState.round.startsAt;
+            let newEnd = dState.round.endsAt;
             // Update rebalancer with new in-state staking parameters
             rebalancer.synchronize(newRound, newStart, newEnd);
         }
-        tracker.triggerBroadcast(); // Broadcast orders in block via WS
-        stateHash = Hasher_1.Hasher.hashState(state); // generate the hash of the new state
+        // Synchronize dState (deliverTx) and cState (commit)
+        cState = JSON.parse(JSON.stringify(dState)); // copy states
+        // Broadcast orders in block via WS
+        tracker.triggerBroadcast();
+        stateHash = Hasher_1.Hasher.hashState(cState); // generate the hash of the new state
         Logger_1.Logger.consensus(`Commit and broadcast complete. Current state hash: ${stateHash}`);
+        // temporary
+        console.log(`... (po) dState: ${Hasher_1.Hasher.hashState(dState)}`);
+        console.log(`... (po) cState: ${Hasher_1.Hasher.hashState(cState)}\n`);
+        console.log(`(temp) cState hash: ${Hasher_1.Hasher.hashState(cState)}`);
+        console.log(`(temp) dState hash: ${Hasher_1.Hasher.hashState(dState)}`);
     }
     catch (err) {
         console.log(err); // temporary
-        Logger_1.Logger.consensusErr("Error broadcasting orders (may require process termination).");
+        Logger_1.Logger.consensusWarn("Error broadcasting orders (may require process termination).");
     }
-    return stateHash; // "done" // change to something more meaningful
+    return stateHash; // TODO: is this the correct thing to return?
 }

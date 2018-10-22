@@ -1,17 +1,17 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  state.ts @ {master}
+  commitState.ts @ {master}
   =========================
   
-  @date_inital 25 September 2018
+  @date_inital 22 October 2018
   @date_modified 19 October 2018
   @author Henry Harder
 
-  Object that represents the (initial) pre-commit state of the OS node.
+  Object that represents the post-commit state of the OS node.
 */
 
-export let state = {
+export let commitState = {
   round: {
     number: 0,
     startsAt: 0,

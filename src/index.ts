@@ -13,17 +13,21 @@
 
 import * as _ws from "ws";
 import * as tendermint from "tendermint-node";
+import * as fs from "fs";
 
 import { Logger } from "./util/Logger";
 import { WebSocketMessage } from "./net/WebSocketMessage";
 import { messages as msg } from "./util/messages";
 import { EventEmitter } from "events";
 
-import { state } from "./state/state";
+import { deliverState } from "./state/deliverState";
+import { commitState } from "./state/commitState";
+
 import { startMain, startRebalancer } from "./abci/handlers";
 import { startAPIserver } from "./net/server";
 
 import { WS_PORT, TM_HOME, ABCI_HOST, ABCI_RPC_PORT, API_PORT } from "./config";
+
 
 let wss: _ws.Server;
 let emitter: EventEmitter;
@@ -69,7 +73,7 @@ let node: any; // Tendermint node instance
     // Start ABCI application
     try{
         // start main ParadigmCore logic 
-        await startMain(state, emitter);
+        await startMain(deliverState, commitState, emitter);
         Logger.consensus("Waiting for Tendermint to synchronize...");
 
         await node.synced();

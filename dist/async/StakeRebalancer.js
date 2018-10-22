@@ -288,7 +288,16 @@ class StakeRebalancer {
      */
     makeABCItransaction() {
         if (this.tmClient === undefined || this.tmClient == null) {
+            // TODO: move this to a function
             this.tmClient = RpcClient(`ws://${this.tmHost}:${this.tmPort}`);
+            this.tmClient.on('close', () => {
+                // called when client is closed
+                console.log("(temporary) TM client disconnected. Attempting to reconnect (not really)");
+            });
+            this.tmClient.on('error', () => {
+                // called when client has error
+                console.log("(temporary) TM client error. Attempting to reconnect (not really)");
+            });
         }
         let txObject = {
             type: "Rebalance",
@@ -304,9 +313,14 @@ class StakeRebalancer {
         // encode transaction
         let payloadStr = PayloadCipher_1.PayloadCipher.encodeFromObject(txObject);
         // execute local ABCI transaction
-        this.tmClient.broadcastTxSync({ tx: payloadStr }).catch((err) => {
+        this.tmClient.broadcastTxSync({
+            tx: payloadStr
+        }).then((res) => {
+            Logger_1.Logger.rebalancer("Rebalance transaction executed.", this.periodCounter);
+            console.log(`(temporary) Response from TX: ${JSON.stringify(res)}`);
+        }).catch((err) => {
             Logger_1.Logger.rebalancerErr("Error encountered while executing local ABCI transaction.");
-            console.log(`(temporary) Error encountered: ${err}`);
+            console.log(`(temporary) Error encountered: ${JSON.stringify(err)}`);
         });
         return;
     }
