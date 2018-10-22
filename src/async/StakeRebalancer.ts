@@ -386,7 +386,10 @@ export class StakeRebalancer {
         let payloadStr = PayloadCipher.encodeFromObject(txObject);
 
         // execute local ABCI transaction
-        this.tmClient.broadcastTxSync({tx:payloadStr}).catch((err) => {
+        this.tmClient.broadcastTxSync({tx:payloadStr}).then((res) => {
+            Logger.rebalancer("Rebalance transaction executed.", this.periodCounter);
+            console.log(`(temporary) Response from TX: ${res}`);
+        }).catch((err) => {
             Logger.rebalancerErr("Error encountered while executing local ABCI transaction.");
             console.log(`(temporary) Error encountered: ${err}`);
         });
