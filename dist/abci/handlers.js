@@ -83,8 +83,8 @@ function info(_) {
     return {
         data: 'ParadigmCore ABCI Application',
         version: config_1.VERSION,
-        lastBlockHeight: 0,
-        lastBlockAppHash: Buffer.alloc(0)
+        lastBlockHeight: cState.lastBlockHeight,
+        lastBlockAppHash: cState.lastBlockAppHash
     };
 }
 function beginBlock(request) {
@@ -131,7 +131,7 @@ function checkTx(request) {
             // This is the condition to accept the first rebalance transaction
             // that sets the initial staking period.
             Logger_1.Logger.mempool('Initial rebalance proposal accepted.');
-            return Vote_1.Vote.valid(); // vote to accept state
+            return Vote_1.Vote.valid(""); // vote to accept state
         }
         else if (cState.round.number === txObject.data.round.number - 1) {
             // Condition to see if the proposal is for the next staking period
@@ -218,7 +218,7 @@ function deliverTx(request) {
                     dState.mapping = txObject.data.mapping;
                     // End state modification
                     Logger_1.Logger.consensus(`State proposal accepted for staking period #${dState.round.number}`);
-                    return Vote_1.Vote.valid();
+                    return Vote_1.Vote.valid("");
                 }
                 else {
                     Logger_1.Logger.consensusWarn(`Proposal rejected. New state does not match local mapping.`);
@@ -242,15 +242,14 @@ function deliverTx(request) {
     }
 }
 function commit(request) {
+    console.log(`... commit request: ${JSON.stringify(request)}`);
+    console.log(`... dState round: ${dState.round.number}`);
+    console.log(`... cState round: ${cState.round.number}`);
     let stateHash; // stores the hash of current state
-    console.log(`d starts at: ${dState.round.startsAt}`);
-    console.log(`c starts at: ${dState.round.startsAt}\n`);
-    console.log(`... (pr) dState: ${Hasher_1.Hasher.hashState(dState)}`);
-    console.log(`... (pr) cState: ${Hasher_1.Hasher.hashState(cState)}\n`);
     try {
         // if ((state.round.startsAt > 0) && (rebalancer.getPeriodNumber() + 1 === state.round.number)) {
         if (dState.round.number > cState.round.number) { //&& (rebalancer.getPeriodNumber() + 1 === state.round.number)) {
-            if (dState.round.startsAt > (cState.round.startsAt + 1)) {
+            if (dState.round.number > (1 + cState.round.number)) {
                 Logger_1.Logger.consensusWarn("This round deliverTx state is more than 1 period ahead of commited state.");
             }
             let newRound = dState.round.number;
@@ -259,21 +258,19 @@ function commit(request) {
             // Update rebalancer with new in-state staking parameters
             rebalancer.synchronize(newRound, newStart, newEnd);
         }
+        dState.lastBlockHeight += 1;
         // Synchronize dState (deliverTx) and cState (commit)
         cState = JSON.parse(JSON.stringify(dState)); // copy states
         // Broadcast orders in block via WS
         tracker.triggerBroadcast();
-        stateHash = Hasher_1.Hasher.hashState(cState); // generate the hash of the new state
+        // Generate the hash of the new state
+        stateHash = Hasher_1.Hasher.hashState(cState);
         Logger_1.Logger.consensus(`Commit and broadcast complete. Current state hash: ${stateHash}`);
-        // temporary
-        console.log(`... (po) dState: ${Hasher_1.Hasher.hashState(dState)}`);
-        console.log(`... (po) cState: ${Hasher_1.Hasher.hashState(cState)}\n`);
-        console.log(`(temp) cState hash: ${Hasher_1.Hasher.hashState(cState)}`);
-        console.log(`(temp) dState hash: ${Hasher_1.Hasher.hashState(dState)}`);
     }
     catch (err) {
         console.log(err); // temporary
         Logger_1.Logger.consensusWarn("Error broadcasting orders (may require process termination).");
     }
+    cState.lastBlockAppHash = stateHash;
     return stateHash; // TODO: is this the correct thing to return?
 }

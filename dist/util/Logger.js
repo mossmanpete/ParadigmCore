@@ -35,7 +35,10 @@ class Logger {
         Logger.logEvent(`${'Mempool:'.magenta.bold} ${message}`);
     }
     static mempoolErr(message) {
-        Logger.logError(`${'Mempool'.magenta.bold} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'Mempool'.magenta} ${'Error:'.red} ${message}`);
+    }
+    static mempoolWarn(message) {
+        Logger.logWarning(`${'Mempool'.magenta} ${'Warning:'.yellow} ${message}`);
     }
     static consensus(message) {
         Logger.logEvent(`${'Consensus:'.cyan} ${message}`);
@@ -44,7 +47,7 @@ class Logger {
         Logger.logError(`${'Consensus'.cyan} ${'Error:'.red} ${message}`);
     }
     static consensusWarn(message) {
-        Logger.logError(`${'Consensus'.cyan} ${'Warning:'.red} ${message}`);
+        Logger.logWarning(`${'Consensus'.cyan} ${'Warning:'.yellow} ${message}`);
     }
     static rebalancer(message, round) {
         Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);

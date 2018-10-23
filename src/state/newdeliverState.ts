@@ -1,4 +1,3 @@
-"use strict";
 /*
   =========================
   ParadigmCore: Blind Star
@@ -11,14 +10,18 @@
 
   Object that represents the initial and pre-commit state of the OS node.
 */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.deliverState = {
-    round: {
-        number: 0,
-        startsAt: 0,
-        endsAt: 0
-    },
-    mapping: {},
-    orderCounter: 0,
-    lastBlockHeight: 0
-};
+
+export let deliverState = {
+  round: {
+    number: 0,
+    startsAt: 0,
+    endsAt: 0
+  },
+  mappings: {
+    balances: {},
+    limits: {}
+  },
+  orderCounter: 0,
+  lastBlockHeight: 0,
+  lastBlockAppHash: Buffer.alloc(0)
+}

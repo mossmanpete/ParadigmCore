@@ -49,5 +49,23 @@ class WebSocketMessage {
             throw new Error('Error sending WS event.');
         }
     }
+    static sendStream(ws, stream) {
+        let msg = {
+            "event": "stream",
+            "timestamp": Math.floor(Date.now() / 1000),
+            "data-type": "JSON",
+            "data": stream
+        };
+        try {
+            ws.send(`${JSON.stringify(msg)}\n`, (err) => {
+                if (err != undefined) {
+                    throw new Error("Error in ws.send(...)");
+                }
+            });
+        }
+        catch (error) {
+            throw new Error('Error sending WS event.');
+        }
+    }
 }
 exports.WebSocketMessage = WebSocketMessage;

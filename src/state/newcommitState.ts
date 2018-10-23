@@ -17,7 +17,11 @@ export let commitState = {
     startsAt: 0,
     endsAt: 0
   },
-  mapping: {},
+  mappings: {
+    balances: {},
+    limits: {}
+  },
   orderCounter: 0,
-  lastBlockHeight: 0
+  lastBlockHeight: 0,
+  lastBlockAppHash: Buffer.alloc(0)
 }

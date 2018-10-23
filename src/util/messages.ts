@@ -14,11 +14,20 @@
 import { WS_PORT, ABCI_PORT, API_PORT } from "../config";
 
 export let messages  = {
+    general: {
+        messages: {
+            start: "Initialization complete, begining new block production."
+        }, 
+        errors: {
+            fatal: "Fatal error detected. Exiting."
+        }
+    },
     websocket: {
         errors: {
             broadcast:  "Error broadcasting websocket event.",
             connect:    "Error establishing websocket connection.",
-            message:    "Error sending websocket message."
+            message:    "Error sending websocket message.",
+            fatal:      "Fatal error starting websocket server. Exiting."
         },
         messages: {
             connected:  `Connected to the OrderStream network at ${new Date().toLocaleString()}`,
@@ -29,7 +38,8 @@ export let messages  = {
         errors: {
             decompress: "Bad order object: error decompressing transaction.",
             format:     "Bad order object: invalid Paradigm order format.",
-            fatal:      "Fatal error initializing application."   
+            fatal:      "Fatal error initializing application. Exiting.",
+            tmFatal:    "Fatal error starting Tendermint core. Exiting."   
         },
         messages: {
             incoming:   {
@@ -44,10 +54,10 @@ export let messages  = {
     },
     api: {
         errors: {
-            badJSON: "Bad JSON format, check TX and try again.",
-            parsing: "Error parsing order, check format and try again.",
-            response: "Error sending HTTP response.",
-            fatal: "Fatal error starting API server."
+            badJSON:    "Bad JSON format, check TX and try again.",
+            parsing:    "Error parsing order, check format and try again.",
+            response:   "Error sending HTTP response.",
+            fatal:      "Fatal error starting API server. Exiting."
         },
         messages: {
             starting: "Starting HTTP API server...",
@@ -55,6 +65,9 @@ export let messages  = {
         }
     },
     rebalancer: {
+        messages: {
+            activated: "Stake rebalancer activated. Subscribed to Ethereum events."
+        },
         errors: {
             fatalStake: "Fatal error encountered processing stake event.",
             badStakeEvent: "Bad stake event.",

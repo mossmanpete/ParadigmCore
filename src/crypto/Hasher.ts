@@ -47,7 +47,8 @@ export class Hasher {
       "roundNumber": state.round.number,
       "startHeight": state.round.startsAt,
       "endHeight": state.round.endsAt,
-      "rateMapping": state.mapping
+      "rateMapping": state.mapping,
+      "lastHeight": state.lastBlockHeightc
     }
 
     try {

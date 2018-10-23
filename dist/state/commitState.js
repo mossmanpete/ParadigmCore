@@ -19,5 +19,6 @@ exports.commitState = {
         endsAt: 0
     },
     mapping: {},
-    orderCounter: 0
+    orderCounter: 0,
+    lastBlockHeight: 0
 };

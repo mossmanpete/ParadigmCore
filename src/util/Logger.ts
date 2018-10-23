@@ -42,7 +42,11 @@ export class Logger {
     }
 
     public static mempoolErr(message: string){
-        Logger.logError(`${'Mempool'.magenta.bold} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'Mempool'.magenta} ${'Error:'.red} ${message}`);
+    }
+
+    public static mempoolWarn(message: string){
+        Logger.logWarning(`${'Mempool'.magenta} ${'Warning:'.yellow} ${message}`);
     }
 
     public static consensus(message: string){
@@ -54,7 +58,7 @@ export class Logger {
     }
 
     public static consensusWarn(message: string){
-        Logger.logError(`${'Consensus'.cyan} ${'Warning:'.red} ${message}`);
+        Logger.logWarning(`${'Consensus'.cyan} ${'Warning:'.yellow} ${message}`);
     }
 
     public static rebalancer(message: string, round: number){

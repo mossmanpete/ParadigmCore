@@ -1,11 +1,11 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  StakeRebalancer.ts @ {master}
+  StakeRebalancer.ts @ {dev}
   =========================
 
   @date_inital 15 October 2018
-  @date_modified 19 October 2018
+  @date_modified 23 October 2018
   @author Henry Harder
 
   UNSTABLE! UNSTABLE! UNSTABLE! UNSTABLE! (Okay not THAT unstable, but be careful)
