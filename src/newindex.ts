@@ -67,7 +67,7 @@ let node: any; // Tendermint node instance
     } catch (error) {
         console.log(error);
         Logger.consensusErr(msg.abci.errors.tmFatal);
-        process.exit();
+        process.exit(1);
     }
 
     // Start WebSocket server
@@ -79,23 +79,31 @@ let node: any; // Tendermint node instance
         emitter = new EventEmitter(); // parent event emitter
     } catch (error) {
         Logger.websocketErr(msg.websocket.errors.fatal);
-        process.exit();
+        process.exit(1);
     }
 
     // Start ABCI application
     try{
-        // Rebalancer configuration options
-        let opts = {
-            provider: WEB3_PROVIDER,
-            periodLength: PERIOD_LENGTH,
-            periodLimit: PERIOD_LIMIT,
-            stakeContractAddr: STAKE_CONTRACT_ADDR,
-            stakeContractABI: STAKE_CONTRACT_ABI,
-            tendermintRpcHost: ABCI_HOST,
-            tendermintRpcPort: ABCI_RPC_PORT
+        // ABCI configuration options
+        let options = {
+            "abciPort": ABCI_PORT,
+            "version": VERSION,
+            "deliverState": dState,
+            "commitState": cState,
+            "emitter": emitter,
+
+            // Rebalancer options
+            "provider": WEB3_PROVIDER,
+            "periodLength": PERIOD_LENGTH,
+            "periodLimit": PERIOD_LIMIT,
+            "stakeContractAddr": STAKE_CONTRACT_ADDR,
+            "stakeContractABI": STAKE_CONTRACT_ABI,
+            "tendermintRpcHost": ABCI_HOST,
+            "tendermintRpcPort": ABCI_RPC_PORT
         }
 
-        await startMain(ABCI_PORT, dState, cState, emitter, opts, VERSION);
+        // TODO: convert to options object
+        await startMain(options);
         Logger.consensus("Waiting for Tendermint to synchronize...");
 
         await node.synced();
@@ -106,7 +114,7 @@ let node: any; // Tendermint node instance
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
         Logger.logError(msg.abci.errors.fatal);
-        process.exit();
+        process.exit(1);
     }
 
     // Start HTTP API server
@@ -115,7 +123,7 @@ let node: any; // Tendermint node instance
         await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
     } catch (error) {
         Logger.apiErr(msg.api.errors.fatal)
-        process.exit();
+        process.exit(1);
     }
 
     /**
@@ -143,7 +151,7 @@ let node: any; // Tendermint node instance
             }
         });
 
-        emitter.on("stream", stream => {
+        /*emitter.on("stream", stream => {
             try {
                 wss.clients.forEach(client => {
                     if ((client.readyState === 1) && (client === ws)){
@@ -153,7 +161,7 @@ let node: any; // Tendermint node instance
             } catch (err) {
                 Logger.websocketErr(msg.websocket.errors.broadcast);
             }
-        });
+        });*/
         
         ws.on('message', message => {
             if(message === "close") { 

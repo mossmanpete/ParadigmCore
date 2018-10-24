@@ -373,10 +373,12 @@ export class StakeRebalancer {
             this.tmClient.on('close', () => {
                 // called when client is closed
                 console.log("(temporary) TM client disconnected. Attempting to reconnect (not really)");
+                process.exit();
             });
             this.tmClient.on('error', () => {
                 // called when client has error
                 console.log("(temporary) TM client error. Attempting to reconnect (not really)");
+                process.exit();
             });
         }
 

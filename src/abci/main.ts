@@ -26,18 +26,17 @@ import { StakeRebalancer } from "../async/StakeRebalancer";
 
 import { checkOrder, deliverOrder } from "./orderHandlers";
 // import { checkStream, deliverStream } from "./streamHandlers";
-import { checkStake, deliverStake } from "./stakeHandlers";
+// import { checkStake, deliverStake } from "./stakeHandlers";
 import { checkRebalance, deliverRebalance } from "./rebalanceHandlers";
 
-let Order = new Paradigm().Order; // Paradigm Order constructor
+let version: string; // store current application version
 let handlers: object; // ABCI handler functions
 
 let tracker: OrderTracker; // used to broadcast orders
 let rebalancer: StakeRebalancer; // construct and submit mapping
+
 let deliverState: any; // deliverTx state
 let commitState: any; // commit state
-
-let version: string; // store current application version
 
 /**
  * @name startMain() {exported async function}
@@ -50,17 +49,13 @@ let version: string; // store current application version
  * @param options {object} configuration options for the rebalancer
  * @param version {string} current application version
  */
-export async function startMain(
-    port: number,
-    dState: any, 
-    cState: any, 
-    emitter: EventEmitter,
-    options: any,
-    version: string){
+export async function startMain(options: any): Promise<null> {
 
     try {
-        deliverState = dState;
-        commitState = cState;
+        version = options.version;
+
+        deliverState = options.deliverState;
+        commitState = options.commitState;
 
         handlers = {
             info: info,
@@ -70,7 +65,7 @@ export async function startMain(
             commit: commit
         };
 
-        tracker = new OrderTracker(emitter);
+        tracker = new OrderTracker(options.emitter);
 
         // TODO: pass in options from index.ts
         rebalancer = await StakeRebalancer.create({
@@ -83,7 +78,7 @@ export async function startMain(
           tendermintRpcPort: options.tendermintRpcPort
         });
 
-        await abci(handlers).listen(port);
+        await abci(handlers).listen(options.abciPort);
         Logger.consensus(msg.abci.messages.servStart);
 
     } catch (err) {
@@ -98,7 +93,7 @@ export async function startMain(
  * 
  * @param none
  */
-export async function startRebalancer() {
+export async function startRebalancer(): Promise<null> {
   try {
     rebalancer.start(); // start listening to Ethereum events
     tracker.activate(); // start tracking new orders
@@ -118,7 +113,7 @@ Below are implementations of Tendermint ABCI functions.
  * 
  * @param _ {null}
  */
-function info(_){
+function info(_): object {
     return {
         data: 'ParadigmCore ABCI Application',
         version: version,
@@ -134,7 +129,7 @@ function info(_){
  * 
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
-function beginBlock(request){
+function beginBlock(request): object {
     let currHeight = request.header.height;
     let currProposer = request.header.proposerAddress.toString('hex');
 
@@ -151,7 +146,7 @@ function beginBlock(request){
  * 
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
-function checkTx(request){
+function checkTx(request): Vote {
     let rawTx: Buffer = request.tx;
 
     let tx: any; // stores decoded transaction object
@@ -176,24 +171,25 @@ function checkTx(request){
         // TODO: decide if enumerable makes more sence
 
         case "OrderBroadcast": {
-            return checkOrder(tx, deliverState);
+            return checkOrder(tx, commitState);
         }
         /*
         case "StreamBroadcast": {
-            return checkStream(tx, deliverState);
-        }*/
-
-        case "StakeEvent": {
-            return checkStake(tx, deliverState);;
+            return checkStream(tx, commitState);
         }
 
+        case "StakeEvent": {
+            return checkStake(tx, commitState);;
+        }*/
+
         case "Rebalance": {
-            return checkRebalance(tx, deliverState);
+            return checkRebalance(tx, commitState);
         }
 
         default: {
-            Logger.mempoolWarn("Invalid transaction type rejected.");
-            return Vote.invalid("Invalid transaction type rejected.");
+            // Invalid transaction type
+            Logger.mempoolWarn(msg.abci.errors.txType);
+            return Vote.invalid(msg.abci.errors.txType);
         }
     }
 }
@@ -205,7 +201,7 @@ function checkTx(request){
  * 
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
-function deliverTx(request){
+function deliverTx(request): Vote {
     let rawTx: Buffer = request.tx;
 
     let tx: any; // stores decoded transaction object
@@ -235,19 +231,20 @@ function deliverTx(request){
         /*
         case "StreamBroadcast": {
             return deliverStream(tx, deliverState, tracker);
-        }*/
+        }
 
         case "StakeEvent": {
             return deliverStake(tx, deliverState);;
-        }
+        }*/
 
         case "Rebalance": {
-            return deliverRebalance(tx, deliverState);
+            return deliverRebalance(tx, deliverState, rebalancer);
         }
 
         default: {
-            Logger.consensusWarn("Invalid transaction type rejected.");
-            return Vote.invalid("Invalid transaction type rejected.");
+            // Invalid transaction type
+            Logger.consensusWarn(msg.abci.errors.txType);
+            return Vote.invalid(msg.abci.errors.txType);
         }
     }
 }
@@ -261,6 +258,53 @@ function deliverTx(request){
  * 
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
-function commit(request){
-    return;
+function commit(request): string {
+    let stateHash: string = "";
+
+    try {
+        // Calculate difference between cState and dState round height
+        let roundDiff = deliverState.round.number - commitState.round.number;
+
+        switch (roundDiff) {
+            case 0: {
+                // No rebalance proposal accepted in this round
+                break;
+            }
+
+            case 1: {
+                // Rebalance proposal accepted in this round
+
+                let newRound = deliverState.round.number;
+                let newStart = deliverState.round.startsAt;
+                let newEnd = deliverState.round.endsAt;
+
+                rebalancer.synchronize(newRound, newStart, newEnd);
+                break;
+            }
+
+            default: {
+                // Commit state is more than 1 round ahead of deliver state
+                Logger.consensusWarn(msg.abci.messages.roundDiff);
+                break;
+            }
+        }
+
+        // Increase block height
+        deliverState.lastBlockHeight =+ 1;
+
+        // Synchronize states
+        commitState = JSON.parse(JSON.stringify(deliverState));
+
+        // Trigger broadcast of orders and streams
+        tracker.triggerBroadcast();
+
+        // Generate new state hash and update
+        stateHash = Hasher.hashState(commitState);
+    } catch (err) {
+        console.log(`(temporary) Error in commit: ${err}`);
+        Logger.consensusErr(msg.abci.errors.broadcast);
+    }
+
+    // Return state's hash to be included in next block header
+    return stateHash;
 }
