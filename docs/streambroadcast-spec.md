@@ -3,7 +3,7 @@ Currently there is one type of broadcast transaction supported by `ParadigmConne
 
 ## `tx.type`: OrderBroadcast
 A signed order broadcast transaction as received by an OrderStream validator via an HTTP POST request (fields marked `[O]` are optional, and required if marked `[R]`):
-```json
+```js
 {
     "maker":            "0x...", // [O] address string
     "subContract":      "0x...", // [R] address string
@@ -27,7 +27,7 @@ StreamBroadcast transactions are similar to OrderBroadcasts from a structural pe
 
 A signed StreamBroadcast transaction is received by an OrderStream validator node via an HTTP POST request:
 
-```json
+```js
 {
     "maker":            "0x...", // [O] address string
     "streamInfo":       {},       // [R] object
@@ -37,7 +37,7 @@ A signed StreamBroadcast transaction is received by an OrderStream validator nod
 The `streamInfo` object can contain arbitary key:value pairs with data necessary for clients to connect to the third party stream. No data structure should be enforced at for the `streamInfo` object by `ParadigmConnect.`
 
 An example of a potential StreamBroadcast transaction:
-```json
+```js
 {
     "maker":        "0xC42E6EBAF1513e56d55c568ff2a9304aCA2BfD59",
     "streamInfo": {
