@@ -1,14 +1,21 @@
 # OrderStream/Ethereum Peg Zone and Finality Gadget
 
-_NOTE: this project is currently a WIP, so details of the implementation are likely to change._
+_NOTE: this project is currently a WIP, so details of the implementation are likely to change. I'll strive to keep this doc up to date with changes. Last updated: 24 October 2018._
 
-A one-way "peg zone" implementation is necessary to 1) establish "true" finality for Ethereum events that otherwise only have weak (probabalistic) finality gauruntees, and 2) accept data (via events) from Ethereum into the OrderStream's state. This implementation is laid out below.
+A one-way "peg zone" implementation is necessary for the OrderStream network to: 
+1) Establish "true" finality for Ethereum events that otherwise only have weak (probabilistic) finality guarantee.
+2) Reach consensus about the state (balances) of the MakerStaking contract.
+3) Accept data (via events) from Ethereum into the OrderStream's state, which is then used to validate external transactions.
+
+The solution this document outlines implements a shared security model, where OrderStream validators are also full Ethereum nodes that act as witnesses to events from a specific contract address. 
 
 ## Background/Terminology
-- The finality threshold is an arbitrary number of blocks agreed upon by validators to establish finality for events and blocks on Ethereum. This threshold is referenced as `x`.
+- The finality threshold is an arbitrary number of Ethereum blocks that must be waited before events within that block can modify the OrderStream's state. 
+- This block maturity (`x`) is agreed upon by validators to establish pseudo-finality for events and blocks on Ethereum. 
 - Staking periods are of fixed length, and based on Ethereum block height.
-- If you make a stake in staking period `i`, you will have network access from staking period `i+1` until you remove your stake.
-- `StakeRebalancer` a primitive class of `ParadigmCore` that is instantiated upon node initialization. It is responsible for listening to Ethereum events via local RPC, and submitting state-modifying transactions to the ABCI application at appropriate times.
+- If a stake is made in staking period `i`, the staker will have write access to the network from staking period `i+1` until you remove your stake.
+- A bandwidth model is implemented to construct a rate-limit mapping that proportionally allocates network throughput to stakers based on stake size.
+- The `StakeRebalancer` is a class in `ParadigmCore` that is instantiated as a subprocess upon node initialization. It is responsible for listening to Ethereum events via local RPC, and submitting special state-modifying and voting transactions to the ABCI application and other validators at appropriate times (outlined below).
 - The state of the network is represented by the following data structure (genesis state shown):
     ```js
     // state.ts - genesis state
@@ -16,18 +23,19 @@ A one-way "peg zone" implementation is necessary to 1) establish "true" finality
     {
         "round": {          // staking period information
             "number":   0,  // staking period counter
-            "startsAt": 0,  // starting height (ethereum)
-            "endsAt":   0   // ending height (ethereum)
+            "startsAt": 0,  // period starting height (ethereum)
+            "endsAt":   0   // period ending height (ethereum)
         },
         "events":   {},     // stake events awaiting witness confirmation
-        "balances": {},     // finalized raw balances (amount staked)
-        "mapping":  {},     // computed rate-limit mapping
+        "balances": {},     // confirmed raw balances (amount staked)
+        "limits":  {},      // computed and current rate-limit mapping 
         "orderCounter": 0,  // number of orders accepted on the network
-        "lastBlockHeight":  0,  // last Tendermint block height
-        "lastBlockAppHash": null; // the hash of the last valid block
+        "lastBlockHeight":  0,      // last Tendermint block height
+        "lastBlockAppHash": null,   // the hash of the last valid block
+        "matureEthBlock": null      // latest Ethereum block that has reached "finality"
     }
     ```
-- A `StakeEvent` is stored in `state.events`, indexed by block number, while awaiting witness confirmation in the following format:
+- `StakeEvent`s are stored in `state.events` while awaiting witness confirmation, and are indexed by the height of the block the event occurred in:
     ```js
     // state.ts - snippet
     {
@@ -36,7 +44,7 @@ A one-way "peg zone" implementation is necessary to 1) establish "true" finality
             "4124023": {    // all events that were picked up in this block
                 "0x..." : { // address of the staking party is the key
                     "amount": 5000000,  // raw value staked (units arbitrary)
-                    "type": "unstake"   // determines if modification is + or -
+                    "type": "remove",   // determines if modification is + or -
                     "conf": 1           // number of witness confirmations
                 }
                 // ...
@@ -46,7 +54,9 @@ A one-way "peg zone" implementation is necessary to 1) establish "true" finality
         // ...
     }
     ```
-    Events are indexed by block so that state modifications of corresponding staker balances (stored in `state.balances`) can be executed in the correct order once a sufficient number of witness confirmations is reached.
+    Events are indexed by block so that state modifications for events occurring in blocks just reaching maturity `x` can quickly be executed when the "finality block" for those events is found.
+    
+- The order transactions are executed in by the ABCI application is especially important for new and synchronizing nodes. After being updated, reset, shut down, etc, Tendermint replays old transactions to allow validators, allowing them to construct the latest state. 
 - When consensus is reached about stake events, the confirmed balances are stored in `state.balances` in the following format:
     ```js
     // state.ts - snippet
@@ -69,40 +79,46 @@ A one-way "peg zone" implementation is necessary to 1) establish "true" finality
     {
         // ...
         "limits": {
-            "0x...4e": {
-                // computed order limit per staking period
+            "0x...4e": { // address of staker (poster)
+                // computed proportional order limit per staking period
                 "orderBroadcastLimit":  4372,
-
-                "streamBroadcastLimit": 1 // always 1, see whitepaper
+                // stream limit is always 1, regardless of stake size
+                "streamBroadcastLimit": 1 
             }
         }
         // ...
     }
     ```
-    The process of adopting this mapping will be elaborated on below.
 
 ## Formal Description
-These processes are kicked off upon network initialization, and run repeatedly alongside normal network functionality (validating and broadcasting orders). You can view the implementation of this proceedure in [`src/abci`](../src/abci), and [`src/async`](../src/async).
-1. A market maker wishes to use the OS network, so they deposit tokens into the staking contract.
-2. A `StakeMade` or `StakeRemoved` event is emitted by the contract, including stakers address and stake size, as well as the Ethereum block number the transaction was included in (block `n`).
-3. The `StakeRebalancer` class on an OrderStream node receives the event, and records the "finality block" height for that event as `n + x`.
-4. Once Ethereum block number `n + x` is found, the `StakeRebalancer` executes and ABCI transaction and submits the event transaction to the node's local mempool.
+These processes are kicked off upon network initialization, and are a crucial part of normal network functionality (validating and broadcasting orders). You can view the implementation of this procedure in [`src/abci`](../src/abci), and [`src/async`](../src/async). These modules are in the process of being refactored.
+1. If a market maker (or agent operating on behalf of one) wishes to use the OS network, they must deposit the appropriate ERC-20 token into the staking contract.
+2. A `StakeMade` or `StakeRemoved` event is emitted by the contract, including the staker's address and the amount staked, as well as the Ethereum block number the transaction was included in (block `n`).
+3. The active `StakeRebalancer` instance on an OrderStream node receives the event, and records the corresponding "finality block" height for that event as `n + x`, where `n` is the block height the event was included in.
+4. Once Ethereum block `n + x` is found, the `StakeRebalancer` executes a local ABCI transaction, submitting the event transaction to the node's local mempool.
 5. The event data is added to state (in `state.events`), including the 1 vote from the witness that first submitted the event.
 6. As other validator nodes pick up the "finality block" for that event, they submit the event data to the network as well.
 7. As each event witness transaction is recorded, the number of witness confirmations for that event is increased:
     ```js
-    // pseudocode - simply to witness confirmations process
+    // in deliverTx ()
+    // pseudocode - illustrating witness confirmation process
 
-    function witnessEvent(blockNumber, address) {
+    function deliverTx(request) {
+        // ...
+
+        // State  executed on  valid 'rebalance' tx's 
         state.events[blockNumber][address].conf += 1;
+
+        // ..
     }
     ```
-8. Once enough (2/3, potentially more) have submitted witness accounts of the event, the events state modification is applied to the corresponding balance in `state.balances`.
-9. If the staker does not currently have any tokens staked, an entry is added to `state.balances` with the quantity from the event:
+8. Once enough validators (2/3 of active, potentially more) have submitted witness accounts of the event, the events state modification is applied to the corresponding balance in `state.balances`.
+9. If the staker does not currently have any tokens staked, a new entry is added to `state.balances` with the quantity from the event:
     ```js
+    // in deliverTx()
     // pseudocode - for illustrative purposes
 
-    if (state.events[blockNumber][address].conf >= CONFIRMATION_THRESHOLD) {
+    if (state.events[blockNumber][address].conf >= CONF_THRESHOLD) {
         if (state.balances.hasOwnProperty(address)) {
             switch (event.type) {
                 case "StakeMade": {
@@ -121,9 +137,9 @@ These processes are kicked off upon network initialization, and run repeatedly a
     }
     ```
 10. If the staker already has an entry in `state.balances`, the state transition from the event is applied to their balance (i.e. if it was a `StakeMade` event, the corresponding amount is added to their balance, if it was a `StakeRemoved` event, the amount is subtracted).
-11. At fixed intervals (round end height for that period), an arbitrary validator will submit a `Rebalance` proposal including a new rate-limit mapping. If adopted into state, the mapping is used in the next period. 
-12. Upon receipt of a `Rebalance` proposal, a validator node will construct a rate-limit mapping based on the in-state balances (from `state.balances`).
-13. The receiving validator will compare the newly constructed mapping to the mapping included in the proposal, and if they match, the validator votes to adopt the proposed mapping. Ex:
+11. At fixed intervals (once the round end height for that period is reached), an arbitrary validator will submit a `rebalance` transaction including a proposal for the new rate-limit mapping. If adopted into state, the mapping is used in the next period. Note: it does not matter if many validators submit proposals at the same time since only one can be accepted. In fact, they all should submit proposals if they are in sync with Ethereum and the OrderStream, and are functioning properly.
+12. Upon receipt of a `rebalance` transaction, a validator node will construct a rate-limit mapping based on the current in-state balances (from `state.balances`).
+13. The receiving validator will compare the newly constructed local mapping to the proposed mapping included in the `rebalance` transaction. If they match, the validator votes to adopt the proposed mapping. Ex:
     ```js
     // pseudocode - this isn't actually how Tendermint works
 
@@ -136,4 +152,4 @@ These processes are kicked off upon network initialization, and run repeatedly a
         return "invalid";
     }
     ```
-14. If sufficient validators vote to accept the proposal, it is adopted in-state as the new rate-limit mapping (in `state.limits`) and used for the next staking period. 
+14. If enough validators vote to accept the proposal, it is adopted in-state as the new rate-limit mapping (in `state.limits`) and used for the next staking period. 

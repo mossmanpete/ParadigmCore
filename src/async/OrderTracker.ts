@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 9 October 2018
-  @date_modified 19 October 2018
+  @date_modified 24 October 2018
   @author Henry Harder
   
   Class to store valid orders and trigger broadcast upon consensus round completion.

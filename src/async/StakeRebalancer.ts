@@ -46,7 +46,7 @@ export class StakeRebalancer {
     private stakeABI: Array<object>; // staking contract ABI
     private stakeAddr: string; // address of staking contract
     
-    // persistant and output state mappings 
+    // persistent and output state mappings 
     private rawMapping: object; // raw rate limit mapping (addr:stakesize)
     private outMapping: object; // output stake mapping (addr:orderLimit)
 
