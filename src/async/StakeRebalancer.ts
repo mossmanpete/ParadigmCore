@@ -393,7 +393,7 @@ export class StakeRebalancer {
                 mapping: this.outMapping
             }
         };
-
+ 
         // encode transaction
         let payloadStr = PayloadCipher.encodeFromObject(txObject);
 

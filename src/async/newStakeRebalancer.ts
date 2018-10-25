@@ -3,17 +3,17 @@ export class StakeRebalancer {
     private web3provider: string;
     private web3: any;
 
-    static async create (options: any) {
+    static async create(options: any) {
         let instance = new StakeRebalancer(options);
         await instance.initialize();
         return instance;
     }
 
-    public async initialize () {
+    public async initialize() {
         this.web3 = new Web3
     }
 
-    private constructor (options: any) {
+    private constructor(options: any) {
         this.web3provider = options.web3provider;
     }
 }

@@ -36,7 +36,7 @@ export function checkRebalance(tx: any, state: any) {
             } else {
                 // Reject invalid initial rebalance proposal from mempool
 
-                Logger.mempool(msg.rebalancer.messages.iReject)
+                Logger.mempoolWarn(msg.rebalancer.messages.iReject)
                 return Vote.invalid();
             }
         }
@@ -50,7 +50,7 @@ export function checkRebalance(tx: any, state: any) {
             } else {
                 // Reject invalid rebalance proposal from mempool
 
-                Logger.mempool(msg.rebalancer.messages.reject);
+                Logger.mempoolWarn(msg.rebalancer.messages.reject);
                 return Vote.invalid(msg.rebalancer.messages.reject);
             }
         }
@@ -66,5 +66,35 @@ export function checkRebalance(tx: any, state: any) {
  * @param rb {StakeRebalancer} the current rebalancer instance
  */
 export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
-    return 0;
+    let proposal = tx.data;
+
+    switch (state.round.number) {
+        case 0: {
+            if (proposal.round.number === 1) {
+                // Accept valid initial rebalance proposal to mempool
+
+                Logger.consensus(msg.rebalancer.messages.iAccept);
+                return Vote.valid();
+            } else {
+                // Reject invalid initial rebalance proposal from mempool
+
+                Logger.consensusWarn(msg.rebalancer.messages.iReject)
+                return Vote.invalid();
+            }
+        }
+
+        default: {
+            if ((1 + state.round.number) === proposal.round.number) {
+                // Accept valid rebalance proposal to mempool 
+
+                Logger.consensus(msg.rebalancer.messages.accept);
+                return Vote.valid(msg.rebalancer.messages.accept);
+            } else {
+                // Reject invalid rebalance proposal from mempool
+
+                Logger.consensusWarn(msg.rebalancer.messages.reject);
+                return Vote.invalid(msg.rebalancer.messages.reject);
+            }
+        }
+    }
 }
