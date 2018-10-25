@@ -88,14 +88,35 @@ These processes are kicked off upon network initialization, and run repeatedly a
 6. As other validator nodes pick up the "finality block" for that event, they submit the event data to the network as well.
 7. As each event witness transaction is recorded, the number of witness confirmations for that event is increased:
     ```js
-    // pseudocode - actual implementation differs
+    // pseudocode - simply to witness confirmations process
 
     function witnessEvent(blockNumber, address) {
         state.events[blockNumber][address].conf += 1;
     }
     ```
 8. Once enough (2/3, potentially more) have submitted witness accounts of the event, the events state modification is applied to the corresponding balance in `state.balances`.
-9. If the staker does not currently have any tokens staked, an entry is added to `state.balances` with the quantity from the event.
+9. If the staker does not currently have any tokens staked, an entry is added to `state.balances` with the quantity from the event:
+    ```js
+    // pseudocode - for illustrative purposes
+
+    if (state.events[blockNumber][address].conf >= CONFIRMATION_THRESHOLD) {
+        if (state.balances.hasOwnProperty(address)) {
+            switch (event.type) {
+                case "StakeMade": {
+                    state.balances[address] += event.amount;
+                    break;
+                }
+                case "StakeRemoved": {
+                    state.balances[address] -= event.amount;
+                    break;
+                }
+            }
+        } else {
+            // if there is no balance, event must be StakeMade
+            state.balances[address] = event.amount;
+        }
+    }
+    ```
 10. If the staker already has an entry in `state.balances`, the state transition from the event is applied to their balance (i.e. if it was a `StakeMade` event, the corresponding amount is added to their balance, if it was a `StakeRemoved` event, the amount is subtracted).
 11. At fixed intervals (round end height for that period), an arbitrary validator will submit a `Rebalance` proposal including a new rate-limit mapping. If adopted into state, the mapping is used in the next period. 
 12. Upon receipt of a `Rebalance` proposal, a validator node will construct a rate-limit mapping based on the in-state balances (from `state.balances`).
