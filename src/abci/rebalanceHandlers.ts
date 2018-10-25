@@ -73,6 +73,12 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
             if (proposal.round.number === 1) {
                 // Accept valid initial rebalance proposal to mempool
 
+                // Begin state modification
+                state.round.number += 1;
+                state.round.startsAt = proposal.round.startsAt;
+                state.round.endsAt = proposal.round.endsAt;
+                // state.mappings.limits = proposal.mapping;
+
                 Logger.consensus(msg.rebalancer.messages.iAccept);
                 return Vote.valid();
             } else {

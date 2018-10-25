@@ -56,7 +56,6 @@ The solution this document outlines implements a shared security model, where Or
     ```
     Events are indexed by block so that state modifications for events occurring in blocks just reaching maturity `x` can quickly be executed when the "finality block" for those events is found.
     
-- The order transactions are executed in by the ABCI application is especially important for new and synchronizing nodes. After being updated, reset, shut down, etc, Tendermint replays old transactions to allow validators, allowing them to construct the latest state. 
 - When consensus is reached about stake events, the confirmed balances are stored in `state.balances` in the following format:
     ```js
     // state.ts - snippet
@@ -113,7 +112,7 @@ These processes are kicked off upon network initialization, and are a crucial pa
     }
     ```
 8. Once enough validators (2/3 of active, potentially more) have submitted witness accounts of the event, the events state modification is applied to the corresponding balance in `state.balances`.
-9. If the staker does not currently have any tokens staked, a new entry is added to `state.balances` with the quantity from the event:
+9. If the staker does not currently have any tokens staked, a new entry is added to `state.balances` with the quantity defined by the event:
     ```js
     // in deliverTx()
     // pseudocode - for illustrative purposes
