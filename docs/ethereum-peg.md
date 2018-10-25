@@ -1,4 +1,7 @@
 # OrderStream/Ethereum Peg Zone and Finality Gadget
+
+_NOTE: this project is currently a WIP, so details of the implementation are likely to change._
+
 A one-way "peg zone" implementation is necessary to 1) establish "true" finality for Ethereum events that otherwise only have weak (probabalistic) finality gauruntees, and 2) accept data (via events) from Ethereum into the OrderStream's state. This implementation is laid out below.
 
 ## Background/Terminology
