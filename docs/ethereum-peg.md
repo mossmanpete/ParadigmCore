@@ -21,7 +21,7 @@ A one-way "peg zone" implementation is necessary to 1) establish "true" finality
         "mapping":  {},     // computed rate-limit mapping
         "orderCounter": 0,  // number of orders accepted on the network
         "lastBlockHeight":  0,  // last Tendermint block height
-        "lastBlockAppHash": ""; // the hash of the last valid block
+        "lastBlockAppHash": null; // the hash of the last valid block
     }
     ```
 - A `StakeEvent` is stored in `state.events`, indexed by block number, while awaiting witness confirmation in the following format:
