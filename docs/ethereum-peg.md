@@ -30,15 +30,14 @@ A one-way "peg zone" implementation is necessary to 1) establish "true" finality
     {
         // ...
         "events": {
-            "4124023": [ // all events that were picked up in this block
-                {
-                    "staker": "0x...",  // address of the staking party
+            "4124023": {    // all events that were picked up in this block
+                "0x..." : { // address of the staking party is the key
                     "amount": 5000000,  // raw value staked (units arbitrary)
                     "type": "unstake"   // determines if modification is + or -
                     "conf": 1           // number of witness confirmations
                 }
                 // ...
-            ]
+            }
             // ...
         }
         // ...
@@ -87,7 +86,14 @@ These processes are kicked off upon network initialization, and run repeatedly a
 4. Once Ethereum block number `n + x` is found, the `StakeRebalancer` executes and ABCI transaction and submits the event transaction to the node's local mempool.
 5. The event data is added to state (in `state.events`), including the 1 vote from the witness that first submitted the event.
 6. As other validator nodes pick up the "finality block" for that event, they submit the event data to the network as well.
-7. As each event witness transaction is recorded, the number of "confirmations" for that event is increased. 
+7. As each event witness transaction is recorded, the number of witness confirmations for that event is increased:
+    ```js
+    // pseudocode - actual implementation differs
+
+    function witnessEvent(blockNumber, address) {
+        state.events[blockNumber][address].conf += 1;
+    }
+    ```
 8. Once enough (2/3, potentially more) have submitted witness accounts of the event, the events state modification is applied to the corresponding balance in `state.balances`.
 9. If the staker does not currently have any tokens staked, an entry is added to `state.balances` with the quantity from the event.
 10. If the staker already has an entry in `state.balances`, the state transition from the event is applied to their balance (i.e. if it was a `StakeMade` event, the corresponding amount is added to their balance, if it was a `StakeRemoved` event, the amount is subtracted).
