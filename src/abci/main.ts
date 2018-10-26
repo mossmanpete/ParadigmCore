@@ -22,11 +22,12 @@ import { Vote } from "../util/Vote"
 import { Logger } from "../util/Logger";
 import { OrderTracker } from "../async/OrderTracker";
 import { EventEmitter } from "events";
-import { StakeRebalancer } from "../async/StakeRebalancer";
+//import { StakeRebalancer } from "../async/StakeRebalancer";
+import { StakeRebalancer } from "../async/newbalancer";
 
 import { checkOrder, deliverOrder } from "./orderHandlers";
 // import { checkStream, deliverStream } from "./streamHandlers";
-// import { checkStake, deliverStake } from "./stakeHandlers";
+import { checkStake, deliverStake } from "./stakeHandlers";
 import { checkRebalance, deliverRebalance } from "./rebalanceHandlers";
 
 let version: string; // store current application version
@@ -42,12 +43,12 @@ let commitState: any; // commit state
  * @name startMain() {exported async function}
  * @description Initialize and start the ABCI application.
  * 
- * @param port {number} port to launch ABCI server on
- * @param dState {object} deliverTx state (modified within rounds)
- * @param cState {object} commit state (updated at the end of each round)
- * @param emitter {EventEmitter} emitter to attach to OrderTracker
- * @param options {object} configuration options for the rebalancer
- * @param version {string} current application version
+ * @param options {object} options object with parameters:
+ *  - options.version       {string}        application version
+ *  - options.emitter       {EventEmitter}  main event emitter object
+ *  - options.deliverState  {object}        deliverTx state object
+ *  - options.commitState   {object}        commit state object
+ *  - options.abciServPort  {number}        local ABCI server port
  */
 export async function startMain(options: any): Promise<null> {
 
@@ -67,22 +68,22 @@ export async function startMain(options: any): Promise<null> {
 
         tracker = new OrderTracker(options.emitter);
 
-        // TODO: pass in options from index.ts
         rebalancer = await StakeRebalancer.create({
           provider: options.provider,
           periodLength: options.periodLength,
           periodLimit: options.periodLimit,
-          stakeContractAddr: options.stakeContractAddr,
-          stakeContractABI: options.stakeContractABI,
-          tendermintRpcHost: options.tendermintRpcHost,
-          tendermintRpcPort: options.tendermintRpcPort
+          stakeAddress: options.stakeAddress,
+          stakeABI: options.stakeABI,
+          abciHost: options.abciHost,
+          abciPort: options.abciPort
         });
 
-        await abci(handlers).listen(options.abciPort);
+        await abci(handlers).listen(options.abciServPort);
         Logger.consensus(msg.abci.messages.servStart);
 
     } catch (err) {
-      throw new Error('Error initializing ABCI application.');
+        console.log(`(temp5) err: ${err}`);
+        throw new Error('Error initializing ABCI application.');
     }
     return;
 }
@@ -95,7 +96,12 @@ export async function startMain(options: any): Promise<null> {
  */
 export async function startRebalancer(): Promise<null> {
   try {
-    rebalancer.start(); // start listening to Ethereum events
+    let code = rebalancer.start(); // start listening to Ethereum events
+    if (code !== 0) {
+        Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
+        throw new Error();
+    }
+
     tracker.activate(); // start tracking new orders
   } catch (err) {
     throw new Error("Error activating stake rebalancer.");
@@ -147,17 +153,14 @@ function beginBlock(request): object {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function checkTx(request): Vote {
-    let rawTx: Buffer = request.tx;
-
+    let rawTx: Buffer = request.tx; // raw transaction buffer
     let tx: any; // stores decoded transaction object
-    let txType: string; // stores transaction type
 
     try {
         // TODO: expand ABCIdecode() to produce rich objects
         
         // decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
-        txType = tx.type;
     } catch (err) {
         Logger.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
@@ -167,7 +170,7 @@ function checkTx(request): Vote {
      * This main switch block selects the propper handler logic
      * based on the transaction type.
      */
-    switch (txType) {
+    switch (tx.type) {
         // TODO: decide if enumerable makes more sence
 
         case "OrderBroadcast": {
@@ -176,11 +179,11 @@ function checkTx(request): Vote {
         /*
         case "StreamBroadcast": {
             return checkStream(tx, commitState);
-        }
+        }*/
 
         case "StakeEvent": {
             return checkStake(tx, commitState);;
-        }*/
+        }
 
         case "Rebalance": {
             return checkRebalance(tx, commitState);

@@ -6,7 +6,7 @@
   =========================
   
   @date_inital 24 September 2018
-  @date_modified 19 October 2018
+  @date_modified 25 October 2018
   @author Henry Harder
 
   A class to represent a vote based on the logic in

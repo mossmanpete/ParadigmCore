@@ -2,22 +2,29 @@
 /*
   =========================
   ParadigmCore: Blind Star
-  state.ts @ {master}
+  deliverState.ts @ {master}
   =========================
   
   @date_inital 25 September 2018
-  @date_modified 19 October 2018
+  @date_modified 24 October 2018
   @author Henry Harder
 
-  Object that represents the (initial) pre-commit state of the OS node.
+  Object that represents the initial and pre-commit state of the OS node.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.state = {
+exports.deliverState = {
     round: {
         number: 0,
         startsAt: 0,
         endsAt: 0
     },
+    events: {
+        stakes: {},
+        blocks: {}
+    },
+    balances: {},
     mapping: {},
-    orderCounter: 0
+    orderCounter: 0,
+    lastBlockHeight: 0,
+    lastBlockAppHash: Buffer.alloc(0)
 };

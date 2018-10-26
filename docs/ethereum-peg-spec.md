@@ -10,7 +10,7 @@ A one-way "peg zone" implementation is necessary for the OrderStream network to:
 The solution this document outlines implements a shared security model, where OrderStream validators are also full Ethereum nodes that act as witnesses to events from a specific contract address. 
 
 ## Background/Terminology
-- The finality threshold is an arbitrary number of Ethereum blocks that must be waited before events within that block can modify the OrderStream's state. 
+- The finality threshold is an arbitrary maturity that blocks must reach before events within that block can modify the OrderStream’s state.
 - This block maturity (`x`) is agreed upon by validators to establish pseudo-finality for events and blocks on Ethereum. 
 - Staking periods are of fixed length, and based on Ethereum block height.
 - If a stake is made in staking period `i`, the staker will have write access to the network from staking period `i+1` until you remove your stake.

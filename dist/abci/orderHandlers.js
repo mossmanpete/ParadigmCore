@@ -47,13 +47,14 @@ function checkOrder(tx, state) {
 }
 exports.checkOrder = checkOrder;
 /**
- * @name deliverOrder() {export function} execute an OrderBroadcast
- * transaction in full, and perform state modification.
+ * @name deliverOrder() {export function} execute an OrderBroadcast transaction
+ * in full, and perform state modification.
  *
  * @param tx {object} decoded transaction body
  * @param state {object} current round state
+ * @param q {OrderTracker} valid order queue
  */
-function deliverOrder(tx, state, tracker) {
+function deliverOrder(tx, state, q) {
     let order; // Paradigm order object
     let poster; // Recovered poster address from signature
     try {
@@ -78,7 +79,7 @@ function deliverOrder(tx, state, tracker) {
         // Access remaining quota 
         let remaining = state.mappings.limits[poster].orderBroadcastLimit;
         // Add order to broadcast queue
-        tracker.add(orderCopy);
+        q.add(orderCopy);
         Logger_1.Logger.consensus(messages_1.messages.abci.messages.verified);
         return Vote_1.Vote.valid(`Remaining quota: ${remaining}`, orderCopy.id);
     }

@@ -12,40 +12,41 @@
   Main ParadigmCore state machine and state transition logic.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-const Paradigm = require("paradigm-connect");
 const abci = require("abci");
 const messages_1 = require("../util/messages");
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
+const Hasher_1 = require("../crypto/Hasher");
 const Vote_1 = require("../util/Vote");
 const Logger_1 = require("../util/Logger");
 const OrderTracker_1 = require("../async/OrderTracker");
-const StakeRebalancer_1 = require("../async/StakeRebalancer");
+//import { StakeRebalancer } from "../async/StakeRebalancer";
+const newbalancer_1 = require("../async/newbalancer");
 const orderHandlers_1 = require("./orderHandlers");
 // import { checkStream, deliverStream } from "./streamHandlers";
-const stakeHandlers_1 = require("./stakeHandlers");
+// import { checkStake, deliverStake } from "./stakeHandlers";
 const rebalanceHandlers_1 = require("./rebalanceHandlers");
-let Order = new Paradigm().Order; // Paradigm Order constructor
+let version; // store current application version
 let handlers; // ABCI handler functions
 let tracker; // used to broadcast orders
 let rebalancer; // construct and submit mapping
 let deliverState; // deliverTx state
 let commitState; // commit state
-let version; // store current application version
 /**
  * @name startMain() {exported async function}
  * @description Initialize and start the ABCI application.
  *
- * @param port {number} port to launch ABCI server on
- * @param dState {object} deliverTx state (modified within rounds)
- * @param cState {object} commit state (updated at the end of each round)
- * @param emitter {EventEmitter} emitter to attach to OrderTracker
- * @param options {object} configuration options for the rebalancer
- * @param version {string} current application version
+ * @param options {object} options object with parameters:
+ *  - options.version       {string}        application version
+ *  - options.emitter       {EventEmitter}  main event emitter object
+ *  - options.deliverState  {object}        deliverTx state object
+ *  - options.commitState   {object}        commit state object
+ *  - options.abciServPort  {number}        local ABCI server port
  */
-async function startMain(port, dState, cState, emitter, options, version) {
+async function startMain(options) {
     try {
-        deliverState = dState;
-        commitState = cState;
+        version = options.version;
+        deliverState = options.deliverState;
+        commitState = options.commitState;
         handlers = {
             info: info,
             beginBlock: beginBlock,
@@ -53,21 +54,21 @@ async function startMain(port, dState, cState, emitter, options, version) {
             deliverTx: deliverTx,
             commit: commit
         };
-        tracker = new OrderTracker_1.OrderTracker(emitter);
-        // TODO: pass in options from index.ts
-        rebalancer = await StakeRebalancer_1.StakeRebalancer.create({
+        tracker = new OrderTracker_1.OrderTracker(options.emitter);
+        rebalancer = await newbalancer_1.StakeRebalancer.create({
             provider: options.provider,
             periodLength: options.periodLength,
             periodLimit: options.periodLimit,
-            stakeContractAddr: options.stakeContractAddr,
-            stakeContractABI: options.stakeContractABI,
-            tendermintRpcHost: options.tendermintRpcHost,
-            tendermintRpcPort: options.tendermintRpcPort
+            stakeAddress: options.stakeAddress,
+            stakeABI: options.stakeABI,
+            abciHost: options.abciHost,
+            abciPort: options.abciPort
         });
-        await abci(handlers).listen(port);
+        await abci(handlers).listen(options.abciServPort);
         Logger_1.Logger.consensus(messages_1.messages.abci.messages.servStart);
     }
     catch (err) {
+        console.log(`(temp5) err: ${err}`);
         throw new Error('Error initializing ABCI application.');
     }
     return;
@@ -81,7 +82,11 @@ exports.startMain = startMain;
  */
 async function startRebalancer() {
     try {
-        rebalancer.start(); // start listening to Ethereum events
+        let code = rebalancer.start(); // start listening to Ethereum events
+        if (code !== 0) {
+            Logger_1.Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
+            throw new Error();
+        }
         tracker.activate(); // start tracking new orders
     }
     catch (err) {
@@ -149,22 +154,23 @@ function checkTx(request) {
     switch (txType) {
         // TODO: decide if enumerable makes more sence
         case "OrderBroadcast": {
-            return orderHandlers_1.checkOrder(tx, deliverState);
+            return orderHandlers_1.checkOrder(tx, commitState);
         }
         /*
         case "StreamBroadcast": {
-            return checkStream(tx, deliverState);
-        }*/
-        case "StakeEvent": {
-            return stakeHandlers_1.checkStake(tx, deliverState);
-            ;
+            return checkStream(tx, commitState);
         }
+
+        case "StakeEvent": {
+            return checkStake(tx, commitState);;
+        }*/
         case "Rebalance": {
-            return rebalanceHandlers_1.checkRebalance(tx, deliverState);
+            return rebalanceHandlers_1.checkRebalance(tx, commitState);
         }
         default: {
-            Logger_1.Logger.mempoolWarn("Invalid transaction type rejected.");
-            return Vote_1.Vote.invalid("Invalid transaction type rejected.");
+            // Invalid transaction type
+            Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.txType);
+            return Vote_1.Vote.invalid(messages_1.messages.abci.errors.txType);
         }
     }
 }
@@ -201,17 +207,18 @@ function deliverTx(request) {
         /*
         case "StreamBroadcast": {
             return deliverStream(tx, deliverState, tracker);
-        }*/
-        case "StakeEvent": {
-            return stakeHandlers_1.deliverStake(tx, deliverState);
-            ;
         }
+
+        case "StakeEvent": {
+            return deliverStake(tx, deliverState);;
+        }*/
         case "Rebalance": {
-            return rebalanceHandlers_1.deliverRebalance(tx, deliverState);
+            return rebalanceHandlers_1.deliverRebalance(tx, deliverState, rebalancer);
         }
         default: {
-            Logger_1.Logger.consensusWarn("Invalid transaction type rejected.");
-            return Vote_1.Vote.invalid("Invalid transaction type rejected.");
+            // Invalid transaction type
+            Logger_1.Logger.consensusWarn(messages_1.messages.abci.errors.txType);
+            return Vote_1.Vote.invalid(messages_1.messages.abci.errors.txType);
         }
     }
 }
@@ -224,5 +231,42 @@ function deliverTx(request) {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function commit(request) {
-    return;
+    let stateHash = "";
+    try {
+        // Calculate difference between cState and dState round height
+        let roundDiff = deliverState.round.number - commitState.round.number;
+        switch (roundDiff) {
+            case 0: {
+                // No rebalance proposal accepted in this round
+                break;
+            }
+            case 1: {
+                // Rebalance proposal accepted in this round
+                let newRound = deliverState.round.number;
+                let newStart = deliverState.round.startsAt;
+                let newEnd = deliverState.round.endsAt;
+                rebalancer.synchronize(newRound, newStart, newEnd);
+                break;
+            }
+            default: {
+                // Commit state is more than 1 round ahead of deliver state
+                Logger_1.Logger.consensusWarn(messages_1.messages.abci.messages.roundDiff);
+                break;
+            }
+        }
+        // Increase block height
+        deliverState.lastBlockHeight = +1;
+        // Synchronize states
+        commitState = JSON.parse(JSON.stringify(deliverState));
+        // Trigger broadcast of orders and streams
+        tracker.triggerBroadcast();
+        // Generate new state hash and update
+        stateHash = Hasher_1.Hasher.hashState(commitState);
+    }
+    catch (err) {
+        console.log(`(temporary) Error in commit: ${err}`);
+        Logger_1.Logger.consensusErr(messages_1.messages.abci.errors.broadcast);
+    }
+    // Return state's hash to be included in next block header
+    return stateHash;
 }

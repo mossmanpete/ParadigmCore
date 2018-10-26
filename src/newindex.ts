@@ -65,7 +65,9 @@ let node: any; // Tendermint node instance
         // node.stdout.pipe(process.stdout); // pipe tendermint logs to STDOUT
 
     } catch (error) {
-        console.log(error);
+
+        console.log(`(temp1) err: ${error}`); // temp
+
         Logger.consensusErr(msg.abci.errors.tmFatal);
         process.exit(1);
     }
@@ -78,6 +80,9 @@ let node: any; // Tendermint node instance
         });
         emitter = new EventEmitter(); // parent event emitter
     } catch (error) {
+        
+        console.log(`(temp2) err: ${error}`); // temp
+
         Logger.websocketErr(msg.websocket.errors.fatal);
         process.exit(1);
     }
@@ -86,20 +91,20 @@ let node: any; // Tendermint node instance
     try{
         // ABCI configuration options
         let options = {
-            "abciPort": ABCI_PORT,
             "version": VERSION,
+            "emitter": emitter,
             "deliverState": dState,
             "commitState": cState,
-            "emitter": emitter,
-
+            "abciServPort": ABCI_PORT,
+        
             // Rebalancer options
             "provider": WEB3_PROVIDER,
             "periodLength": PERIOD_LENGTH,
             "periodLimit": PERIOD_LIMIT,
-            "stakeContractAddr": STAKE_CONTRACT_ADDR,
-            "stakeContractABI": STAKE_CONTRACT_ABI,
-            "tendermintRpcHost": ABCI_HOST,
-            "tendermintRpcPort": ABCI_RPC_PORT
+            "stakeAddress": STAKE_CONTRACT_ADDR,
+            "stakeABI": STAKE_CONTRACT_ABI,
+            "abciHost": ABCI_HOST,
+            "abciPort": ABCI_RPC_PORT
         }
 
         // TODO: convert to options object
@@ -113,6 +118,9 @@ let node: any; // Tendermint node instance
         await startRebalancer();
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
+
+        console.log(`(temp3) err: ${error}`); // temp
+
         Logger.logError(msg.abci.errors.fatal);
         process.exit(1);
     }
@@ -122,6 +130,9 @@ let node: any; // Tendermint node instance
         Logger.apiEvt("Starting HTTP API server...");
         await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
     } catch (error) {
+
+        console.log(`(temp4) err: ${error}`); // temp
+
         Logger.apiErr(msg.api.errors.fatal)
         process.exit(1);
     }

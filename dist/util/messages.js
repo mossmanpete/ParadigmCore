@@ -39,7 +39,9 @@ exports.messages = {
             decompress: "Bad order object: error decompressing transaction.",
             format: "Bad order object: invalid Paradigm order format.",
             fatal: "Fatal error initializing application. Exiting.",
-            tmFatal: "Fatal error starting Tendermint core. Exiting."
+            tmFatal: "Fatal error starting Tendermint core. Exiting.",
+            broadcast: "Error broadcasting orders (may require process termination).",
+            txType: "Invalid transaction type rejected."
         },
         messages: {
             incoming: {
@@ -49,7 +51,8 @@ exports.messages = {
             mempool: "New order passed mempool verification (checkTx).",
             noStake: "New order rejected: invalid poster or no poster stake.",
             verified: "New order verified and added to OrderStream queue (deliverTx).",
-            servStart: `ABCI server started on port ${config_1.ABCI_PORT}.`
+            servStart: `ABCI server started on port ${config_1.ABCI_PORT}.`,
+            roundDiff: "This round deliverTx state is more than 1 period ahead of commited state.",
         }
     },
     api: {
@@ -66,7 +69,13 @@ exports.messages = {
     },
     rebalancer: {
         messages: {
-            activated: "Stake rebalancer activated. Subscribed to Ethereum events."
+            activated: "Stake rebalancer activated. Subscribed to Ethereum events.",
+            iAccept: "Valid initial (genesis) rebalance proposal accepted.",
+            iReject: "Invalid initial (genesis) rebalance proposal rejected.",
+            accept: "Valid rebalance proposal accepted.",
+            reject: "Invalid rebalance proposla rejected.",
+            wrongRound: "Rejected proposal for incorrect staking period.",
+            noMatch: "Rejected proposal that does not match local mapping."
         },
         errors: {
             fatalStake: "Fatal error encountered processing stake event.",
