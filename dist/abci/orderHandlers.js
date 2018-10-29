@@ -17,6 +17,7 @@ const messages_1 = require("../util/messages");
 const Logger_1 = require("../util/Logger");
 const Vote_1 = require("../util/Vote");
 const Hasher_1 = require("../crypto/Hasher");
+// Order constructor from paradigm-connect
 let Order = new Paradigm().Order;
 /**
  * @name checkOrder() {export function} use to perform light verification of

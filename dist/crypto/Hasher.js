@@ -45,8 +45,11 @@ class Hasher {
             "roundNumber": state.round.number,
             "startHeight": state.round.startsAt,
             "endHeight": state.round.endsAt,
-            "rateMapping": state.mapping,
-            "lastHeight": state.lastBlockHeightc
+            "balances": state.balances,
+            "ordernum": state.orderCounter,
+            "events": state.events,
+            "limits": state.limits,
+            "lastHeight": state.lastBlockHeight
         };
         try {
             let stateHash = hash(hashPrep);

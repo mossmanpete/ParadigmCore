@@ -16,15 +16,13 @@ exports.deliverState = {
     round: {
         number: 0,
         startsAt: 0,
-        endsAt: 0
+        endsAt: 0,
+        limit: 0
     },
-    events: {
-        stakes: {},
-        blocks: {}
-    },
+    events: {},
     balances: {},
-    mapping: {},
+    limits: {},
     orderCounter: 0,
     lastBlockHeight: 0,
-    lastBlockAppHash: Buffer.alloc(0)
+    lastBlockAppHash: null
 };

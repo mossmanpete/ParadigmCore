@@ -29,6 +29,7 @@ export class OrderTracker {
     constructor(emitter: EventEmitter) {
         this.em = emitter;
         this.orders = [];
+        this.streams = [];
     }
 
     public activate(): boolean {

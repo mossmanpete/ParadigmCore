@@ -17,6 +17,7 @@ class OrderTracker {
         this.activated = false;
         this.em = emitter;
         this.orders = [];
+        this.streams = [];
     }
     flush() {
         this.orders = [];

@@ -5,39 +5,39 @@
   =========================
 
   @date_inital 13 September 2018
-  @date_modified 23 October 2018
+  @date_modified 27 October 2018
   @author Henry Harder
 
   Main ParadigmCore state machine and state transition logic.
 */
 
-import * as Paradigm from "paradigm-connect";
+// Tendermint JS ABCI server 
 import * as abci from "abci";
 
+// Log message templates
 import { messages as msg } from "../util/messages";
 
+// Custom classes
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Hasher } from "../crypto/Hasher";
 import { Vote } from "../util/Vote"
 import { Logger } from "../util/Logger";
 import { OrderTracker } from "../async/OrderTracker";
-import { EventEmitter } from "events";
-//import { StakeRebalancer } from "../async/StakeRebalancer";
-import { StakeRebalancer } from "../async/newbalancer";
+import { StakeRebalancer } from "../async/StakeRebalancer";
 
+// ABCI handler functions
 import { checkOrder, deliverOrder } from "./orderHandlers";
-// import { checkStream, deliverStream } from "./streamHandlers";
 import { checkStake, deliverStake } from "./stakeHandlers";
 import { checkRebalance, deliverRebalance } from "./rebalanceHandlers";
 
-let version: string; // store current application version
-let handlers: object; // ABCI handler functions
+let version: string;    // store current application version
+let handlers: object;   // ABCI handler functions
 
-let tracker: OrderTracker; // used to broadcast orders
-let rebalancer: StakeRebalancer; // construct and submit mapping
+let tracker: OrderTracker;          // used to broadcast orders
+let rebalancer: StakeRebalancer;    // construct and submit mapping
 
-let deliverState: any; // deliverTx state
-let commitState: any; // commit state
+let deliverState: any;  // deliverTx state
+let commitState: any;   // commit state
 
 /**
  * @name startMain() {exported async function}
@@ -51,13 +51,14 @@ let commitState: any; // commit state
  *  - options.abciServPort  {number}        local ABCI server port
  */
 export async function startMain(options: any): Promise<null> {
-
     try {
         version = options.version;
 
+        // Load state objects
         deliverState = options.deliverState;
         commitState = options.commitState;
 
+        // Establish ABCI handler functions
         handlers = {
             info: info,
             beginBlock: beginBlock,
@@ -66,23 +67,26 @@ export async function startMain(options: any): Promise<null> {
             commit: commit
         };
 
+        // Queue for valid broadcast transactions (order/stream)
         tracker = new OrderTracker(options.emitter);
 
+        // Configure StakeRebalancer module
         rebalancer = await StakeRebalancer.create({
           provider: options.provider,
           periodLength: options.periodLength,
           periodLimit: options.periodLimit,
+          finalityThreshold: options.finalityThreshold,
           stakeAddress: options.stakeAddress,
           stakeABI: options.stakeABI,
           abciHost: options.abciHost,
           abciPort: options.abciPort
         });
 
+        // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
         Logger.consensus(msg.abci.messages.servStart);
 
     } catch (err) {
-        console.log(`(temp5) err: ${err}`);
         throw new Error('Error initializing ABCI application.');
     }
     return;
@@ -96,17 +100,18 @@ export async function startMain(options: any): Promise<null> {
  */
 export async function startRebalancer(): Promise<null> {
   try {
-    let code = rebalancer.start(); // start listening to Ethereum events
-    if (code !== 0) {
+      // Start rebalancer after sync
+      let code = rebalancer.start(); // start listening to Ethereum event
+      if (code !== 0) {
         Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
         throw new Error();
-    }
+      }
 
-    tracker.activate(); // start tracking new orders
-  } catch (err) {
-    throw new Error("Error activating stake rebalancer.");
-  }
-  return;
+      tracker.activate();
+    } catch (err) {
+        throw new Error("Error activating stake rebalancer.");
+    }
+    return;
 }
 
 /*
@@ -139,8 +144,6 @@ function beginBlock(request): object {
     let currHeight = request.header.height;
     let currProposer = request.header.proposerAddress.toString('hex');
 
-    // rebalancer.newOrderStreamBlock(currHeight, currProposer);
-
     Logger.newRound(currHeight, currProposer);
     return {};
 }
@@ -153,14 +156,18 @@ function beginBlock(request): object {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function checkTx(request): Vote {
-    let rawTx: Buffer = request.tx; // raw transaction buffer
-    let tx: any; // stores decoded transaction object
+    // Raw transaction buffer (encoded and compressed)
+    let rawTx: Buffer = request.tx;
+
+    let tx: any;        // Stores decoded transaction object
+    let txType: string; // Stores transaction type
 
     try {
         // TODO: expand ABCIdecode() to produce rich objects
         
-        // decode the buffered and compressed transaction
+        // Decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
+        txType = tx.type.toLowerCase();
     } catch (err) {
         Logger.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
@@ -170,22 +177,20 @@ function checkTx(request): Vote {
      * This main switch block selects the propper handler logic
      * based on the transaction type.
      */
-    switch (tx.type) {
-        // TODO: decide if enumerable makes more sence
-
-        case "OrderBroadcast": {
+    switch (txType) {
+        case "order": {
             return checkOrder(tx, commitState);
         }
         /*
-        case "StreamBroadcast": {
+        case "stream": {
             return checkStream(tx, commitState);
         }*/
 
-        case "StakeEvent": {
+        case "stake": {
             return checkStake(tx, commitState);;
         }
 
-        case "Rebalance": {
+        case "rebalance": {
             return checkRebalance(tx, commitState);
         }
 
@@ -205,17 +210,18 @@ function checkTx(request): Vote {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function deliverTx(request): Vote {
+    // Raw transaction buffer (encoded and compressed)
     let rawTx: Buffer = request.tx;
 
-    let tx: any; // stores decoded transaction object
-    let txType: string; // stores transaction type
+    let tx: any;        // Stores decoded transaction object
+    let txType: string; // Stores transaction type
 
     try {
         // TODO: expand ABCIdecode() to produce rich objects
         
-        // decode the buffered and compressed transaction
+        // Decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
-        txType = tx.type;
+        txType = tx.type.toLowerCase();
     } catch (err) {
         Logger.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
@@ -226,21 +232,19 @@ function deliverTx(request): Vote {
      * based on the transaction type.
      */
     switch (txType) {
-        // TODO: decide if enumerable makes more sence
-
-        case "OrderBroadcast": {
+        case "order": {
             return deliverOrder(tx, deliverState, tracker);
         }
         /*
-        case "StreamBroadcast": {
+        case "stream": {
             return deliverStream(tx, deliverState, tracker);
-        }
-
-        case "StakeEvent": {
-            return deliverStake(tx, deliverState);;
         }*/
 
-        case "Rebalance": {
+        case "stake": {
+            return deliverStake(tx, deliverState);;
+        }
+
+        case "rebalance": {
             return deliverRebalance(tx, deliverState, rebalancer);
         }
 
@@ -255,7 +259,7 @@ function deliverTx(request): Vote {
 // TODO: implement endBlock()
 
 /**
- * @name commit() {function}
+ * @name commit()
  * @description Persist application state, synchronize commit and deliver
  * states, and trigger the broadcast of valid orders in that block.
  * 
@@ -277,10 +281,12 @@ function commit(request): string {
             case 1: {
                 // Rebalance proposal accepted in this round
 
+                // Load round parameters from state
                 let newRound = deliverState.round.number;
                 let newStart = deliverState.round.startsAt;
                 let newEnd = deliverState.round.endsAt;
 
+                // Synchronize staking period parameters
                 rebalancer.synchronize(newRound, newStart, newEnd);
                 break;
             }
@@ -292,22 +298,27 @@ function commit(request): string {
             }
         }
 
+        console.log("... before inc: " + deliverState.lastBlockHeight);
         // Increase block height
-        deliverState.lastBlockHeight =+ 1;
-
-        // Synchronize states
-        commitState = JSON.parse(JSON.stringify(deliverState));
+        deliverState.lastBlockHeight += 1;
+        console.log("... after inc: " + deliverState.lastBlockHeight);
+        
+        // Generate new state hash and update
+        stateHash = Hasher.hashState(deliverState);
+        deliverState.lastBlockAppHash = stateHash;
 
         // Trigger broadcast of orders and streams
         tracker.triggerBroadcast();
 
-        // Generate new state hash and update
-        stateHash = Hasher.hashState(commitState);
+        // Synchronize commit state from delivertx state
+        commitState = JSON.parse(JSON.stringify(deliverState));        
+        Logger.consensus(`Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
         console.log(`(temporary) Error in commit: ${err}`);
         Logger.consensusErr(msg.abci.errors.broadcast);
     }
-
+    console.log(`.... dState: ${JSON.stringify(deliverState)}`);
+    console.log(`.... cState: ${JSON.stringify(commitState)}`);
     // Return state's hash to be included in next block header
     return stateHash;
 }

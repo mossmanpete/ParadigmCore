@@ -10,8 +10,10 @@
 
   Handler functions for verifying ABCI Event Transactions. 
 */
-import { Logger } from "src/util/Logger";
-import { Vote } from "src/util/Vote";
+import { Logger } from "../util/Logger";
+import { Vote } from "../util/Vote";
+
+const CONF_THRESHOLD = 1;
 
 /**
  * @name checkStake() {export function} use to perform mempool verification of
@@ -56,9 +58,10 @@ export function deliverStake(tx: any, state: any): Vote {
                 // Event has already been added, we are just voting
 
                 state.events[block][staker].conf += 1;
-                if (state.events[block][staker].conf >= 5) {
+                console.log(state.events[block][staker].conf);
+                if (state.events[block][staker].conf >= CONF_THRESHOLD) {
                     // This vote was the final confirmation
-
+                    console.log('........ confirmed');
                     switch (state.balances.hasOwnProperty(staker)) {
                         case true: {
                             if (type === "add") {
@@ -111,6 +114,41 @@ export function deliverStake(tx: any, state: any): Vote {
                 "type": type,
                 "conf": 1
             };
+
+            // REMOVE THE BLOCK BELOW BEFORE DEPLOYING
+            if (state.events[block][staker].conf >= CONF_THRESHOLD) {
+                // This vote was the final confirmation
+                console.log('........ confirmed');
+                switch (state.balances.hasOwnProperty(staker)) {
+                    case true: {
+                        if (type === "add") {
+                            state.balances[staker] += amount;
+                        } else if (type === "remove") {
+                            state.balances[staker] -= amount;
+                        }
+                        delete state.events[block][staker];
+                        break;
+                    }
+                    case false: {
+                        if (type !== "add") {
+                            Logger.consensusWarn("Potential consensus failure.");
+                        }
+                        state.balances[staker] = amount;
+                        delete state.events[block][staker];
+                        break;
+                    }
+                    default: { break; }
+                }
+
+                Logger.consensus("Stake event confirmed, balances updated.");
+                return Vote.valid();
+            } else {
+                Logger.consensus(
+                    "Witness transaction approved for pending event.");
+                return Vote.valid();
+            }
+
+            // REMOVE ABOVE BLOCK BEFORE DEPLOYING
 
             Logger.consensus("Witness transaction approved for new event.");
             return Vote.valid();

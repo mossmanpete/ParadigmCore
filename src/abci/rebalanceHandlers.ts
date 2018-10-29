@@ -14,7 +14,7 @@
 import { Vote } from "../util/Vote";
 import { Logger } from "../util/Logger";
 // import { StakeRebalancer } from "src/async/StakeRebalancer";
-import { StakeRebalancer } from "../async/newbalancer";
+import { StakeRebalancer } from "../async/StakeRebalancer";
 
 import { messages as msg } from "../util/messages";
 
@@ -84,6 +84,9 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
                 state.round.number += 1;
                 state.round.startsAt = proposal.round.startsAt;
                 state.round.endsAt = proposal.round.endsAt;
+
+                // TODO: make sure limit is agreed upon
+                state.round.limit = proposal.round.limit;
                 // state.mappings.limits = proposal.mapping;
 
                 Logger.consensus(msg.rebalancer.messages.iAccept);
@@ -101,7 +104,9 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
                 // Accept valid rebalance proposal to mempool 
 
                 let propLimits = proposal.limits;
-                let localLimits = genLimits(state.balances, state.period.limit);
+
+                // CHANGE THIS: debug genLimits
+                let localLimits = genLimits(state.balances, state.round.limit);
 
                 if (JSON.stringify(propLimits) === JSON.stringify(localLimits)) {
                     // If proposed mapping matches mapping constructed from 
@@ -148,10 +153,14 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
  * @param limit     {number} the total number of orders accepted in the period
  */
 function genLimits(balances: any, limit: number): any {
+    console.log('we in gen limits');
+
     let total: number; // total amount currenty staked
     let stakers: number; // total number of stakers
 
     let output: object = {}; // generated output mapping
+
+    console.log("5 we ere boys");
 
     // Calculate total balance currently staked
     Object.keys(balances).forEach((k, _) => {

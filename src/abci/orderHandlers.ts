@@ -19,6 +19,7 @@ import { Vote } from "../util/Vote";
 import { Hasher } from "../crypto/Hasher";
 import { OrderTracker } from "../async/OrderTracker";
 
+// Order constructor from paradigm-connect
 let Order = new Paradigm().Order;
 
 /**

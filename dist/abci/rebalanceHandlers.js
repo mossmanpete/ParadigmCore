@@ -75,6 +75,8 @@ function deliverRebalance(tx, state, rb) {
                 state.round.number += 1;
                 state.round.startsAt = proposal.round.startsAt;
                 state.round.endsAt = proposal.round.endsAt;
+                // TODO: make sure limit is agreed upon
+                state.round.limit = proposal.round.limit;
                 // state.mappings.limits = proposal.mapping;
                 Logger_1.Logger.consensus(messages_1.messages.rebalancer.messages.iAccept);
                 return Vote_1.Vote.valid();
@@ -89,7 +91,8 @@ function deliverRebalance(tx, state, rb) {
             if ((1 + state.round.number) === proposal.round.number) {
                 // Accept valid rebalance proposal to mempool 
                 let propLimits = proposal.limits;
-                let localLimits = genLimits(state.balances, state.period.limit);
+                // CHANGE THIS: debug genLimits
+                let localLimits = genLimits(state.balances, state.round.limit);
                 if (JSON.stringify(propLimits) === JSON.stringify(localLimits)) {
                     // If proposed mapping matches mapping constructed from 
                     // in state balances.
@@ -131,9 +134,11 @@ exports.deliverRebalance = deliverRebalance;
  * @param limit     {number} the total number of orders accepted in the period
  */
 function genLimits(balances, limit) {
+    console.log('we in gen limits');
     let total; // total amount currenty staked
     let stakers; // total number of stakers
     let output = {}; // generated output mapping
+    console.log("5 we ere boys");
     // Calculate total balance currently staked
     Object.keys(balances).forEach((k, _) => {
         if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {

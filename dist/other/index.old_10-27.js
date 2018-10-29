@@ -8,37 +8,25 @@
   @date_modified 19 October 2018
   @author Henry Harder
 
-  Entry point and startup script for ParadigmCore. 
-*/
+  Entry point and startup script for ParadigmCore.
+
 
 import * as _ws from "ws";
 import * as tendermint from "tendermint-node";
+import * as fs from "fs";
 
 import { Logger } from "./util/Logger";
 import { WebSocketMessage } from "./net/WebSocketMessage";
 import { messages as msg } from "./util/messages";
 import { EventEmitter } from "events";
 
-import { deliverState as dState } from "./state/deliverState";
-import { commitState as cState} from "./state/commitState";
+import { deliverState } from "./state/deliverState";
+import { commitState } from "./state/commitState";
 
-import { startMain, startRebalancer } from "./abci/main";
+import { startMain, startRebalancer } from "./abci/handlers";
 import { startAPIserver } from "./net/server";
 
-import { 
-    WS_PORT,
-    TM_HOME, 
-    ABCI_HOST, 
-    ABCI_RPC_PORT, 
-    API_PORT, 
-    WEB3_PROVIDER, 
-    PERIOD_LENGTH, 
-    PERIOD_LIMIT, 
-    STAKE_CONTRACT_ADDR, 
-    STAKE_CONTRACT_ABI, 
-    ABCI_PORT,
-    VERSION
-} from "./config";
+import { WS_PORT, TM_HOME, ABCI_HOST, ABCI_RPC_PORT, API_PORT } from "./config";
 
 
 let wss: _ws.Server;
@@ -48,7 +36,7 @@ let node: any; // Tendermint node instance
 /**
  * This function executes immediately upon this file being executed. It is
  * responsible for starting all dependant modules.
- */
+ *
 (async function() {
     Logger.logStart();
 
@@ -65,11 +53,9 @@ let node: any; // Tendermint node instance
         // node.stdout.pipe(process.stdout); // pipe tendermint logs to STDOUT
 
     } catch (error) {
-
-        console.log(`(temp1) err: ${error}`); // temp
-
-        Logger.consensusErr(msg.abci.errors.tmFatal);
-        process.exit(1);
+        console.log(error);
+        Logger.consensusErr("Fatal error starting Tendermint core.");
+        process.exit();
     }
 
     // Start WebSocket server
@@ -80,49 +66,25 @@ let node: any; // Tendermint node instance
         });
         emitter = new EventEmitter(); // parent event emitter
     } catch (error) {
-        
-        console.log(`(temp2) err: ${error}`); // temp
-
-        Logger.websocketErr(msg.websocket.errors.fatal);
-        process.exit(1);
+        Logger.websocketErr("Fatal error starting WebSocket server.");
+        process.exit();
     }
 
     // Start ABCI application
     try{
-        // ABCI configuration options
-        let options = {
-            "version": VERSION,
-            "emitter": emitter,
-            "deliverState": dState,
-            "commitState": cState,
-            "abciServPort": ABCI_PORT,
-        
-            // Rebalancer options
-            "provider": WEB3_PROVIDER,
-            "periodLength": PERIOD_LENGTH,
-            "periodLimit": PERIOD_LIMIT,
-            "stakeAddress": STAKE_CONTRACT_ADDR,
-            "stakeABI": STAKE_CONTRACT_ABI,
-            "abciHost": ABCI_HOST,
-            "abciPort": ABCI_RPC_PORT
-        }
-
-        // TODO: convert to options object
-        await startMain(options);
+        // start main ParadigmCore logic
+        await startMain(deliverState, commitState, emitter);
         Logger.consensus("Waiting for Tendermint to synchronize...");
 
         await node.synced();
         Logger.consensus("Tendermint initialized and syncronized.");
 
-        // Start state rebalancer sub-process AFTER sync
+        // start state rebalancer sub-process AFTER sync
         await startRebalancer();
-        Logger.rebalancer(msg.rebalancer.messages.activated, 0);
+        Logger.rebalancer("Stake rebalancer activated. Subscribed to Ethereum events.", 0);
     } catch (error) {
-
-        console.log(`(temp3) err: ${error}`); // temp
-
         Logger.logError(msg.abci.errors.fatal);
-        process.exit(1);
+        process.exit();
     }
 
     // Start HTTP API server
@@ -130,18 +92,15 @@ let node: any; // Tendermint node instance
         Logger.apiEvt("Starting HTTP API server...");
         await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
     } catch (error) {
-
-        console.log(`(temp4) err: ${error}`); // temp
-
         Logger.apiErr(msg.api.errors.fatal)
-        process.exit(1);
+        process.exit();
     }
 
     /**
      * Begin WebSocket handler implementation (below)
-     * 
+     *
      * TODO: move this to another file
-     */
+     *
 
     wss.on("connection", ws => {
         try {
@@ -161,21 +120,9 @@ let node: any; // Tendermint node instance
                 Logger.websocketErr(msg.websocket.errors.broadcast);
             }
         });
-
-        /*emitter.on("stream", stream => {
-            try {
-                wss.clients.forEach(client => {
-                    if ((client.readyState === 1) && (client === ws)){
-                        WebSocketMessage.sendStream(client, stream);
-                    }
-                });
-            } catch (err) {
-                Logger.websocketErr(msg.websocket.errors.broadcast);
-            }
-        });*/
         
         ws.on('message', message => {
-            if(message === "close") { 
+            if(message === "close") {
                 return ws.close();
             } else {
                 WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
@@ -183,5 +130,5 @@ let node: any; // Tendermint node instance
         });
     });
 
-    Logger.logEvent(msg.general.messages.start);
-})();
+    Logger.logEvent("Initialization complete, begining new block production.");
+})();*/ 
