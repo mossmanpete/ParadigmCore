@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 15 October 2018
-  @date_modified 27 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   UNSTABLE! (Okay not THAT unstable, but be careful)
@@ -16,7 +16,8 @@
   likely be unstable for a while. Assume that if this message is here, it should not be run 
   in production. 
 */
-require("colors");
+
+require("colors"); // temporary
 
 import Web3 = require('web3');
 import Contract from "web3/eth/contract";
@@ -467,7 +468,7 @@ export class StakeRebalancer {
                 this.updateBalance(this.events[matBlock][k]);
                 this.execEventTx(this.events[matBlock][k]);
             });
-            
+
             // Once all balances have been updated, delete entry
             delete this.events[matBlock];
         }

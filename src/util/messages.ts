@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 1 October 2018
-  @date_modified 19 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   Simple message object to store common ABCI and WS messages.

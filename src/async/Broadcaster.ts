@@ -1,5 +1,17 @@
-require("colors");
+/**  
+  =========================
+  ParadigmCore: Blind Star
+  Broadcaster.ts @ {dev}
+  =========================
 
+  @date_inital 29 October 2018
+  @date_modified 29 October 2018
+  @author Henry Harder
+
+  Implements a queue for local ABCI transactions.
+*/
+
+require("colors"); // temporary
 import { URL } from "url";
 import { EventEmitter } from "events";
 import { RpcClient } from "tendermint";

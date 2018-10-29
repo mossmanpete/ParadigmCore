@@ -1,11 +1,11 @@
-/* 
+/**
   =========================
   ParadigmCore: Blind Star
   main.ts @ {dev}
   =========================
 
   @date_inital 13 September 2018
-  @date_modified 27 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   Main ParadigmCore state machine and state transition logic.

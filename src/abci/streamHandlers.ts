@@ -2,17 +2,17 @@
   =========================
   ParadigmCore: Blind Star
   streamHandlers.ts @ {dev}
-  ~/src/abci/*
   =========================
 
   @date_inital 23 October 2018
-  @date_modified 23 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   Handler functions for verifying ABCI StreamBroadcasts. 
 
   @10-23 We need paradigm-connect to allow the creation of a custom order type
 */
+
 import * as Paradigm from "paradigm-connect";
 
 import { messages as msg } from "../util/messages";

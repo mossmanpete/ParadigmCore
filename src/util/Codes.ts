@@ -1,3 +1,16 @@
+/**  
+  =========================
+  ParadigmCore: Blind Star
+  Codes.ts @ {dev}
+  =========================
+
+  @date_inital 27 October 2018
+  @date_modified 29 October 2018
+  @author Henry Harder
+
+  Error codes. Working on integrating better error codes throughout PC.
+*/
+
 export default class Codes {
     static OK           = 0;
     static NO_BLOCK     = 1;

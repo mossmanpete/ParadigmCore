@@ -1,20 +1,21 @@
-/* 
+/** 
   =========================
   ParadigmCore: Blind Star
   stakeHandlers.ts @ {dev}
   =========================
 
   @date_inital 23 October 2018
-  @date_modified 23 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   Handler functions for verifying ABCI Event Transactions. 
 */
+
 import { Logger } from "../util/Logger";
 import { Vote } from "../util/Vote";
 
 // TEMPORARY
-const CONF_THRESHOLD = 5;
+const CONF_THRESHOLD = 4;
 
 /**
  * @name checkStake() Performs mempool verification of Ethereum

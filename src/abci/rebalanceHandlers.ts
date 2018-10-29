@@ -1,11 +1,11 @@
-/* 
+/**
   =========================
   ParadigmCore: Blind Star
   rebalanceHandlers.ts @ {dev}
   =========================
 
   @date_inital 23 October 2018
-  @date_modified 23 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   Handler functions for verifying ABCI Rebalance transactions. 

@@ -1,3 +1,16 @@
+/**  
+  =========================
+  ParadigmCore: Blind Star
+  Queue.ts @ {dev}
+  =========================
+
+  @date_inital 28 October 2018
+  @date_modified 29 October 2018
+  @author Henry Harder
+
+  Simple (custom) generalized queue implementation. Used in Broadcaster class.
+*/
+
 export class Queue {
     private items: Array<any>;  // Queue items
 

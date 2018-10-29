@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 12 September 2018
-  @date_modified 27 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   Entry point and startup script for ParadigmCore. 
