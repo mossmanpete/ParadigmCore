@@ -14,7 +14,7 @@ import { Logger } from "../util/Logger";
 import { Vote } from "../util/Vote";
 
 // TEMPORARY
-const CONF_THRESHOLD = 1;
+const CONF_THRESHOLD = 5;
 
 /**
  * @name checkStake() Performs mempool verification of Ethereum
@@ -81,7 +81,7 @@ export function deliverStake(tx: any, state: any): Vote {
                 }
 
                 // TEMPORARY (not needed with multiple nodes)
-                updateMappings(state, staker, block, amount, type);
+                // updateMappings(state, staker, block, amount, type);
 
                 // Voted for valid new event
                 Logger.consensus("Voted for new valid stake event.");
@@ -107,7 +107,7 @@ export function deliverStake(tx: any, state: any): Vote {
             };
 
             // TEMPORARY! Will not be needed with multiple nodes
-            updateMappings(state, staker, block, amount, type);
+            // updateMappings(state, staker, block, amount, type);
 
             // Added new event to state
             Logger.consensus("Voted for valid stake event (new).");
