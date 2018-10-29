@@ -5,7 +5,7 @@
   =========================
 
   @date_inital 24 September 2018
-  @date_modified 19 October 2018
+  @date_modified 29 October 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
@@ -43,7 +43,7 @@ app.post("/*", (req, res) => {
     let payloadStr: string;
     try {
         payloadStr = PayloadCipher.encodeFromObject({
-            type: "OrderBroadcast",
+            type: "order",
             data: req.body
         });
     } catch (error) {
