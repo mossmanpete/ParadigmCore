@@ -70,24 +70,30 @@ export function deliverStake(tx: any, state: any): Vote {
                                 state.balances[staker] -= amount;
                             }
                             delete state.events[block][staker];
+                            if (Object.keys(state.events[block]).length === 0) {
+                                delete state.events[block];   
+                            }
                             break;
                         }
                         case false: {
                             if (type !== "add") {
-                                Logger.consensusWarn("Potential consensus failure.");
+                                Logger.consensusWarn("(1) Potential consensus failure.");
                             }
                             state.balances[staker] = amount;
                             delete state.events[block][staker];
+                            if (Object.keys(state.events[block]).length === 0) {
+                                delete state.events[block];   
+                            }
                             break;
                         }
                         default: { break; }
                     }
 
-                    Logger.consensus("Stake event confirmed, balances updated.");
+                    Logger.consensus("(2) Stake event confirmed, balances updated.");
                     return Vote.valid();
                 } else {
                     Logger.consensus(
-                        "Witness transaction approved for pending event.");
+                        "(3) Witness transaction approved for pending event.");
                     return Vote.valid();
                 }
             } else if (!(state.events[block].hasOwnProperty(staker))) {
@@ -99,10 +105,10 @@ export function deliverStake(tx: any, state: any): Vote {
                     "conf": 1
                 };
 
-                Logger.consensus("Witness transaction approved for new event.");
+                Logger.consensus("(4) Witness transaction approved for new event.");
                 return Vote.valid();   
             } else {
-                Logger.consensusWarn("Disagreement about event parameters.");
+                Logger.consensusWarn("(5) Disagreement about event parameters.");
                 return Vote.invalid("Disagreement about event parameters.");
             }
         } else {
@@ -118,7 +124,6 @@ export function deliverStake(tx: any, state: any): Vote {
             // REMOVE THE BLOCK BELOW BEFORE DEPLOYING
             if (state.events[block][staker].conf >= CONF_THRESHOLD) {
                 // This vote was the final confirmation
-                console.log('........ confirmed');
                 switch (state.balances.hasOwnProperty(staker)) {
                     case true: {
                         if (type === "add") {
@@ -127,24 +132,30 @@ export function deliverStake(tx: any, state: any): Vote {
                             state.balances[staker] -= amount;
                         }
                         delete state.events[block][staker];
+                        if (Object.keys(state.events[block]).length === 0) {
+                            delete state.events[block];   
+                        }
                         break;
                     }
                     case false: {
                         if (type !== "add") {
-                            Logger.consensusWarn("Potential consensus failure.");
+                            Logger.consensusWarn("(6) Potential consensus failure.");
                         }
                         state.balances[staker] = amount;
                         delete state.events[block][staker];
+                        if (Object.keys(state.events[block]).length === 0) {
+                            delete state.events[block];   
+                        }
                         break;
                     }
                     default: { break; }
                 }
 
-                Logger.consensus("Stake event confirmed, balances updated.");
+                Logger.consensus("(7) Stake event confirmed, balances updated.");
                 return Vote.valid();
             } else {
                 Logger.consensus(
-                    "Witness transaction approved for pending event.");
+                    "(8) Witness transaction approved for pending event.");
                 return Vote.valid();
             }
 
@@ -156,7 +167,7 @@ export function deliverStake(tx: any, state: any): Vote {
     } else {
         // Invalid event
 
-        Logger.consensusWarn("Invalid witness event rejected.");
+        Logger.consensusWarn("(9) Invalid witness event rejected.");
         return Vote.invalid("Invalid witness event rejected.");
     }
 }

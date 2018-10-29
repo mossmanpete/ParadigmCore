@@ -68,25 +68,31 @@ function deliverStake(tx, state) {
                                 state.balances[staker] -= amount;
                             }
                             delete state.events[block][staker];
+                            if (Object.keys(state.events[block]).length === 0) {
+                                delete state.events[block];
+                            }
                             break;
                         }
                         case false: {
                             if (type !== "add") {
-                                Logger_1.Logger.consensusWarn("Potential consensus failure.");
+                                Logger_1.Logger.consensusWarn("(1) Potential consensus failure.");
                             }
                             state.balances[staker] = amount;
                             delete state.events[block][staker];
+                            if (Object.keys(state.events[block]).length === 0) {
+                                delete state.events[block];
+                            }
                             break;
                         }
                         default: {
                             break;
                         }
                     }
-                    Logger_1.Logger.consensus("Stake event confirmed, balances updated.");
+                    Logger_1.Logger.consensus("(2) Stake event confirmed, balances updated.");
                     return Vote_1.Vote.valid();
                 }
                 else {
-                    Logger_1.Logger.consensus("Witness transaction approved for pending event.");
+                    Logger_1.Logger.consensus("(3) Witness transaction approved for pending event.");
                     return Vote_1.Vote.valid();
                 }
             }
@@ -97,11 +103,11 @@ function deliverStake(tx, state) {
                     "type": type,
                     "conf": 1
                 };
-                Logger_1.Logger.consensus("Witness transaction approved for new event.");
+                Logger_1.Logger.consensus("(4) Witness transaction approved for new event.");
                 return Vote_1.Vote.valid();
             }
             else {
-                Logger_1.Logger.consensusWarn("Disagreement about event parameters.");
+                Logger_1.Logger.consensusWarn("(5) Disagreement about event parameters.");
                 return Vote_1.Vote.invalid("Disagreement about event parameters.");
             }
         }
@@ -116,7 +122,6 @@ function deliverStake(tx, state) {
             // REMOVE THE BLOCK BELOW BEFORE DEPLOYING
             if (state.events[block][staker].conf >= CONF_THRESHOLD) {
                 // This vote was the final confirmation
-                console.log('........ confirmed');
                 switch (state.balances.hasOwnProperty(staker)) {
                     case true: {
                         if (type === "add") {
@@ -126,25 +131,31 @@ function deliverStake(tx, state) {
                             state.balances[staker] -= amount;
                         }
                         delete state.events[block][staker];
+                        if (Object.keys(state.events[block]).length === 0) {
+                            delete state.events[block];
+                        }
                         break;
                     }
                     case false: {
                         if (type !== "add") {
-                            Logger_1.Logger.consensusWarn("Potential consensus failure.");
+                            Logger_1.Logger.consensusWarn("(6) Potential consensus failure.");
                         }
                         state.balances[staker] = amount;
                         delete state.events[block][staker];
+                        if (Object.keys(state.events[block]).length === 0) {
+                            delete state.events[block];
+                        }
                         break;
                     }
                     default: {
                         break;
                     }
                 }
-                Logger_1.Logger.consensus("Stake event confirmed, balances updated.");
+                Logger_1.Logger.consensus("(7) Stake event confirmed, balances updated.");
                 return Vote_1.Vote.valid();
             }
             else {
-                Logger_1.Logger.consensus("Witness transaction approved for pending event.");
+                Logger_1.Logger.consensus("(8) Witness transaction approved for pending event.");
                 return Vote_1.Vote.valid();
             }
             // REMOVE ABOVE BLOCK BEFORE DEPLOYING
@@ -154,7 +165,7 @@ function deliverStake(tx, state) {
     }
     else {
         // Invalid event
-        Logger_1.Logger.consensusWarn("Invalid witness event rejected.");
+        Logger_1.Logger.consensusWarn("(9) Invalid witness event rejected.");
         return Vote_1.Vote.invalid("Invalid witness event rejected.");
     }
 }

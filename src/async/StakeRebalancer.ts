@@ -16,6 +16,7 @@
   likely be unstable for a while. Assume that if this message is here, it should not be run 
   in production. 
 */
+require("colors");
 
 import Web3 = require('web3');
 import Contract from "web3/eth/contract";
@@ -27,6 +28,7 @@ import { messages as msg } from "../util/messages";
 import { default as err } from "../util/Codes";
 import { Provider } from "web3/providers";
 import { PayloadCipher } from '../crypto/PayloadCipher';
+import { Broadcaster } from "./Broadcaster";
 
 export class StakeRebalancer {
     // Rebalancer instance status
@@ -57,6 +59,7 @@ export class StakeRebalancer {
     // Tendermint ABCI connection variables
     private abciClient: RpcClient;  // Tendermint ABCI client
     private abciURI: URL;           // Local ABCI application URI
+    private broadcaster: Broadcaster;
 
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold
@@ -71,16 +74,13 @@ export class StakeRebalancer {
      * @param limit     {number} total number of orders accepted per period
      */
     public static genLimits(balances: any, limit: number): any {
-        let total: number; // total amount currenty staked
-        let stakers: number; // total number of stakers
-
-        let output: object = {}; // generated output mapping
+        let total: number = 0;      // Total amount currenty staked
+        let output: object = {};    // Generated output mapping
 
         // Calculate total balance currently staked
         Object.keys(balances).forEach((k, _) => {
             if (balances.hasOwnProperty(k) && typeof(balances[k]) === 'number') {
                 total += balances[k];
-                stakers += 1;
             }
         });
 
@@ -97,8 +97,38 @@ export class StakeRebalancer {
             }
         });
 
-        // return [output, stakers]; //  do this?
+        // Return constructed output mapping.
         return output;
+    }
+
+    /**
+     * Use to generate a WitnessTx event object.
+     * 
+     * @param staker    {string}    address of staking party
+     * @param type      {string}    stake type (`stakemade` or `stakeremoved`)
+     * @param amount    {number}    amount staked in event
+     * @param block     {number}    Ethereum block the event was recorded in.
+     */
+    public static genEvtObject(_addr, _type, _amt, _block): any {
+        let type: string; // Parsed event type
+
+        // Detect event type
+        switch (_type) {
+            case "stakemade": {
+                type = "add";
+                break;
+            }
+            case "stakeremoved": {
+                type = "remove";
+                break;
+            }
+            default: {
+                throw new Error("Invalid event type.");
+            }
+        }
+
+        // Construct and return event object
+        return {"staker": _addr, "type": type, "amount": _amt, "block": _block};
     }
 
     /**
@@ -120,10 +150,13 @@ export class StakeRebalancer {
         let instance; // stores new StakeRebalancer instance
 
         try {
+            // Create new rebalancer instance
             instance = new StakeRebalancer(options);
+
+            // Initialize instance
             let code = await instance.initialize();
             if (code !== err.OK) {
-                throw new Error(`ERRCODE: ${code}`)
+                throw new Error(`Rebalancer initialization failed with code: ${code}`)
             }
         } catch (err) {
             throw new Error(err.message);
@@ -202,10 +235,7 @@ export class StakeRebalancer {
             return err.CONTRACT; // Unable to initialize staking contract
         }
 
-        // Only returns 0 upon successful initialization
-
-        console.log(this.initHeight); // temporary
-
+        // Only returns OK upon successful initialization
         this.initialized = true;
         return err.OK;
     }
@@ -301,6 +331,7 @@ export class StakeRebalancer {
      * @description Connect to local Tendermint ABCI server.
      */
     private connectABCI(): number {
+        /*
         try {
             if (this.abciClient === undefined) {
                 this.abciClient = RpcClient(this.abciURI.href);
@@ -316,7 +347,13 @@ export class StakeRebalancer {
                 }
         } catch (err) {
             return err.ABCI_CON; // Unable to establish ABCI connection
-        }
+        }*/
+        this.broadcaster = new Broadcaster({
+            host: this.abciURI.hostname,
+            port: this.abciURI.port
+        });
+
+        this.broadcaster.connect();
 
         return err.OK;
     }
@@ -362,25 +399,26 @@ export class StakeRebalancer {
             return;
         }
 
-        // Create event object
-        let block = res.blockNumber;
+        // Pull event parameters
+        let staker = res.returnValues.staker.toLowerCase(); // Staker's address
+        let rType = res.event.toLowerCase();                // Raw event type
+        let amount = parseInt(res.returnValues.amount);     // Amount staked
+        let block = res.blockNumber;                        // Event block
+       
+        // Generate event object
+        let event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
+
         console.log(`in handle stake: block: ${block}`);
-        let eventObject = {
-            "type": res.event.toLowerCase(),
-            "staker": res.returnValues.staker.toLowerCase(),
-            "amount": parseInt(res.returnValues.amount),
-            "block": block
-        };
+        console.log(`... (rebalancer) Event. type: ${event.type} staker: ${event.staker}\n\n`);
 
         // work on this
-
-        /*
-        // See if this is a historical block that has already matured
+        // See if this is a historical event that has already matured
         if ((this.initHeight - block) > this.finalityThreshold){
-            this.updateBalance(eventObject);
-            this.execEventTx(eventObject);
+            this.updateBalance(event);
+            this.execEventTx(event);
+            console.log(`.... (rebalancer) balances ${JSON.stringify(this.balances)}\n\n\n`);
             return;
-        }*/
+        }
         
         // If this is the first event from this block, create entry
         if (!this.events.hasOwnProperty(block)) {
@@ -388,10 +426,10 @@ export class StakeRebalancer {
         }
 
         // Add event to confirmation queue
-        this.events[block].push(eventObject);
+        this.events[block].push(event);
 
         console.log(`(temp) got new stake`)
-        console.log(`(rebalancer) ${JSON.stringify(this.events)}`);
+        console.log(`(rebalancer) balances ${JSON.stringify(this.balances)}`);
         return;
     }
 
@@ -488,13 +526,13 @@ export class StakeRebalancer {
         }
 
         switch (event.type) {
-            case 'stakemade': {
+            case 'add': {
                 this.balances[event.staker] += event.amount;
                 console.log('adding to bal');
                 return;
             }
 
-            case 'stakeremoved': {
+            case 'remove': {
                 this.balances[event.staker] -= event.amount;
                 console.log('removing from bal');
                 return;
@@ -564,6 +602,7 @@ export class StakeRebalancer {
             }
         };
 
+        // Return constructed transaction object
         return tx;
     }
 
@@ -593,7 +632,7 @@ export class StakeRebalancer {
      * @param _tx   {object}    raw transaction object
      */
     private execAbciTx(_tx: any): number {
-        // todo add queue?
+        /* todo add queue?
         if (this.abciClient === undefined) {
             Logger.rebalancerErr("ABCI client not connected.");
             return err.NO_ABCI;
@@ -610,6 +649,13 @@ export class StakeRebalancer {
         }).catch(e => {
             Logger.rebalancerErr("Failed to execute ABCI transaction.");
         });
+        */
+
+        try {
+            this.broadcaster.add(_tx);
+        } catch (e) {
+            console.log('(not in BROADCASTER) sending tx failed.');
+        }
 
         // Will return OK unless ABCI is disconnected
         return err.OK;

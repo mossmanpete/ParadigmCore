@@ -298,11 +298,9 @@ function commit(request): string {
             }
         }
 
-        console.log("... before inc: " + deliverState.lastBlockHeight);
         // Increase block height
         deliverState.lastBlockHeight += 1;
-        console.log("... after inc: " + deliverState.lastBlockHeight);
-        
+
         // Generate new state hash and update
         stateHash = Hasher.hashState(deliverState);
         deliverState.lastBlockAppHash = stateHash;
@@ -317,7 +315,6 @@ function commit(request): string {
         console.log(`(temporary) Error in commit: ${err}`);
         Logger.consensusErr(msg.abci.errors.broadcast);
     }
-    console.log(`.... dState: ${JSON.stringify(deliverState)}`);
     console.log(`.... cState: ${JSON.stringify(commitState)}`);
     // Return state's hash to be included in next block header
     return stateHash;

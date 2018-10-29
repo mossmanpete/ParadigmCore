@@ -6,18 +6,29 @@ export class Queue {
         return;
     }
 
-    public add(item): void {
+    /**
+     * Add an item to the queue.
+     * 
+     * @param item  {any}   the item to add to the queue.
+     */
+    public add(item: any): void {
         this.items.push(item);
         return;
     }
 
+    /**
+     * Removes and returns the first item from the queue.
+     */
     public remove(): any {
-        if (this.isEmpty()) throw new Error("Underflow");
+        if (this.isEmpty()) return null;
         return this.items.shift();
     }
 
+    /**
+     * Returns the first item in the queue.
+     */
     public front(): any {
-        if(this.isEmpty()) throw new Error("Underflow");
+        if(this.isEmpty()) return null;
         return this.items[0];
     }
 
@@ -28,26 +39,10 @@ export class Queue {
         return JSON.stringify(this.items);
     }
 
-    private isEmpty(): boolean {
-        return this.items.length == 0;
+    /**
+     * Returns true if queue is empty.
+     */
+    public isEmpty(): boolean {
+        return this.items.length === 0;
     }
 }
-
-console.log("Testing.");
-
-let queue = new Queue();
-
-console.log("Adding items to queue.");
-queue.add(1);
-queue.add(2);
-queue.add(3);
-
-console.log("Printing queue.");
-console.log(queue.allItems());
-
-console.log("Calling remove.");
-console.log(queue.remove());
-
-console.log("Printing queue.");
-console.log(queue.allItems());
-
