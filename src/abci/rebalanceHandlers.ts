@@ -1,7 +1,7 @@
 /**
   =========================
   ParadigmCore: Blind Star
-  rebalanceHandlers.ts @ {dev}
+  rebalanceHandlers.ts @ {master}
   =========================
 
   @date_inital 23 October 2018

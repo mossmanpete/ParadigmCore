@@ -1,7 +1,7 @@
 /** 
   =========================
   ParadigmCore: Blind Star
-  stakeHandlers.ts @ {dev}
+  stakeHandlers.ts @ {master}
   =========================
 
   @date_inital 23 October 2018

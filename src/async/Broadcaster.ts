@@ -1,7 +1,7 @@
 /**  
   =========================
   ParadigmCore: Blind Star
-  Broadcaster.ts @ {dev}
+  Broadcaster.ts @ {master}
   =========================
 
   @date_inital 29 October 2018

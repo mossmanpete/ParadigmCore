@@ -1,7 +1,7 @@
 /**  
   =========================
   ParadigmCore: Blind Star
-  Queue.ts @ {dev}
+  Queue.ts @ {master}
   =========================
 
   @date_inital 28 October 2018
