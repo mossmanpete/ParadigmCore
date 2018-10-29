@@ -25,12 +25,12 @@ const OrderTracker_1 = require("../async/OrderTracker");
 const StakeRebalancer_1 = require("../async/StakeRebalancer");
 // ABCI handler functions
 const orderHandlers_1 = require("./orderHandlers");
-const r_stakeHandlers_1 = require("./r_stakeHandlers");
+const stakeHandlers_1 = require("./stakeHandlers");
 const rebalanceHandlers_1 = require("./rebalanceHandlers");
 let version; // store current application version
 let handlers; // ABCI handler functions
 let tracker; // used to broadcast orders
-let rebalancer; // construct and submit mapping
+let rebalancer; // construct and submit mappings
 let deliverState; // deliverTx state
 let commitState; // commit state
 /**
@@ -168,7 +168,7 @@ function checkTx(request) {
             return checkStream(tx, commitState);
         }*/
         case "stake": {
-            return r_stakeHandlers_1.checkStake(tx, commitState);
+            return stakeHandlers_1.checkStake(tx, commitState);
             ;
         }
         case "rebalance": {
@@ -216,7 +216,7 @@ function deliverTx(request) {
             return deliverStream(tx, deliverState, tracker);
         }*/
         case "stake": {
-            return r_stakeHandlers_1.deliverStake(tx, deliverState);
+            return stakeHandlers_1.deliverStake(tx, deliverState);
             ;
         }
         case "rebalance": {
@@ -263,7 +263,7 @@ function commit(request) {
                 break;
             }
         }
-        // Increase block height
+        // Increase last block height
         deliverState.lastBlockHeight += 1;
         // Generate new state hash and update
         stateHash = Hasher_1.Hasher.hashState(deliverState);

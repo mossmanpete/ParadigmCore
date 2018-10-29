@@ -38,7 +38,7 @@ app.post("/*", (req, res) => {
     let payloadStr;
     try {
         payloadStr = PayloadCipher_1.PayloadCipher.encodeFromObject({
-            type: "order ",
+            type: "order",
             data: req.body
         });
     }

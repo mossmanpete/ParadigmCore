@@ -29,12 +29,12 @@ let Order = new Paradigm().Order;
  * @param tx {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkOrder(tx: object, state: any){
+export function checkOrder(tx: any, state: any){
     let order; // Paradigm order object
     let poster; // Recovered poster address from signature
 
     try {
-        order = new Order(tx);
+        order = new Order(tx.data);
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
         Logger.mempoolWarn(msg.abci.errors.format);
@@ -58,13 +58,13 @@ export function checkOrder(tx: object, state: any){
  * @param state {object} current round state
  * @param q {OrderTracker} valid order queue
  */
-export function deliverOrder(tx: object, state: any, q: OrderTracker){
+export function deliverOrder(tx: any, state: any, q: OrderTracker){
     let order; // Paradigm order object
     let poster; // Recovered poster address from signature
 
     try {
         // Construct Paradigm order object
-        order = new Order(tx);
+        order = new Order(tx.data);
 
         // Recover poster's signature, if valid
         poster = order.recoverPoster().toLowerCase();
