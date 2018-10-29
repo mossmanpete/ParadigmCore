@@ -30,7 +30,7 @@ function checkOrder(tx, state) {
     let order; // Paradigm order object
     let poster; // Recovered poster address from signature
     try {
-        order = new Order(tx);
+        order = new Order(tx.data);
         poster = order.recoverPoster().toLowerCase();
     }
     catch (err) {
@@ -60,7 +60,7 @@ function deliverOrder(tx, state, q) {
     let poster; // Recovered poster address from signature
     try {
         // Construct Paradigm order object
-        order = new Order(tx);
+        order = new Order(tx.data);
         // Recover poster's signature, if valid
         poster = order.recoverPoster().toLowerCase();
     }

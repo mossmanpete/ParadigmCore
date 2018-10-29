@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+require("colors");
 const url_1 = require("url");
 const events_1 = require("events");
 const tendermint_1 = require("tendermint");
@@ -103,6 +104,8 @@ class Broadcaster extends events_1.EventEmitter {
         let broadcast = this.client.broadcastTxSync({
             tx: txPayload
         }).then(_ => {
+            // TEMPORARY
+            console.log("(broadcaster) TRANSACTION SENT".green);
             // If queue is now empty, stop broadcast cycle, mark as ready
             if (_this.queue.isEmpty()) {
                 this.ready = true;
@@ -112,8 +115,9 @@ class Broadcaster extends events_1.EventEmitter {
             this.send();
         }).catch(e => {
             // Temporary log
+            console.log("(broadcaster) TRANSACTION FAILED".red);
             console.log("(BROADCASTER) Error: " + JSON.stringify(e));
-            throw new Error("Error broadcasting ABCI transaction.");
+            // throw new Error("Error broadcasting ABCI transaction.");
         });
         return;
     }

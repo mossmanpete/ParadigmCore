@@ -410,11 +410,13 @@ export class StakeRebalancer {
         
         // If this is the first event from this block, create entry
         if (!this.events.hasOwnProperty(block)) {
-            this.events[block] = [];
+            // this.events[block] = [];
+            this.events[block] = {};
         }
 
         // Add event to confirmation queue
-        this.events[block].push(event);
+        //this.events[block].push(event);
+        this.events[block][staker] = event;
 
         console.log(`(Rebalancer) balances ${JSON.stringify(this.balances)}\n`);
         return;
@@ -461,11 +463,11 @@ export class StakeRebalancer {
 
         // See if any events have reached finality
         if (this.events.hasOwnProperty(matBlock)) {
-            this.events[matBlock].forEach(event => {
-                this.updateBalance(event);
-                this.execEventTx(event);
+            Object.keys(this.events[matBlock]).forEach(k => {
+                this.updateBalance(this.events[matBlock][k]);
+                this.execEventTx(this.events[matBlock][k]);
             });
-
+            
             // Once all balances have been updated, delete entry
             delete this.events[matBlock];
         }
@@ -538,7 +540,7 @@ export class StakeRebalancer {
                 block: _block,
                 amount: _amt
             },
-            nonce: Math.floor(Math.random() * 1000) // TODO: revisit this       
+            nonce: Math.floor(Math.random() * 10000) // TODO: revisit this       
         };
         return tx;
     }

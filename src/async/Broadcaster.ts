@@ -1,3 +1,5 @@
+require("colors");
+
 import { URL } from "url";
 import { EventEmitter } from "events";
 import { RpcClient } from "tendermint";
@@ -125,6 +127,8 @@ export class Broadcaster extends EventEmitter{
         let broadcast = this.client.broadcastTxSync({
             tx: txPayload
         }).then(_ => {
+            // TEMPORARY
+            console.log("(broadcaster) TRANSACTION SENT".green);
             // If queue is now empty, stop broadcast cycle, mark as ready
             if (_this.queue.isEmpty()) {
                 this.ready = true;
@@ -135,8 +139,9 @@ export class Broadcaster extends EventEmitter{
             this.send();
         }).catch(e => {
             // Temporary log
+            console.log("(broadcaster) TRANSACTION FAILED".red);
             console.log("(BROADCASTER) Error: " + JSON.stringify(e));
-            throw new Error("Error broadcasting ABCI transaction.");
+            // throw new Error("Error broadcasting ABCI transaction.");
         });
 
         return;
