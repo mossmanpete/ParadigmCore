@@ -63,7 +63,7 @@ export class StakeRebalancer {
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold
     private balances: any;      // The address:stake_amount mapping
-    
+
     /**
      * @name genLimits()
      * @description Generates an output address:limit mapping based on a provided
@@ -348,7 +348,6 @@ export class StakeRebalancer {
 
         // Connect broadcaster to Tendermint RPC
         this.broadcaster.connect();
-
         return err.OK;
     }
 
@@ -402,15 +401,10 @@ export class StakeRebalancer {
         // Generate event object
         let event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
 
-        console.log(`in handle stake: block: ${block}`);
-        console.log(`... (rebalancer) Event. type: ${event.type} staker: ${event.staker}\n\n`);
-
-        // work on this
         // See if this is a historical event that has already matured
         if ((this.initHeight - block) > this.finalityThreshold){
             this.updateBalance(event);
             this.execEventTx(event);
-            console.log(`.... (rebalancer) balances ${JSON.stringify(this.balances)}\n\n\n`);
             return;
         }
         
@@ -422,8 +416,7 @@ export class StakeRebalancer {
         // Add event to confirmation queue
         this.events[block].push(event);
 
-        console.log(`(temp) got new stake`)
-        console.log(`(rebalancer) balances ${JSON.stringify(this.balances)}`);
+        console.log(`(Rebalancer) balances ${JSON.stringify(this.balances)}\n`);
         return;
     }
 
@@ -441,6 +434,9 @@ export class StakeRebalancer {
             return;
         }
 
+        // Update current Ethereum block
+        this.currHeight = res.number;
+
         // See if this is the first new block
         if ((this.periodNumber === 0) && (res.number > this.initHeight)) {
             Logger.rebalancer("Proposing parameters for initial period.", 0);
@@ -454,33 +450,14 @@ export class StakeRebalancer {
                 Logger.rebalancerErr(`Tx failed with code: ${code}.`);
             }
 
-            console.log(`....../ exiting`);
             // Exit block handler function early on first block
             return;
         }
-
-        // Update current Ethereum block
-        this.currHeight = res.number;
         
         // Calculate which block is reaching maturity
         let matBlock = this.currHeight - this.finalityThreshold;
-        console.log(`(temporary) current block is: ${this.currHeight}`);
-        console.log(`(temporary) most final block is: ${matBlock}`);
-        console.log(`(temporary) next round ends at: ${this.periodEnd}`);
-
-        /*
-        // TODO: is there a better way to flush historical events?
-        if (Object.keys(this.events).length > 0){
-            Object.keys(this.events).forEach(k => {
-                this.events[k].forEach(event => {
-                    this.updateBalance(event);
-                    this.execEventTx(event);
-                });
-
-                delete this.events[k];
-            });
-        } else { console.log('no stakes :(')}
-        */
+        Logger.rebalancer(`(Temporary) Most final block is: ${matBlock}`, this.periodNumber);
+        Logger.rebalancer(`(Temporary) Next round ends at: ${this.periodEnd}`, this.periodNumber);
 
         // See if any events have reached finality
         if (this.events.hasOwnProperty(matBlock)) {
@@ -515,28 +492,32 @@ export class StakeRebalancer {
         // If no stake is present, set balance to stake amount
         if (!this.balances.hasOwnProperty(event.staker)) {
             this.balances[event.staker] = event.amount;
-            console.log('making new bal');
             return;
         }
 
+        // Update balance based on stake event 
         switch (event.type) {
             case 'add': {
                 this.balances[event.staker] += event.amount;
-                console.log('adding to bal');
-                return;
+                break;
             }
-
             case 'remove': {
                 this.balances[event.staker] -= event.amount;
-                console.log('removing from bal');
-                return;
+                break;
             }
-
             default: {
                 Logger.rebalancerErr("Received unknown event type.");
                 return;
             }
         }
+
+        // Remove balance entry if it is now 0
+        if (this.balances[event.staker] === 0) {
+            delete this.balances[event.staker];
+        }
+        
+        // Done.
+        return;
     }
 
     /**
@@ -556,7 +537,8 @@ export class StakeRebalancer {
                 type: _type,
                 block: _block,
                 amount: _amt
-            }        
+            },
+            nonce: Math.floor(Math.random() * 1000) // TODO: revisit this       
         };
         return tx;
     }
@@ -626,29 +608,14 @@ export class StakeRebalancer {
      * @param _tx   {object}    raw transaction object
      */
     private execAbciTx(_tx: any): number {
-        /* todo add queue?
-        if (this.abciClient === undefined) {
-            Logger.rebalancerErr("ABCI client not connected.");
-            return err.NO_ABCI;
-        }
+        // TODO: expand this? or delegate functionality to Broadcaster
 
-        // Encode and compress transaction
-        let payload = PayloadCipher.encodeFromObject(_tx);
-
-        // Execute ABCI transaction
-        this.abciClient.broadcastTxAsync({
-            tx: payload
-        }).then(r => {
-            Logger.rebalancer("ABCI Transaction executed.", this.periodNumber);    
-        }).catch(e => {
-            Logger.rebalancerErr("Failed to execute ABCI transaction.");
-        });
-        */
-
+        // Add Tx to broadcast queue
         try {
             this.broadcaster.add(_tx);
         } catch (e) {
-            console.log('(not in BROADCASTER) sending tx failed.');
+            Logger.rebalancerErr("Failed to execute local ABCI transaction.");
+            return err.TX_FAILED;
         }
 
         // Will return OK unless ABCI is disconnected

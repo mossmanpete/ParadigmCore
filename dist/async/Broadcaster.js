@@ -102,9 +102,7 @@ class Broadcaster extends events_1.EventEmitter {
         // Broadcast Tx (USING SYNC MODE)
         let broadcast = this.client.broadcastTxSync({
             tx: txPayload
-        }).then(r => {
-            // Temporary log
-            console.log(`(BROADCASTER) Sent. Res: ${JSON.stringify(r)}`);
+        }).then(_ => {
             // If queue is now empty, stop broadcast cycle, mark as ready
             if (_this.queue.isEmpty()) {
                 this.ready = true;

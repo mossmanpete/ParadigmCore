@@ -11,4 +11,5 @@ Codes.WEB3_PROV = 5;
 Codes.WEB3_INST = 6;
 Codes.SUBSCRIBE = 7;
 Codes.NO_ABCI = 8;
+Codes.TX_FAILED = 9;
 exports.default = Codes;

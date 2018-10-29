@@ -134,11 +134,9 @@ exports.deliverRebalance = deliverRebalance;
  * @param limit     {number} the total number of orders accepted in the period
  */
 function genLimits(balances, limit) {
-    console.log('we in gen limits');
     let total = 0; // total amount currenty staked
     let stakers; // total number of stakers
     let output = {}; // generated output mapping
-    console.log("5 we ere boys");
     // Calculate total balance currently staked
     Object.keys(balances).forEach((k, _) => {
         if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {
@@ -146,7 +144,6 @@ function genLimits(balances, limit) {
             stakers += 1;
         }
     });
-    console.log(`(temp) Total staked: ${total}`);
     // Compute the rate-limits for each staker based on stake size
     Object.keys(balances).forEach((k, _) => {
         if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {
@@ -156,9 +153,11 @@ function genLimits(balances, limit) {
                 // streamLimit is always 1, regardless of stake size
                 streamLimit: 1
             };
-            console.log("(temp) this orderlimit: " + output[k].orderLimit);
         }
     });
-    // return [output, stakers];
+    // Temporary
+    console.log(`... (Temp) Total staked this round: ${total}`);
+    console.log(`... (Temp) Total stakers this round: ${stakers}`);
+    // Return computed output mapping
     return output;
 }

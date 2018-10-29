@@ -12,7 +12,7 @@
 */
 
 // Tendermint JS ABCI server 
-import * as abci from "abci";
+const abci: any = require('abci');
 
 // Log message templates
 import { messages as msg } from "../util/messages";
@@ -34,7 +34,7 @@ let version: string;    // store current application version
 let handlers: object;   // ABCI handler functions
 
 let tracker: OrderTracker;          // used to broadcast orders
-let rebalancer: StakeRebalancer;    // construct and submit mapping
+let rebalancer: StakeRebalancer;    // construct and submit mappings
 
 let deliverState: any;  // deliverTx state
 let commitState: any;   // commit state
@@ -298,7 +298,7 @@ function commit(request): string {
             }
         }
 
-        // Increase block height
+        // Increase last block height
         deliverState.lastBlockHeight += 1;
 
         // Generate new state hash and update

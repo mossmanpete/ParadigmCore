@@ -8,4 +8,5 @@ export default class Codes {
     static WEB3_INST    = 6;
     static SUBSCRIBE    = 7;
     static NO_ABCI      = 8;
+    static TX_FAILED    = 9;
 }

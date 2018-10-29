@@ -13,7 +13,7 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 // Tendermint JS ABCI server 
-const abci = require("abci");
+const abci = require('abci');
 // Log message templates
 const messages_1 = require("../util/messages");
 // Custom classes
@@ -25,7 +25,7 @@ const OrderTracker_1 = require("../async/OrderTracker");
 const StakeRebalancer_1 = require("../async/StakeRebalancer");
 // ABCI handler functions
 const orderHandlers_1 = require("./orderHandlers");
-const stakeHandlers_1 = require("./stakeHandlers");
+const r_stakeHandlers_1 = require("./r_stakeHandlers");
 const rebalanceHandlers_1 = require("./rebalanceHandlers");
 let version; // store current application version
 let handlers; // ABCI handler functions
@@ -168,7 +168,7 @@ function checkTx(request) {
             return checkStream(tx, commitState);
         }*/
         case "stake": {
-            return stakeHandlers_1.checkStake(tx, commitState);
+            return r_stakeHandlers_1.checkStake(tx, commitState);
             ;
         }
         case "rebalance": {
@@ -216,7 +216,7 @@ function deliverTx(request) {
             return deliverStream(tx, deliverState, tracker);
         }*/
         case "stake": {
-            return stakeHandlers_1.deliverStake(tx, deliverState);
+            return r_stakeHandlers_1.deliverStake(tx, deliverState);
             ;
         }
         case "rebalance": {
