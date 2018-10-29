@@ -27,14 +27,14 @@ const Codes_1 = require("../util/Codes");
 const Broadcaster_1 = require("./Broadcaster");
 class StakeRebalancer {
     /**
-     * @name constructor()
+     * @name StakeRebalancer constructor()
      * @private
      * @description PRIVATE constructor. Do not use. Create new rebalancers
      * with StakeRebalancer.create(options)
      *
-     * @param options {object} see .create()
+     * @param opts {object} options object - see .create()
      */
-    constructor(options) {
+    constructor(opts) {
         /**
          * @name handleStake()
          * @description Stake event handler. NOTE: events are indexed by the block
@@ -144,23 +144,29 @@ class StakeRebalancer {
             // Return once all tasks complete
             return;
         };
+        // Check Web3 provider URL
         try {
-            this.web3provider = new url_1.URL(options.provider);
+            this.web3provider = new url_1.URL(opts.provider);
         }
         catch (err) {
             throw new Error("Invalid web3 provider URL.");
         }
+        // Check Tendermint client parameters
+        try {
+            this.abciURI = new url_1.URL(`ws://${opts.abciHost}:${opts.abciPort}`);
+        }
+        catch (err) {
+            throw new Error("Invalid Tendermint ABCI URL");
+        }
         // Staking period parameters
-        this.periodLimit = options.periodLimit;
-        this.periodLength = options.periodLength;
+        this.periodLimit = opts.periodLimit;
+        this.periodLength = opts.periodLength;
         this.periodNumber = 0;
         // Finality threshold
-        this.finalityThreshold = options.finalityThreshold;
+        this.finalityThreshold = opts.finalityThreshold;
         // Staking contract parameters
-        this.stakeABI = options.stakeABI;
-        this.stakeAddress = options.stakeAddress;
-        // Tendermint client parameters
-        this.abciURI = new url_1.URL(`ws://${options.abciHost}:${options.abciPort}`);
+        this.stakeABI = opts.stakeABI;
+        this.stakeAddress = opts.stakeAddress;
         // Mapping objects
         this.events = {};
         this.balances = {};
@@ -177,14 +183,12 @@ class StakeRebalancer {
      * @param limit     {number} total number of orders accepted per period
      */
     static genLimits(balances, limit) {
-        let total = 0; // total amount currenty staked
-        let stakers; // total number of stakers
-        let output = {}; // generated output mapping
+        let total = 0; // Total amount currenty staked
+        let output = {}; // Generated output mapping
         // Calculate total balance currently staked
         Object.keys(balances).forEach((k, _) => {
             if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {
                 total += balances[k];
-                stakers += 1;
             }
         });
         // Compute the rate-limits for each staker based on stake size
@@ -198,7 +202,7 @@ class StakeRebalancer {
                 };
             }
         });
-        // return [output, stakers]; //  do this?
+        // Return constructed output mapping.
         return output;
     }
     /**
@@ -244,17 +248,22 @@ class StakeRebalancer {
      *  - options.abciPort          {number}    ABCI application RPC port
      */
     static async create(options) {
-        let instance; // stores new StakeRebalancer instance
+        let instance; // Stores new StakeRebalancer instance
         try {
+            // Create new rebalancer instance
             instance = new StakeRebalancer(options);
+            // Initialize instance
             let code = await instance.initialize();
+            // Reject promise if initialization failed
             if (code !== Codes_1.default.OK) {
-                throw new Error(`ERRCODE: ${code}`);
+                throw new Error(`Rebalancer initialization failed with code: ${code}`);
             }
         }
         catch (err) {
+            // Throw error with message and code from above
             throw new Error(err.message);
         }
+        // Return new instance upon successful initialization
         return instance;
     }
     /**
@@ -286,7 +295,6 @@ class StakeRebalancer {
         catch (_) {
             return Codes_1.default.CONTRACT; // Unable to initialize staking contract
         }
-        console.log(this.initHeight); // temporary
         // Only returns OK upon successful initialization
         this.initialized = true;
         return Codes_1.default.OK;
@@ -300,16 +308,16 @@ class StakeRebalancer {
      */
     start() {
         // Subscribe to Ethereum events
-        let subc = this.subscribe();
-        if (subc !== Codes_1.default.OK) {
-            return subc;
+        let subCode = this.subscribe();
+        if (subCode !== Codes_1.default.OK) {
+            return subCode;
         }
         // Connect to Tendermint via ABCI
-        let abcic = this.connectABCI();
-        if (abcic !== Codes_1.default.OK) {
-            return abcic;
+        let abciCode = this.connectABCI();
+        if (abciCode !== Codes_1.default.OK) {
+            return abciCode;
         }
-        // Success
+        // Successful startup
         this.started = true;
         return Codes_1.default.OK;
     }
@@ -348,6 +356,7 @@ class StakeRebalancer {
         else {
             let protocol = this.web3provider.protocol;
             let url = this.web3provider.href;
+            // Supports HTTP and WS (TODO: only WS?)
             try {
                 if (protocol === 'ws:' || protocol === 'wss:') {
                     provider = new Web3.providers.WebsocketProvider(url);
@@ -364,6 +373,7 @@ class StakeRebalancer {
                 // Unable to establish provider
                 return Codes_1.default.WEB3_PROV;
             }
+            // Create Web3 instance
             try {
                 this.web3 = new Web3(provider);
             }
@@ -380,27 +390,12 @@ class StakeRebalancer {
      * @description Connect to local Tendermint ABCI server.
      */
     connectABCI() {
-        /*
-        try {
-            if (this.abciClient === undefined) {
-                this.abciClient = RpcClient(this.abciURI.href);
-                this.abciClient.on('close', () => {
-                    console.log('(temp) client disconnected.');
-                });
-                this.abciClient.on('error', () => {
-                    console.log('(temp) error in abci client');
-                });
-
-                Logger.rebalancer(
-                    "Connected to Tendermint via ABCI", this.periodNumber);
-                }
-        } catch (err) {
-            return err.ABCI_CON; // Unable to establish ABCI connection
-        }*/
+        // Create broadcaster instance
         this.broadcaster = new Broadcaster_1.Broadcaster({
             host: this.abciURI.hostname,
             port: this.abciURI.port
         });
+        // Connect broadcaster to Tendermint RPC
         this.broadcaster.connect();
         return Codes_1.default.OK;
     }

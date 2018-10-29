@@ -33,7 +33,7 @@ import { Broadcaster } from "./Broadcaster";
 export class StakeRebalancer {
     // Rebalancer instance status
     private initialized: boolean;   // True if .initialize() sucessful
-    private started: boolean;       // True if Tendermint in sync
+    private started: boolean;       // True if Tendermint is connected
 
     // Web3 instance variables
     private web3provider: URL;  // Web3 provider URI
@@ -57,9 +57,8 @@ export class StakeRebalancer {
     private stakeAddress: string;       // Staking contract address
 
     // Tendermint ABCI connection variables
-    private abciClient: RpcClient;  // Tendermint ABCI client
-    private abciURI: URL;           // Local ABCI application URI
-    private broadcaster: Broadcaster;
+    private abciURI: URL;               // Local ABCI application URI
+    private broadcaster: Broadcaster;   // ABCI Tx broadcaster and queue
 
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold
@@ -147,7 +146,7 @@ export class StakeRebalancer {
      *  - options.abciPort          {number}    ABCI application RPC port
      */
     public static async create(options: any): Promise<StakeRebalancer> {
-        let instance; // stores new StakeRebalancer instance
+        let instance;   // Stores new StakeRebalancer instance
 
         try {
             // Create new rebalancer instance
@@ -155,45 +154,54 @@ export class StakeRebalancer {
 
             // Initialize instance
             let code = await instance.initialize();
+
+            // Reject promise if initialization failed
             if (code !== err.OK) {
                 throw new Error(`Rebalancer initialization failed with code: ${code}`)
             }
         } catch (err) {
+            // Throw error with message and code from above
             throw new Error(err.message);
         }
 
+        // Return new instance upon successful initialization
         return instance;
     }
     
     /**
-     * @name constructor()
+     * @name StakeRebalancer constructor()
      * @private
      * @description PRIVATE constructor. Do not use. Create new rebalancers
      * with StakeRebalancer.create(options)
      * 
-     * @param options {object} see .create()
+     * @param opts {object} options object - see .create()
      */
-    private constructor(options: any) {
+    private constructor(opts: any) {
+        // Check Web3 provider URL
         try {
-            this.web3provider = new URL(options.provider);
+            this.web3provider = new URL(opts.provider);
         } catch (err) {
             throw new Error("Invalid web3 provider URL.");
         }
 
+        // Check Tendermint client parameters
+        try {
+            this.abciURI = new URL(`ws://${opts.abciHost}:${opts.abciPort}`);
+        } catch (err) {
+            throw new Error("Invalid Tendermint ABCI URL");
+        }
+
         // Staking period parameters
-        this.periodLimit = options.periodLimit;
-        this.periodLength = options.periodLength;
+        this.periodLimit = opts.periodLimit;
+        this.periodLength = opts.periodLength;
         this.periodNumber = 0;
 
         // Finality threshold
-        this.finalityThreshold = options.finalityThreshold;
+        this.finalityThreshold = opts.finalityThreshold;
 
         // Staking contract parameters
-        this.stakeABI = options.stakeABI;
-        this.stakeAddress = options.stakeAddress;
-
-        // Tendermint client parameters
-        this.abciURI = new URL(`ws://${options.abciHost}:${options.abciPort}`);
+        this.stakeABI = opts.stakeABI;
+        this.stakeAddress = opts.stakeAddress;
 
         // Mapping objects
         this.events = {};
@@ -249,14 +257,14 @@ export class StakeRebalancer {
      */
     public start(): number {
         // Subscribe to Ethereum events
-        let subc = this.subscribe();
-        if (subc !== err.OK) { return subc; }
+        let subCode = this.subscribe();
+        if (subCode !== err.OK) { return subCode; }
         
         // Connect to Tendermint via ABCI
-        let abcic = this.connectABCI();
-        if (abcic !== err.OK) { return abcic; }
+        let abciCode = this.connectABCI();
+        if (abciCode !== err.OK) { return abciCode; }
 
-        // Success
+        // Successful startup
         this.started = true;
         return err.OK; 
     }
@@ -281,7 +289,6 @@ export class StakeRebalancer {
         this.periodNumber = round;
         this.periodStart = startsAt;
         this.periodEnd = endsAt;
-
         return;
     }
 
@@ -300,6 +307,7 @@ export class StakeRebalancer {
             let protocol = this.web3provider.protocol;
             let url = this.web3provider.href;
 
+            // Supports HTTP and WS (TODO: only WS?)
             try {
                 if (protocol === 'ws:' || protocol === 'wss:'){
                     provider = new Web3.providers.WebsocketProvider(url);
@@ -314,6 +322,7 @@ export class StakeRebalancer {
                 return err.WEB3_PROV;  
             }
 
+            // Create Web3 instance
             try {
                 this.web3 = new Web3(provider);
             } catch (_) {
@@ -331,28 +340,13 @@ export class StakeRebalancer {
      * @description Connect to local Tendermint ABCI server.
      */
     private connectABCI(): number {
-        /*
-        try {
-            if (this.abciClient === undefined) {
-                this.abciClient = RpcClient(this.abciURI.href);
-                this.abciClient.on('close', () => {
-                    console.log('(temp) client disconnected.');
-                });
-                this.abciClient.on('error', () => {
-                    console.log('(temp) error in abci client');
-                });
-
-                Logger.rebalancer(
-                    "Connected to Tendermint via ABCI", this.periodNumber);
-                }
-        } catch (err) {
-            return err.ABCI_CON; // Unable to establish ABCI connection
-        }*/
+        // Create broadcaster instance
         this.broadcaster = new Broadcaster({
             host: this.abciURI.hostname,
             port: this.abciURI.port
         });
 
+        // Connect broadcaster to Tendermint RPC
         this.broadcaster.connect();
 
         return err.OK;

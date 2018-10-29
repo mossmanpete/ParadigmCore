@@ -77,7 +77,6 @@ export class Broadcaster extends EventEmitter{
 
         // Attach general event handlers
         this.on('tx', () => {
-            console.log("(BROADCASTER) Added new tx to queue.");
             // If we are already broadcasting, we don't need to start
             if (_this.ready) _this.send();
         });
@@ -90,8 +89,30 @@ export class Broadcaster extends EventEmitter{
         return;
     }
 
-    public send() {
-        console.log('(BROADCASTER) Sending order.');
+    /**
+     * Add an ABCI transaction to the broadcast queue. Compresses and encodes 
+     * transactions before submission via ABCI.
+     * 
+     * @param tx {object}   raw transaction object to submit via ABCI
+     */
+    public add(tx: any): void {
+        // Compress and encode transaction
+        let payload = PayloadCipher.encodeFromObject(tx);
+        this.queue.add(payload);
+
+        // Trigger transaction broadcast
+        this.emit('tx');
+    }
+
+    /**
+     * Returns true if broadcaster has been started, false otherwise.
+     */
+    public isStarted(): boolean {
+        return this.started;
+    }
+
+    private send() {
+        console.log('(BROADCASTER) Sending tx.');
         // Store this reference, mark as not ready
         var _this = this;
         this.ready = false;
@@ -117,23 +138,10 @@ export class Broadcaster extends EventEmitter{
             this.send();
         }).catch(e => {
             // Temporary log
-            console.log(JSON.stringify(e));
+            console.log("(BROADCASTER) Error: " + JSON.stringify(e));
             throw new Error("Error broadcasting ABCI transaction.");
         });
 
         return;
-    }
-
-    public isStarted(): boolean {
-        return this.started;
-    }
-
-    public add(tx: any): void {
-        // Compress and encode transaction
-        let payload = PayloadCipher.encodeFromObject(tx);
-        this.queue.add(payload);
-
-        // Trigger transaction broadcast
-        this.emit('tx');
     }
 }
