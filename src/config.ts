@@ -14,7 +14,7 @@
 */
 
 // major, minor, and sub version numbers
-export const VERSION: string = "0.1.0"; // PC Version 
+export const VERSION: string = "0.1.1"; // PC Version 
 
 // configuration for Ethereum peg and rebalancer
 export const WEB3_PROVIDER: string = "wss://ropsten.infura.io/ws";
