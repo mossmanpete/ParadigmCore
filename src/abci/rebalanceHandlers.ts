@@ -118,15 +118,15 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
                     state.round.endsAt = proposal.round.endsAt;
                     state.limits = proposal.limits;
                     // End state modification
+
+                    Logger.consensus(msg.rebalancer.messages.accept);
+                    return Vote.valid(msg.rebalancer.messages.accept);
                 } else {
                     // Proposal does not match local mapping
 
                     Logger.consensusWarn(msg.rebalancer.messages.noMatch);
                     return Vote.invalid(msg.rebalancer.messages.noMatch);
                 }
-
-                Logger.consensus(msg.rebalancer.messages.accept);
-                return Vote.valid(msg.rebalancer.messages.accept);
 
             } else if ((1 + state.round.number) < proposal.round.number) {
                 // Proposal is for incorrect period
