@@ -43,7 +43,7 @@ app.post("/*", (req, res) => {
     let payloadStr: string;
     try {
         payloadStr = PayloadCipher.encodeFromObject({
-            type: "order ",
+            type: "order",
             data: req.body
         });
     } catch (error) {
