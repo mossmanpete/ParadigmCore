@@ -108,7 +108,7 @@ let node: any;                // Tendermint node instance
             "abciPort": ABCI_RPC_PORT
         }
 
-        // Wait for main process to start
+        // Wait for main ABCI application to start
         await startMain(options);
         Logger.consensus("Waiting for Tendermint to synchronize...");
 

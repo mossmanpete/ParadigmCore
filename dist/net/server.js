@@ -1,3 +1,4 @@
+"use strict";
 /*
   =========================
   ParadigmCore: Blind Star
@@ -12,41 +13,38 @@
 
   @10-16: TODO: support StreamBroadcast type.
 */
-
-import * as express from "express";
-import * as bodyParser from "body-parser";
-import cors = require('cors');
-
-import { Message } from "../net/ExpressMessage";
-import { Logger } from "../util/Logger";
-import { messages as msg } from "../util/messages";
-import LocalPoster from "./LocalPoster";
-
-let client: LocalPoster; // tendermint client for RPC
+Object.defineProperty(exports, "__esModule", { value: true });
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const ExpressMessage_1 = require("../net/ExpressMessage");
+const Logger_1 = require("../util/Logger");
+const messages_1 = require("../util/messages");
+const LocalPoster_1 = require("./LocalPoster");
+let client; // tendermint client for RPC
 let app = express();
-
 app.use(cors());
 app.use(bodyParser.json());
-
 app.use(function (err, req, res, next) {
     try {
-        Message.staticSendError(res, msg.api.errors.badJSON, 400);
-    } catch (err) {
-        Logger.apiErr(msg.api.errors.response);
+        ExpressMessage_1.Message.staticSendError(res, messages_1.messages.api.errors.badJSON, 400);
+    }
+    catch (err) {
+        Logger_1.Logger.apiErr(messages_1.messages.api.errors.response);
     }
 });
-
 app.post("/*", (req, res) => {
     try {
         client.send("order", req.body).then(r => {
             console.log(`(temp) Sent order via LocalPoster: ${r}`);
-            Message.staticSend(res, r);
+            ExpressMessage_1.Message.staticSend(res, r);
         }).catch(e => {
             console.log(`(temp) Error sending via LocalPoster: ${e}`);
         });
-    } catch (error) {
-        Logger.apiErr(error.message);
-        Message.staticSendError(res, msg.api.errors.parsing, 400);
+    }
+    catch (error) {
+        Logger_1.Logger.apiErr(error.message);
+        ExpressMessage_1.Message.staticSendError(res, messages_1.messages.api.errors.parsing, 400);
     }
     /*
     let payloadStr: string;
@@ -70,16 +68,16 @@ app.post("/*", (req, res) => {
     });
     */
 });
-
-export async function startAPIserver(host, rpcPort, apiPort) {
+async function startAPIserver(host, rpcPort, apiPort) {
     try {
         // Create HTTP poster instance
-        client = new LocalPoster("sync", host, rpcPort);
-        
+        client = new LocalPoster_1.default("sync", host, rpcPort);
         await app.listen(apiPort);
-        Logger.apiEvt(msg.api.messages.servStart)
-        return
-    } catch (err) {
+        Logger_1.Logger.apiEvt(messages_1.messages.api.messages.servStart);
+        return;
+    }
+    catch (err) {
         throw new Error('Error starting API server');
     }
 }
+exports.startAPIserver = startAPIserver;
