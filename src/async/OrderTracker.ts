@@ -4,7 +4,7 @@
   OrderTracker.ts @ {master}
   =========================
 
-  @date_inital 9 October 2018
+  @date_initial 9 October 2018
   @date_modified 24 October 2018
   @author Henry Harder
   
@@ -15,7 +15,7 @@ import { EventEmitter } from "events";
 
 export class OrderTracker {
     
-    private em: EventEmitter; // event emiter instance
+    private em: EventEmitter; // event emitter instance
     private orders: Array<object>; // stores valid orders
     private streams: Array<object>; // stores valid streams
 

@@ -4,7 +4,7 @@
   StakeRebalancer.ts @ {master}
   =========================
 
-  @date_inital 15 October 2018
+  @date_initial 15 October 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
@@ -33,7 +33,7 @@ import { Broadcaster } from "./Broadcaster";
 
 export class StakeRebalancer {
     // Rebalancer instance status
-    private initialized: boolean;   // True if .initialize() sucessful
+    private initialized: boolean;   // True if .initialize() successful
     private started: boolean;       // True if Tendermint is connected
 
     // Web3 instance variables
@@ -68,13 +68,13 @@ export class StakeRebalancer {
     /**
      * @name genLimits()
      * @description Generates an output address:limit mapping based on a provided
-     * address:balance mapping, and a total thoughput limit.
+     * address:balance mapping, and a total throughput limit.
      * 
      * @param balances  {object} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
     public static genLimits(balances: any, limit: number): any {
-        let total: number = 0;      // Total amount currenty staked
+        let total: number = 0;      // Total amount currently staked
         let output: object = {};    // Generated output mapping
 
         // Calculate total balance currently staked
@@ -303,7 +303,7 @@ export class StakeRebalancer {
 
         if (typeof(this.web3) !== 'undefined') {
             this.web3 = new Web3(this.web3.currentProvider);
-            return err.OK; // Sucessful
+            return err.OK;
         } else {
             let protocol = this.web3provider.protocol;
             let url = this.web3provider.href;
@@ -330,8 +330,7 @@ export class StakeRebalancer {
                 // Unable to create web3 instance
                 return err.WEB3_INST; 
             }
-
-            // Sucessful 
+ 
             return err.OK; 
         }
     }

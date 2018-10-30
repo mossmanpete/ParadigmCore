@@ -4,7 +4,7 @@
   Codes.ts @ {master}
   =========================
 
-  @date_inital 27 October 2018
+  @date_initial 27 October 2018
   @date_modified 29 October 2018
   @author Henry Harder
 

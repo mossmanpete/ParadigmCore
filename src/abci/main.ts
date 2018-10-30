@@ -4,7 +4,7 @@
   main.ts @ {master}
   =========================
 
-  @date_inital 13 September 2018
+  @date_initial 13 September 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
@@ -26,15 +26,15 @@ import { OrderTracker } from "../async/OrderTracker";
 import { StakeRebalancer } from "../async/StakeRebalancer";
 
 // ABCI handler functions
-import { checkOrder, deliverOrder } from "./orderHandlers";
-import { checkStake, deliverStake } from "./stakeHandlers";
-import { checkRebalance, deliverRebalance } from "./rebalanceHandlers";
+import { checkOrder, deliverOrder } from "./handlers/order";
+import { checkStake, deliverStake } from "./handlers/stake";
+import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
 
 let version: string;    // store current application version
 let handlers: object;   // ABCI handler functions
 
 let tracker: OrderTracker;          // used to broadcast orders
-let rebalancer: StakeRebalancer;    // construct and submit mappings
+let rebalancer: StakeRebalancer;    // Witness component
 
 let deliverState: any;  // deliverTx state
 let commitState: any;   // commit state
@@ -164,11 +164,13 @@ function checkTx(request): Vote {
 
     try {
         // TODO: expand ABCIdecode() to produce rich objects
-        
         // Decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
         txType = tx.type.toLowerCase();
     } catch (err) {
+        console.log(`.... ERROR: ${err}`); // TEMP
+        process.exit(1);                    // TEMP
+
         Logger.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
     }

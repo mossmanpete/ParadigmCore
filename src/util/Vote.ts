@@ -4,7 +4,7 @@
   Vote.ts @ {master}
   =========================
   
-  @date_inital 24 September 2018
+  @date_initial 24 September 2018
   @date_modified 25 October 2018
   @author Henry Harder
 

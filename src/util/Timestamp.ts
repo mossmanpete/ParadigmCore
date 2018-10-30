@@ -4,7 +4,7 @@
   Timestamp.ts @ {master}
   =========================
   
-  @date_inital 10 October 2018
+  @date_initial 10 October 2018
   @date_modified 27 October 2018
   @author Henry Harder
 

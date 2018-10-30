@@ -4,7 +4,7 @@
   commitState.ts @ {master}
   =========================
   
-  @date_inital 22 October 2018
+  @date_initial 22 October 2018
   @date_modified 24 October 2018
   @author Henry Harder
 

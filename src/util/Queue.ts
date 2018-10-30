@@ -4,7 +4,7 @@
   Queue.ts @ {master}
   =========================
 
-  @date_inital 28 October 2018
+  @date_initial 28 October 2018
   @date_modified 29 October 2018
   @author Henry Harder
 

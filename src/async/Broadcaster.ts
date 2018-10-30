@@ -4,7 +4,7 @@
   Broadcaster.ts @ {master}
   =========================
 
-  @date_inital 29 October 2018
+  @date_initial 29 October 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
@@ -19,7 +19,7 @@ import { RpcClient } from "tendermint";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Queue } from "../util/Queue";
 
-export class Broadcaster extends EventEmitter{
+export class Broadcaster extends EventEmitter {
     // Tendermint ABCI connection
     private client: any;    // Tendermint client
     private abciUrl: URL;   // ABCI RPC URI
@@ -35,10 +35,10 @@ export class Broadcaster extends EventEmitter{
      * 
      * @param options   {object}    configuration options
      *  - options.host  {string}    Tendermint ABCI server host
-     *  - options.port  {nunmber}   Tendermint ABCI server port
+     *  - options.port  {number}   Tendermint ABCI server port
      */
     constructor(options) {
-        // Establish EventEmitter properties
+        // Construct and inherit EventEmitter properties
         super();
 
         // Tendermint configuration options
