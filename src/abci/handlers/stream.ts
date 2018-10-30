@@ -4,7 +4,7 @@
   streamHandlers.ts @ {master}
   =========================
 
-  @date_inital 23 October 2018
+  @date_initial 23 October 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
@@ -15,10 +15,10 @@
 
 import * as Paradigm from "paradigm-connect";
 
-import { messages as msg } from "../util/messages";
-import { OrderTracker } from "../async/OrderTracker";
-import { Logger } from "../util/Logger";
-import { Vote } from "../util/Vote";
+import { messages as msg } from "../../util/messages";
+import { OrderTracker } from "../../async/OrderTracker";
+import { Logger } from "../../util/Logger";
+import { Vote } from "../../util/Vote";
 
 let Order = new Paradigm().Order; // Paradigm order constructor
 

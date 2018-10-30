@@ -4,7 +4,7 @@
   index.ts @ {master}
   =========================
 
-  @date_inital 12 September 2018
+  @date_initial 12 September 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
@@ -30,6 +30,7 @@ import { startMain, startRebalancer } from "./abci/main";
 import { startAPIserver } from "./net/server";
 
 // Configuration and constants
+// TODO: convert to environment variables
 import { 
     WS_PORT,
     TM_HOME, 
@@ -46,9 +47,10 @@ import {
     FINALITY_THRESHOLD
 } from "./config";
 
-let wss: _ws.Server;        // OrderStream WS server
-let emitter: EventEmitter;  // Emitter to track events
-let node: any;              // Tendermint node instance
+// "Globals"
+let wss: _ws.Server;          // OrderStream WS server
+let emitter: EventEmitter;    // Emitter to track events
+let node: any;                // Tendermint node instance
 
 /**
  * This function executes immediately upon this file being loaded. It is
@@ -112,13 +114,14 @@ let node: any;              // Tendermint node instance
 
         // Wait for Tendermint to load and synchronize
         await node.synced();
-        Logger.consensus("Tendermint initialized and syncronized.");
+        Logger.consensus("Tendermint initialized and synchronized.");
 
         // Start state rebalancer sub-process AFTER sync
         await startRebalancer();
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
         Logger.logError(msg.abci.errors.fatal);
+        Logger.logError("Failed at ")
         process.exit(1);
     }
 

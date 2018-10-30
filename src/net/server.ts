@@ -4,7 +4,7 @@
   server.ts @ {master}
   =========================
 
-  @date_inital 24 September 2018
+  @date_initial 24 September 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
@@ -51,6 +51,8 @@ app.post("/*", (req, res) => {
         Message.staticSendError(res, msg.api.errors.parsing, 400);
     }
 
+    // TODO fix this
+    console.log("SENDING TX: " + payloadStr);
     client.broadcastTxSync({tx:payloadStr}).then(r => {
         res.send(r);
     }).catch(e => {
@@ -61,7 +63,7 @@ app.post("/*", (req, res) => {
 
 export async function startAPIserver(host, rpcPort, apiPort) {
     try {
-        client = RpcClient(`ws://${host}:${rpcPort}`);      
+        client = RpcClient(`http://${host}:${rpcPort}`); 
         
         await app.listen(apiPort);
         Logger.apiEvt(msg.api.messages.servStart)

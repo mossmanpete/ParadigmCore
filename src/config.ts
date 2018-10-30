@@ -4,7 +4,7 @@
   config.ts @ {master}
   =========================
 
-  @date_inital 12 September 2018
+  @date_initial 12 September 2018
   @date_modified 29 October 2018
   @author Henry Harder
 

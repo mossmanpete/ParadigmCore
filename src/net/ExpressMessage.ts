@@ -4,7 +4,7 @@
   Message.ts @ {master}
   =========================
 
-  @date_inital 19 August 2018
+  @date_initial 19 August 2018
   @date_modified 19 October 2018
   @author Henry Harder
 
