@@ -104,10 +104,10 @@ export class PayloadCipher {
             dcBuff = zlib.inflateSync(inBuff);
             outStr = dcBuff.toString(PayloadCipher.inEncoding);
         } catch (err) {
-            // console.log(err) // debugging (REMOVE)
+            console.log("ERROR:" + err.stack) // debugging (REMOVE)
             throw new Error("Error decoding payload.");
         }
-        
+
         try {
             outObj = JSON.parse(outStr);
         } catch (err) {
@@ -126,7 +126,7 @@ export class PayloadCipher {
     public static ABCIdecode(inBuff: Buffer): object {
         // TODO: consider depreciating and wrapping into other function
 
-       let inStr: string = inBuff.toString(this.outEncoding);
+       let inStr: string = inBuff.toString(this.inEncoding);
        return PayloadCipher.decodeToObject(inStr);
     }
 }

@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 24 September 2018
-  @date_modified 29 October 2018
+  @date_modified 31 October 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
@@ -20,7 +20,6 @@ const cors = require("cors");
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/messages");
-const LocalPoster_1 = require("./LocalPoster");
 let client; // tendermint client for RPC
 let app = express();
 app.use(cors());
@@ -33,45 +32,33 @@ app.use(function (err, req, res, next) {
         Logger_1.Logger.apiErr(messages_1.messages.api.errors.response);
     }
 });
-app.post("/*", (req, res) => {
+app.post("/*", async (req, res) => {
+    // Create transaction object
+    let tx = { type: "order", data: req.body };
+    // Execute local ABCI transaction
     try {
-        client.send("order", req.body).then(r => {
-            console.log(`(temp) Sent order via LocalPoster: ${r}`);
-            ExpressMessage_1.Message.staticSend(res, r);
-        }).catch(e => {
-            console.log(`(temp) Error sending via LocalPoster: ${e}`);
-        });
+        // Await ABCI response
+        let response = await client.send(tx);
+        // Send response back to client
+        Logger_1.Logger.apiEvt("Successfully executed local ABCI transaction.");
+        ExpressMessage_1.Message.staticSend(res, response);
     }
     catch (error) {
-        Logger_1.Logger.apiErr(error.message);
-        ExpressMessage_1.Message.staticSendError(res, messages_1.messages.api.errors.parsing, 400);
+        Logger_1.Logger.apiErr("Failed to execute local ABCI transaction");
+        ExpressMessage_1.Message.staticSendError(res, "Internal error, try again.", 500);
     }
-    /*
-    let payloadStr: string;
-    try {
-        payloadStr = PayloadCipher.encodeFromObject({
-            type: "order",
-            data: req.body
-        });
-    } catch (error) {
-        Logger.apiErr(msg.api.errors.parsing);
-        Message.staticSendError(res, msg.api.errors.parsing, 400);
-    }
-
-    // TODO fix this
-    console.log("SENDING TX: " + payloadStr);
-    client.broadcastTxSync({tx:payloadStr}).then(r => {
-        res.send(r);
-    }).catch(e => {
-        console.log(e);
-        Message.staticSendError(res, e.message, 500);
-    });
-    */
 });
-async function startAPIserver(host, rpcPort, apiPort) {
+/**
+ * Start and bind API server.
+ *
+ * @param apiPort       {number}        port to bind API server to
+ * @param broadcaster   {TxBroadcaster} local transaction broadcaster
+ */
+async function startAPIserver(apiPort, broadcaster) {
     try {
         // Create HTTP poster instance
-        client = new LocalPoster_1.default("sync", host, rpcPort);
+        client = broadcaster;
+        // Start API server
         await app.listen(apiPort);
         Logger_1.Logger.apiEvt(messages_1.messages.api.messages.servStart);
         return;

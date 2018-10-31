@@ -30,15 +30,16 @@ const rebalance_1 = require("./handlers/rebalance");
 // "Globals"
 let version; // store current application version
 let handlers; // ABCI handler functions
-let tracker; // used to broadcast orders
+// Asynchronous modules
+let tracker; // Wsed to broadcast valid orders
 let rebalancer; // Witness component
+// State objects
 let deliverState; // deliverTx state
 let commitState; // commit state
 /**
- * @name startMain() {exported async function}
- * @description Initialize and start the ABCI application.
+ * Initialize and start the ABCI application.
  *
- * @param options {object} options object with parameters:
+ * @param options {object} Options object with parameters:
  *  - options.version       {string}        application version
  *  - options.emitter       {EventEmitter}  main event emitter object
  *  - options.deliverState  {object}        deliverTx state object
@@ -70,8 +71,7 @@ async function startMain(options) {
             finalityThreshold: options.finalityThreshold,
             stakeAddress: options.stakeAddress,
             stakeABI: options.stakeABI,
-            abciHost: options.abciHost,
-            abciPort: options.abciPort
+            broadcaster: options.broadcaster
         });
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
@@ -84,10 +84,7 @@ async function startMain(options) {
 }
 exports.startMain = startMain;
 /**
- * @name startRebalancer() {export async function}
- * @description Start rebalancer module and order tracker module.
- *
- * @param none
+ * Start rebalancer module and order tracker module.
  */
 async function startRebalancer() {
     try {
@@ -97,6 +94,7 @@ async function startRebalancer() {
             Logger_1.Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
             throw new Error();
         }
+        // Activate OrderTracker (after Tendermint sync)
         tracker.activate();
     }
     catch (err) {
@@ -109,8 +107,7 @@ exports.startRebalancer = startRebalancer;
 Below are implementations of Tendermint ABCI functions.
 */
 /**
- * @name info() {function}
- * @description Return information about the state and software.
+ * Return information about the state and software.
  *
  * @param _ {null}
  */
@@ -123,9 +120,7 @@ function info(_) {
     };
 }
 /**
- * @name beginBlock() {function}
- * @description Called at the begining of each new block. Updates proposer
- * and block height.
+ * Called at the begining of each new block. Updates proposer and block height.
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
@@ -136,29 +131,23 @@ function beginBlock(request) {
     return {};
 }
 /**
- * @name checkTx() {function}
- * @description Perform light verification on incoming transactions, accept
- * valid transactions to the mempool, and reject invalid ones.
+ * Perform light verification on incoming transactions, accept valid
+ * transactions to the mempool, and reject invalid ones.
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function checkTx(request) {
     // Raw transaction buffer (encoded and compressed)
-    let rawTx = request.tx;
+    let rawTx /*: Buffer */ = request.tx;
     let tx; // Stores decoded transaction object
     let txType; // Stores transaction type
-    console.log("we are here");
     try {
         // TODO: expand ABCIdecode() to produce rich objects
         // Decode the buffered and compressed transaction
-        // console.log("... raw TX: " + request.tx);
-        // console.log("... decoded: " + PayloadCipher.decodeToString(request.tx));
         tx = PayloadCipher_1.PayloadCipher.ABCIdecode(rawTx);
-        console.log("... abci decoded: " + JSON.stringify(tx));
         txType = tx.type.toLowerCase();
     }
     catch (err) {
-        console.log(`.... ERROR: ${err}`); // TEMP
         Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.decompress);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
@@ -189,9 +178,8 @@ function checkTx(request) {
     }
 }
 /**
- * @name deliverTx() {function}
- * @description Execute a transaction in full: perform state modification, and
- * verify transaction validity.
+ * Execute a transaction in full: perform state modification, and verify
+ * transaction validity.
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
@@ -238,9 +226,8 @@ function deliverTx(request) {
 }
 // TODO: implement endBlock()
 /**
- * @name commit()
- * @description Persist application state, synchronize commit and deliver
- * states, and trigger the broadcast of valid orders in that block.
+ * Persist application state, synchronize commit and deliver states, and
+ * trigger the broadcast of valid orders in that block.
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
@@ -282,9 +269,9 @@ function commit(request) {
         Logger_1.Logger.consensus(`Commit and broadcast complete. Current state hash: ${stateHash}`);
     }
     catch (err) {
-        console.log(`(temporary) Error in commit: ${err}`);
         Logger_1.Logger.consensusErr(messages_1.messages.abci.errors.broadcast);
     }
+    // Temporary
     console.log(`.... cState: ${JSON.stringify(commitState)}`);
     // Return state's hash to be included in next block header
     return stateHash;

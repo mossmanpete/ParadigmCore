@@ -17,8 +17,7 @@ const Vote_1 = require("../../util/Vote");
 // TEMPORARY
 const CONF_THRESHOLD = 1;
 /**
- * @name checkStake() Performs mempool verification of Ethereum
- * StakeEvent transactions.
+ * Performs mempool verification of Ethereum StakeEvent transactions.
  *
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
@@ -35,14 +34,13 @@ function checkStake(tx, _) {
 }
 exports.checkStake = checkStake;
 /**
- * @name deliverStake() Performs state modification of Stake
- * Event transactions (modify staker's balance).
+ * Performs state modification of Stake Event transactions (modify staker's
+ * balance).
  *
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  *
  * @todo: options for confirmation threshold
- * @todo: refactor and write some helper funcs, this is ugly
  */
 function deliverStake(tx, state) {
     // Check structural validity
@@ -135,6 +133,15 @@ function isValidStakeEvent(data) {
         return true;
     }
 }
+/**
+ * Update state upon event confirmation
+ *
+ * @param state     {object}    current state object
+ * @param staker    {string}    staker's address
+ * @param block     {number}    relevant block height
+ * @param amount    {number}    amount staked (or unstaked)
+ * @param type      {string}    event type (stake made or removed)
+ */
 function updateMappings(state, staker, block, amount, type) {
     if (state.events.hasOwnProperty(block) &&
         state.events[block].hasOwnProperty(staker) &&
@@ -186,6 +193,14 @@ function updateMappings(state, staker, block, amount, type) {
         return;
     }
 }
+/**
+ * Apply event state transition of balances.
+ *
+ * @param state     {object}    current state object
+ * @param staker    {string}    staker's address
+ * @param amount    {number}    amount staked (or unstaked)
+ * @param type      {string}    event type (add or remove)
+ */
 function applyEvent(state, staker, amount, type) {
     switch (type) {
         // Staker is adding stake

@@ -53,9 +53,9 @@ export class OrderTracker {
     }
 
     public triggerBroadcast() {
-        if(!this.activated) return; // do not broadcast if not in sync
+        if (!this.activated) return; // do not broadcast if not in sync
 
-        if(this.orders.length > 0 || this.streams.length > 0){
+        if (this.orders.length > 0 || this.streams.length > 0) {
             try {
                 // Trigger order broadcast
                 this.orders.forEach(order => {

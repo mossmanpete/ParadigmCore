@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 15 October 2018
-  @date_modified 29 October 2018
+  @date_modified 31 October 2018
   @author Henry Harder
 
   UNSTABLE! (Okay not THAT unstable, but be careful)
@@ -18,27 +18,24 @@
   in production.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-require("colors"); // temporary
+// Third party and stdlib imports
 const Web3 = require("web3");
 const url_1 = require("url");
+// ParadigmCore modules/classes
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/messages");
 const Codes_1 = require("../util/Codes");
-const Broadcaster_1 = require("./Broadcaster");
 class StakeRebalancer {
     /**
-     * @name StakeRebalancer constructor()
-     * @private
-     * @description PRIVATE constructor. Do not use. Create new rebalancers
-     * with StakeRebalancer.create(options)
+     * PRIVATE constructor. Do not use. Create new rebalancers with
+     * StakeRebalancer.create(options)
      *
-     * @param opts {object} options object - see .create()
+     * @param opts {object} options object - see .create() docstring
      */
     constructor(opts) {
         /**
-         * @name handleStake()
-         * @description Stake event handler. NOTE: events are indexed by the block
-         * they occur in, not the finality block for that event.
+         * Stake event handler. NOTE: events are indexed by the block they occur
+         * in, not the finality block for that event.
          *
          * @param e     {object}    error object
          * @param res   {object}    event response object
@@ -63,19 +60,15 @@ class StakeRebalancer {
             }
             // If this is the first event from this block, create entry
             if (!this.events.hasOwnProperty(block)) {
-                // this.events[block] = [];
                 this.events[block] = {};
             }
             // Add event to confirmation queue
-            //this.events[block].push(event);
             this.events[block][staker] = event;
-            console.log(`(Rebalancer) balances ${JSON.stringify(this.balances)}\n`);
             return;
         };
         /**
-         * @name handleBlock()
-         * @description New Ethereum block event handler. Updates balances and
-         * executes ABCI transactions at appropriate finality blocks.
+         * New Ethereum block event handler. Updates balances and executes ABCI
+         * transactions at appropriate finality blocks.
          *
          * @param e     {object}    error object
          * @param res   {object}    event response object
@@ -133,17 +126,12 @@ class StakeRebalancer {
         catch (err) {
             throw new Error("Invalid web3 provider URL.");
         }
-        // Check Tendermint client parameters
-        try {
-            this.abciURI = new url_1.URL(`ws://${opts.abciHost}:${opts.abciPort}`);
-        }
-        catch (err) {
-            throw new Error("Invalid Tendermint ABCI URL");
-        }
         // Staking period parameters
         this.periodLimit = opts.periodLimit;
         this.periodLength = opts.periodLength;
         this.periodNumber = 0;
+        // Local ABCI transaction broadcaster
+        this.broadcaster = opts.broadcaster;
         // Finality threshold
         this.finalityThreshold = opts.finalityThreshold;
         // Staking contract parameters
@@ -157,8 +145,7 @@ class StakeRebalancer {
         this.started = false;
     }
     /**
-     * @name genLimits()
-     * @description Generates an output address:limit mapping based on a provided
+     * Generates an output address:limit mapping based on a provided
      * address:balance mapping, and a total throughput limit.
      *
      * @param balances  {object} current address:balance mapping
@@ -215,9 +202,9 @@ class StakeRebalancer {
         return { "staker": _addr, "type": type, "amount": _amt, "block": _block };
     }
     /**
-     * @name create()
-     * @description Static generator to create new rebalancer instances.
-     * @returns a promise that resolves to a new rebalancer instance
+     * Static generator to create new rebalancer instances.
+     *
+     * @returns Promise that resolves to a new rebalancer instance.
      *
      * @param options {object} options object with the following parameters:
      *  - options.provider          {string}    web3 provider URL
@@ -226,8 +213,7 @@ class StakeRebalancer {
      *  - options.finalityThreshold {number}    required block maturity
      *  - options.stakeABI          {array}     JSON staking contract ABI
      *  - options.stakeAddress      {string}    deployed staking contract address
-     *  - options.abciHost          {string}    ABCI application RPC host
-     *  - options.abciPort          {number}    ABCI application RPC port
+     *  - options.broadcaster       {TxBroadcaster}    broadcaster instance
      */
     static async create(options) {
         let instance; // Stores new StakeRebalancer instance
@@ -249,11 +235,10 @@ class StakeRebalancer {
         return instance;
     }
     /**
-     * @name initialize()
-     * @description Initialize rebalancer instance by connecting to a web3
-     * endpoint and instantiating contract instance. Uses error codes.
+     * Initialize rebalancer instance by connecting to a web3 endpoint and
+     * instantiating contract instance. Uses error codes.
      *
-     * @returns (a promise that resolves to) 0 if OK
+     * @returns Promise that resolves to 0 if OK
      */
     async initialize() {
         if (this.initialized && this.initHeight !== undefined) {
@@ -282,9 +267,8 @@ class StakeRebalancer {
         return Codes_1.default.OK;
     }
     /**
-     * @name start()
-     * @description Starts rebalancer instance after node synchronization,
-     * and connects to local Tendermint instance via ABCI.
+     * Starts rebalancer instance after node synchronization, and connects to
+     * local Tendermint instance via ABCI.
      *
      * @returns 0 if OK
      */
@@ -294,19 +278,13 @@ class StakeRebalancer {
         if (subCode !== Codes_1.default.OK) {
             return subCode;
         }
-        // Connect to Tendermint via ABCI
-        let abciCode = this.connectABCI();
-        if (abciCode !== Codes_1.default.OK) {
-            return abciCode;
-        }
         // Successful startup
         this.started = true;
         return Codes_1.default.OK;
     }
     /**
-     * @name synchronize()
-     * @description Use in ABCI commit() to update when a new state is accepted
-     * to update staking period parameters.
+     * Use in ABCI commit() to update when a new state is accepted. Updates
+     * staking period parameters.
      *
      * @param round     {number}    accepted new stake round (incrementing)
      * @param startsAt  {number}    accepted starting block for new period
@@ -325,9 +303,8 @@ class StakeRebalancer {
         return;
     }
     /**
-     * @name connectWeb3()
-     * @description Used to connect to Web3 provider. Called upon
-     * initialization, and if a web3 disconnect is detected.
+     * Used to connect to Web3 provider. Called during initialization, and
+     * if a web3 disconnect is detected.
      */
     connectWeb3() {
         let provider;
@@ -338,7 +315,7 @@ class StakeRebalancer {
         else {
             let protocol = this.web3provider.protocol;
             let url = this.web3provider.href;
-            // Supports HTTP and WS (TODO: only WS?)
+            // Supports HTTP and WS
             try {
                 if (protocol === 'ws:' || protocol === 'wss:') {
                     provider = new Web3.providers.WebsocketProvider(url);
@@ -367,22 +344,7 @@ class StakeRebalancer {
         }
     }
     /**
-     * @name connectABCI()
-     * @description Connect to local Tendermint ABCI server.
-     */
-    connectABCI() {
-        // Create broadcaster instance
-        this.broadcaster = new Broadcaster_1.Broadcaster({
-            host: this.abciURI.hostname,
-            port: this.abciURI.port
-        });
-        // Connect broadcaster to Tendermint RPC
-        this.broadcaster.connect();
-        return Codes_1.default.OK;
-    }
-    /**
-     * @name subscribe()
-     * @description Subscribe to relevant Ethereum events and attach handlers.
+     * Subscribe to relevant Ethereum events and attach handlers.
      */
     subscribe() {
         try {
@@ -404,20 +366,28 @@ class StakeRebalancer {
         // Success
         return Codes_1.default.OK;
     }
-    updateBalance(event) {
+    /**
+     * Perform "state transition" of instance balances. NOTE: this function
+     * does not modify the state of the ABCI application, however it
+     * implements the same logic as the state machine to ensure balances in
+     * state are up-to-date with the instance balances.
+     *
+     * @param evt   {object}    event object
+     */
+    updateBalance(evt) {
         // If no stake is present, set balance to stake amount
-        if (!this.balances.hasOwnProperty(event.staker)) {
-            this.balances[event.staker] = event.amount;
+        if (!this.balances.hasOwnProperty(evt.staker)) {
+            this.balances[evt.staker] = evt.amount;
             return;
         }
         // Update balance based on stake event 
-        switch (event.type) {
+        switch (evt.type) {
             case 'add': {
-                this.balances[event.staker] += event.amount;
+                this.balances[evt.staker] += evt.amount;
                 break;
             }
             case 'remove': {
-                this.balances[event.staker] -= event.amount;
+                this.balances[evt.staker] -= evt.amount;
                 break;
             }
             default: {
@@ -426,15 +396,12 @@ class StakeRebalancer {
             }
         }
         // Remove balance entry if it is now 0
-        if (this.balances[event.staker] === 0) {
-            delete this.balances[event.staker];
-        }
-        // Done.
+        if (this.balances[evt.staker] === 0)
+            delete this.balances[evt.staker];
         return;
     }
     /**
-     * @name generateEventTx()
-     * @description Construct a new event ABCI transaction object.
+     * Construct a new event ABCI transaction object.
      *
      * @param _staker   {string}    Ethereum address string
      * @param _type     {string}    stake event type ('add' or 'remove')
@@ -455,10 +422,8 @@ class StakeRebalancer {
         return tx;
     }
     /**
-     * @name genRebalanceTx()
-     * @description Generates a rebalance transaction object by computing
-     * proportional allocation of transaction throughput based on stake
-     * size.
+     * Generates a rebalance transaction object by computing proportional
+     * allocation of transaction throughput based on stake size.
      *
      * @param _round    {number}    the current staking period number
      * @param _start    {number}    period starting ETG block number
@@ -491,8 +456,7 @@ class StakeRebalancer {
         return tx;
     }
     /**
-     * @name execEventTx()
-     * @description Generate and send and event witness transaction.
+     * Generate and send and event witness transaction.
      *
      * @param event     {object}    event object
      */
@@ -505,17 +469,18 @@ class StakeRebalancer {
         return;
     }
     /**
-     * @name execAbciTx()
-     * @description Encodes and compresses a transactions, then submits it to
-     * Tendermint via the local ABCI server.
+     * Encodes and compresses a transactions, then submits it to Tendermint
+     * via the broadcaster connection.
      *
      * @param _tx   {object}    raw transaction object
      */
     execAbciTx(_tx) {
-        // TODO: expand this? or delegate functionality to Broadcaster
-        // Add Tx to broadcast queue
         try {
-            this.broadcaster.add(_tx);
+            this.broadcaster.send(_tx).then(_ => {
+                Logger_1.Logger.rebalancer("Executed local ABCI Tx.", this.periodNumber);
+            }).catch(_ => {
+                Logger_1.Logger.rebalancerErr("Local ABCI transaction failed.");
+            });
         }
         catch (e) {
             Logger_1.Logger.rebalancerErr("Failed to execute local ABCI transaction.");
