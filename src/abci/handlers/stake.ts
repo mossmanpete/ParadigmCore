@@ -63,6 +63,7 @@ export function deliverStake(tx: any, state: any): Vote {
                 state.events[block][staker].amount === amount &&
                 state.events[block][staker].type === type
             ) {
+                console.log("(temp) before voting "+"\n" + state.events+"\n");
                 // Event is already in state, add confirmation
                 state.events[block][staker].conf += 1;
                 console.log("(temp) Just voted for event. Conf: " + state.events[block][staker].conf)
