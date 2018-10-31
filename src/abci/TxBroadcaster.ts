@@ -126,34 +126,6 @@ export class TxBroadcaster {
         // Compress and encode Tx
         let payload = PayloadCipher.encodeFromObject(txObject);
         
-        /*
-        // Send transaction
-        this.client.broadcastTxSync({
-            tx: `"${payload}"`
-        }).then(res => {
-            // Temporary
-            Logger.txEvt("Transaction sent successfully.");
-
-            // Resolve promise to JSON response
-            txEmitter.emit('sent', res);
-
-            // If queue is now empty, stop broadcasting
-            if(_this.isEmpty()) {
-                this.broadcasting = false;
-                return;
-            }
-
-            // Otherwise, move onto the next Tx
-            this.broadcast();
-        }).catch(err => {
-            // Temporary
-            Logger.txErr("Transaction failed.");
-
-            // Resolve promise to error object
-            txEmitter.emit('failed', err);
-        });
-        */
-
         try {
             // Await ABCI response, and resolve promise
             let res = await this.client.broadcastTxSync({ tx:`"${payload}"` });
