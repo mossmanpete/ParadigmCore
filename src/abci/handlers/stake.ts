@@ -65,6 +65,7 @@ export function deliverStake(tx: any, state: any): Vote {
             ) {
                 // Event is already in state, add confirmation
                 state.events[block][staker].conf += 1;
+                console.log("(temp) Just voted for event. Conf: " + state.events[block][staker].conf)
                 updateMappings(state, staker, block, amount, type);
                 
                 // Voted for valid existing event
