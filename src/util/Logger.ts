@@ -12,6 +12,7 @@
 */
 
 const { VERSION } = process.env;
+
 import { Timestamp } from "./Timestamp"
 import "colors";
 

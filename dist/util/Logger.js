@@ -12,21 +12,21 @@
   Simple Logger class to handle logs to STDOUT.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = require("../config");
+const { VERSION } = process.env;
 const Timestamp_1 = require("./Timestamp");
 require("colors");
 class Logger {
     static logStart() {
-        console.log(`${'S'.magenta} [${"PC".cyan} v${config_1.VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] Starting ${'ParadigmCore (ALPHA)'.cyan.bold} version ${config_1.VERSION.red}`);
+        console.log(`${'S'.magenta} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] Starting ${'ParadigmCore (ALPHA)'.cyan.bold} version ${VERSION.red}`);
     }
     static logEvent(message) {
-        console.log(`${'I'.green} [${"PC".cyan} v${config_1.VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message}`);
+        console.log(`${'I'.green} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message}`);
     }
     static logError(message) {
-        console.log(`${'E'.red} [${"PC".cyan} v${config_1.VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message.red}`);
+        console.log(`${'E'.red} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message.red}`);
     }
     static logWarning(message) {
-        console.log(`${'W'.yellow} [${"PC".cyan} v${config_1.VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message}`);
+        console.log(`${'W'.yellow} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp_1.Timestamp().logFormat().yellow}] ${message}`);
     }
     static newRound(height, proposer) {
         Logger.logEvent(`${`Starting block #${height}:`.blue} Validator ${proposer.bold} is proposer.`);

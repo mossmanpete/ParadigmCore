@@ -13,7 +13,7 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 const zlib = require("zlib");
-const config_1 = require("../config");
+const { IN_ENC, OUT_ENC } = process.env;
 class PayloadCipher {
     /**
      * encodeFromObject (public static method): Construct encoded and compressed
@@ -119,7 +119,7 @@ class PayloadCipher {
     }
 }
 // encoding for in/output of orders, default utf8
-PayloadCipher.inEncoding = config_1.IN_ENC;
+PayloadCipher.inEncoding = IN_ENC;
 // encoding used for URL transport, default base64
-PayloadCipher.outEncoding = config_1.OUT_ENC;
+PayloadCipher.outEncoding = OUT_ENC;
 exports.PayloadCipher = PayloadCipher;

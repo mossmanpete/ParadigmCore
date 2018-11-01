@@ -73,7 +73,6 @@ export async function startMain(options: any): Promise<null> {
         tracker = new OrderTracker(options.emitter);
 
         // Configure StakeRebalancer module
-        // @todo should be env variables
         rebalancer = await StakeRebalancer.create({
           provider: options.provider,
           periodLength: options.periodLength,
@@ -153,13 +152,12 @@ function beginBlock(request): object {
  */
 function checkTx(request): Vote {
     // Raw transaction buffer (encoded and compressed)
-    let rawTx/*: Buffer */= request.tx;
+    let rawTx: Buffer = request.tx;
 
     let tx: any;        // Stores decoded transaction object
     let txType: string; // Stores transaction type
 
     try {
-        // TODO: expand ABCIdecode() to produce rich objects
         // Decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
         txType = tx.type.toLowerCase();
@@ -302,6 +300,7 @@ function commit(request): string {
         tracker.triggerBroadcast();
 
         // Synchronize commit state from delivertx state
+        // @TODO: find a better way to deep-clone the state object
         commitState = JSON.parse(JSON.stringify(deliverState));        
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
@@ -310,7 +309,7 @@ function commit(request): string {
     }
 
     // Temporary
-    console.log(`.... cState: ${JSON.stringify(commitState)}`);
+    console.log(`\n.... cState: ${JSON.stringify(commitState)}\n`);
 
     // Return state's hash to be included in next block header
     return stateHash;

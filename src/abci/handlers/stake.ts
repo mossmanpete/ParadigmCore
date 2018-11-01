@@ -15,7 +15,7 @@ import { Logger } from "../../util/Logger";
 import { Vote } from "../../util/Vote";
 
 // TEMPORARY
-const CONF_THRESHOLD = 4;
+const { CONF_THRESHOLD } = process.env;
 
 /**
  * Performs mempool verification of Ethereum StakeEvent transactions.

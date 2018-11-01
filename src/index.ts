@@ -10,6 +10,8 @@
 
   Entry point and startup script for ParadigmCore. 
 */
+// Load configuration from environment
+require('dotenv').config();
 
 // Standard lib and 3rd party NPM modules
 import * as _ws from "ws";
@@ -30,11 +32,10 @@ import { commitState as cState } from "./state/commitState";
 import { startMain, startRebalancer } from "./abci/main";
 import { startAPIserver } from "./net/server";
 
-// Configuration and constants
-// Importing ABI from config, rest of the variables
-// from process.env
-import { STAKE_CONTRACT_ABI } from "./config";
+// Staking contract ABI
+import { STAKE_CONTRACT_ABI } from "./util/contractABI";
 
+// Config and constants from environment
 const {
     WS_PORT,
     ABCI_HOST,
@@ -47,8 +48,9 @@ const {
     ABCI_PORT,
     VERSION,
     FINALITY_THRESHOLD
-} = process.env;
+}: any = process.env;
 
+// Tendermint config and storage directory
 const TM_HOME = `${process.env.HOME}/.tendermint`;
 
 // "Globals"
@@ -75,16 +77,13 @@ let node: any;                  // Tendermint node instance
                 laddr: `tcp://${ABCI_HOST}:${ABCI_RPC_PORT}`
             }
         });
-
-        // node.stdout.pipe(process.stdout);
-
     } catch (error) {
         Logger.consensusErr("failed initializing Tendermint.");
         Logger.logError(msg.abci.errors.tmFatal);
         process.exit(1);
     }
 
-    // Construct ABCI broadcaster
+    // Construct local ABCI broadcaster instance
     try {
         broadcaster = new TxBroadcaster({
             "client": node.rpc
@@ -98,7 +97,7 @@ let node: any;                  // Tendermint node instance
     // Start WebSocket server
     Logger.websocketEvt("Starting WebSocket server...");
     try {
-        wss = new _ws.Server({ 'port': WS_PORT }, () => {
+        wss = new _ws.Server({ port: WS_PORT }, () => {
             Logger.websocketEvt(msg.websocket.messages.servStart);
         });
         emitter = new EventEmitter(); // parent event emitter
@@ -111,7 +110,7 @@ let node: any;                  // Tendermint node instance
     // Start ABCI application
     try{
         let options = {
-            // Transaction broadcaster
+            // Transaction broadcaster instance
             "broadcaster": broadcaster,
         
             // ABCI configuration options
@@ -128,8 +127,6 @@ let node: any;                  // Tendermint node instance
             "finalityThreshold": FINALITY_THRESHOLD,
             "stakeAddress": STAKE_CONTRACT_ADDR,
             "stakeABI": STAKE_CONTRACT_ABI,
-            "abciHost": ABCI_HOST,
-            "abciPort": ABCI_RPC_PORT
         }
 
         // Wait for main ABCI application to start

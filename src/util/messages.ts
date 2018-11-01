@@ -63,24 +63,24 @@ export let messages  = {
             fatal:      "Fatal error starting API server. Exiting."
         },
         messages: {
-            starting: "Starting HTTP API server...",
-            servStart: `API server started on port ${API_PORT}.`
+            starting:   "Starting HTTP API server...",
+            servStart:  `API server started on port ${API_PORT}.`
         }
     },
     rebalancer: {
         messages: {
             activated:  "Stake rebalancer activated. Subscribed to Ethereum events.",
-            iAccept:     "Valid initial (genesis) rebalance proposal accepted.",
-            iReject:     "Invalid initial (genesis) rebalance proposal rejected.",
+            iAccept:    "Valid initial (genesis) rebalance proposal accepted.",
+            iReject:    "Invalid initial (genesis) rebalance proposal rejected.",
             accept:     "Valid rebalance proposal accepted.",
             reject:     "Invalid rebalance proposla rejected.",
             wrongRound: "Rejected proposal for incorrect staking period.",
             noMatch:    "Rejected proposal that does not match local mapping."
         },
         errors: {
-            fatalStake: "Fatal error encountered processing stake event.",
-            badStakeEvent: "Bad stake event.",
-            badBlockEvent: "Bad block event."
+            fatalStake:     "Fatal error encountered processing stake event.",
+            badStakeEvent:  "Bad stake event.",
+            badBlockEvent:  "Bad block event."
         }
     }
 }
