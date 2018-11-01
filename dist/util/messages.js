@@ -12,7 +12,7 @@
   Simple message object to store common ABCI and WS messages.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_1 = require("../config");
+const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 exports.messages = {
     general: {
         messages: {
@@ -31,7 +31,7 @@ exports.messages = {
         },
         messages: {
             connected: `Connected to the OrderStream network at ${new Date().toLocaleString()}`,
-            servStart: `WebSocket server started on port ${config_1.WS_PORT}`,
+            servStart: `WebSocket server started on port ${WS_PORT}`,
         }
     },
     abci: {
@@ -51,7 +51,7 @@ exports.messages = {
             mempool: "New order passed mempool verification (checkTx).",
             noStake: "New order rejected: invalid poster or no poster stake.",
             verified: "New order verified and added to OrderStream queue (deliverTx).",
-            servStart: `ABCI server started on port ${config_1.ABCI_PORT}.`,
+            servStart: `ABCI server started on port ${ABCI_PORT}.`,
             roundDiff: "This round deliverTx state is more than 1 period ahead of commited state.",
         }
     },
@@ -64,7 +64,7 @@ exports.messages = {
         },
         messages: {
             starting: "Starting HTTP API server...",
-            servStart: `API server started on port ${config_1.API_PORT}.`
+            servStart: `API server started on port ${API_PORT}.`
         }
     },
     rebalancer: {

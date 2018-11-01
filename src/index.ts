@@ -10,6 +10,8 @@
 
   Entry point and startup script for ParadigmCore. 
 */
+// Load configuration from environment
+require('dotenv').config();
 
 // Standard lib and 3rd party NPM modules
 import * as _ws from "ws";
@@ -24,29 +26,32 @@ import { TxBroadcaster } from "./abci/TxBroadcaster";
 
 // State object templates
 import { deliverState as dState } from "./state/deliverState";
-import { commitState as cState} from "./state/commitState";
+import { commitState as cState } from "./state/commitState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
 import { startAPIserver } from "./net/server";
 
-// Configuration and constants
-// TODO: convert to environment variables
-import { 
+// Staking contract ABI
+import { STAKE_CONTRACT_ABI } from "./util/contractABI";
+
+// Config and constants from environment
+const {
     WS_PORT,
-    TM_HOME, 
-    ABCI_HOST, 
-    ABCI_RPC_PORT, 
-    API_PORT, 
-    WEB3_PROVIDER, 
-    PERIOD_LENGTH, 
-    PERIOD_LIMIT, 
-    STAKE_CONTRACT_ADDR, 
-    STAKE_CONTRACT_ABI, 
+    ABCI_HOST,
+    ABCI_RPC_PORT,
+    API_PORT,
+    WEB3_PROVIDER,
+    PERIOD_LENGTH,
+    PERIOD_LIMIT,
+    STAKE_CONTRACT_ADDR,
     ABCI_PORT,
     VERSION,
     FINALITY_THRESHOLD
-} from "./config";
+}: any = process.env;
+
+// Tendermint config and storage directory
+const TM_HOME = `${process.env.HOME}/.tendermint`;
 
 // "Globals"
 let wss: _ws.Server;            // OrderStream WS server
@@ -72,16 +77,13 @@ let node: any;                  // Tendermint node instance
                 laddr: `tcp://${ABCI_HOST}:${ABCI_RPC_PORT}`
             }
         });
-
-        // node.stdout.pipe(process.stdout);
-
     } catch (error) {
         Logger.consensusErr("failed initializing Tendermint.");
         Logger.logError(msg.abci.errors.tmFatal);
         process.exit(1);
     }
 
-    // Construct ABCI broadcaster
+    // Construct local ABCI broadcaster instance
     try {
         broadcaster = new TxBroadcaster({
             "client": node.rpc
@@ -108,7 +110,7 @@ let node: any;                  // Tendermint node instance
     // Start ABCI application
     try{
         let options = {
-            // Transaction broadcaster
+            // Transaction broadcaster instance
             "broadcaster": broadcaster,
         
             // ABCI configuration options
@@ -125,8 +127,6 @@ let node: any;                  // Tendermint node instance
             "finalityThreshold": FINALITY_THRESHOLD,
             "stakeAddress": STAKE_CONTRACT_ADDR,
             "stakeABI": STAKE_CONTRACT_ABI,
-            "abciHost": ABCI_HOST,
-            "abciPort": ABCI_RPC_PORT
         }
 
         // Wait for main ABCI application to start
@@ -172,7 +172,7 @@ let node: any;                  // Tendermint node instance
         } catch (err) {
             Logger.websocketErr(msg.websocket.errors.connect);
         }
-    
+
         emitter.on("order", order => {
             try {
                 wss.clients.forEach(client => {
@@ -196,9 +196,9 @@ let node: any;                  // Tendermint node instance
                 Logger.websocketErr(msg.websocket.errors.broadcast);
             }
         });*/
-        
+
         ws.on('message', message => {
-            if(message === "close") { 
+            if(message === "close") {
                 return ws.close();
             } else {
                 WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
