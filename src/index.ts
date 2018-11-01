@@ -23,29 +23,32 @@ import { messages as msg } from "./util/messages";
 
 // State object templates
 import { deliverState as dState } from "./state/deliverState";
-import { commitState as cState} from "./state/commitState";
+import { commitState as cState } from "./state/commitState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
 import { startAPIserver } from "./net/server";
 
 // Configuration and constants
-// TODO: convert to environment variables
-import { 
+// Importing ABI from config, rest of the variables
+// from process.env
+import { STAKE_CONTRACT_ABI } from "./config";
+
+const {
     WS_PORT,
-    TM_HOME, 
-    ABCI_HOST, 
-    ABCI_RPC_PORT, 
-    API_PORT, 
-    WEB3_PROVIDER, 
-    PERIOD_LENGTH, 
-    PERIOD_LIMIT, 
-    STAKE_CONTRACT_ADDR, 
-    STAKE_CONTRACT_ABI, 
+    ABCI_HOST,
+    ABCI_RPC_PORT,
+    API_PORT,
+    WEB3_PROVIDER,
+    PERIOD_LENGTH,
+    PERIOD_LIMIT,
+    STAKE_CONTRACT_ADDR,
     ABCI_PORT,
     VERSION,
     FINALITY_THRESHOLD
-} from "./config";
+} = process.env;
+
+const TM_HOME = `${process.env.HOME}/.tendermint`;
 
 // "Globals"
 let wss: _ws.Server;          // OrderStream WS server
@@ -78,7 +81,7 @@ let node: any;                // Tendermint node instance
     // Start WebSocket server
     Logger.websocketEvt("Starting WebSocket server...");
     try {
-        wss = new _ws.Server({ port: WS_PORT }, () => {
+        wss = new _ws.Server({ 'port': WS_PORT }, () => {
             Logger.websocketEvt(msg.websocket.messages.servStart);
         });
         emitter = new EventEmitter(); // parent event emitter
@@ -96,7 +99,7 @@ let node: any;                // Tendermint node instance
             "commitState": cState,
             "version": VERSION,
             "abciServPort": ABCI_PORT,
-        
+
             // Rebalancer options
             "provider": WEB3_PROVIDER,
             "periodLength": PERIOD_LENGTH,
@@ -146,7 +149,7 @@ let node: any;                // Tendermint node instance
         } catch (err) {
             Logger.websocketErr(msg.websocket.errors.connect);
         }
-    
+
         emitter.on("order", order => {
             try {
                 wss.clients.forEach(client => {
@@ -170,9 +173,9 @@ let node: any;                // Tendermint node instance
                 Logger.websocketErr(msg.websocket.errors.broadcast);
             }
         });*/
-        
+
         ws.on('message', message => {
-            if(message === "close") { 
+            if(message === "close") {
                 return ws.close();
             } else {
                 WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);

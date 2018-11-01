@@ -11,7 +11,7 @@
   Simple Logger class to handle logs to STDOUT.
 */
 
-import { VERSION } from "../config";
+const { VERSION } = process.env;
 import { Timestamp } from "./Timestamp"
 import "colors";
 

@@ -11,7 +11,7 @@
   Simple message object to store common ABCI and WS messages.
 */
 
-import { WS_PORT, ABCI_PORT, API_PORT } from "../config";
+const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 
 export let messages  = {
     general: {
