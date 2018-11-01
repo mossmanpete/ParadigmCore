@@ -37,7 +37,7 @@ function checkOrder(tx, state) {
         Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.format);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.format);
     }
-    if (state.mappings.limits.hasOwnProperty(poster)) {
+    if (state.limits.hasOwnProperty(poster)) {
         Logger_1.Logger.mempool(messages_1.messages.abci.messages.mempool);
         return Vote_1.Vote.valid(messages_1.messages.abci.messages.mempool);
     }
@@ -68,17 +68,17 @@ function deliverOrder(tx, state, q) {
         Logger_1.Logger.consensusWarn(messages_1.messages.abci.errors.format);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.format);
     }
-    if (state.mappings.limits.hasOwnProperty(poster) &&
-        state.mappings.limits[poster].orderBroadcastLimit > 0) {
+    if (state.limits.hasOwnProperty(poster) &&
+        state.limits[poster].orderLimit > 0) {
         // This block executed if poster has valid stake 
         let orderCopy = order.toJSON();
         orderCopy.id = Hasher_1.Hasher.hashOrder(order);
         // Begin state modification
-        state.mappings.limits[poster].orderBroadcastLimit -= 1;
+        state.limits[poster].orderLimit -= 1;
         state.orderCounter += 1;
         // End state modification
         // Access remaining quota 
-        let remaining = state.mappings.limits[poster].orderBroadcastLimit;
+        let remaining = state.limits[poster].orderLimit;
         // Add order to broadcast queue
         q.add(orderCopy);
         Logger_1.Logger.consensus(messages_1.messages.abci.messages.verified);

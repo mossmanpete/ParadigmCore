@@ -74,7 +74,7 @@ class LocalPoster {
             throw new Error("Failed to execute local ABCI transaction.");
         }
     }
-    getOptions(param) {
+    postOptions(param) {
         return {
             method: "post",
             url: this.endpoint.href,
@@ -86,9 +86,20 @@ class LocalPoster {
                 jsonrpc: "2.0",
                 params: [param],
                 id: "paradigmcore"
+            }
+        };
+    }
+    getOptions(param) {
+        return {
+            method: "get",
+            url: `${this.endpoint.href}${this.txMode}`,
+            headers: {
+                "Content-Type": "application/json"
             },
-            responseType: "json",
-            responseEncoding: "utf8"
+            params: {
+                tx: `'${param}'`
+            },
+            responseType: 'json'
         };
     }
 }

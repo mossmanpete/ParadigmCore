@@ -13,9 +13,7 @@
 
 import { Vote } from "../../util/Vote";
 import { Logger } from "../../util/Logger";
-// import { StakeRebalancer } from "src/async/StakeRebalancer";
 import { StakeRebalancer } from "../../async/StakeRebalancer";
-
 import { messages as msg } from "../../util/messages";
 
 /**

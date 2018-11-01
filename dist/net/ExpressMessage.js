@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 19 August 2018
-  @date_modified 19 October 2018
+  @date_modified 31 October 2018
   @author Henry Harder
 
   Simple class for creating and sending JSON messages using ExpressJS.

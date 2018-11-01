@@ -15,11 +15,10 @@ import { Logger } from "../../util/Logger";
 import { Vote } from "../../util/Vote";
 
 // TEMPORARY
-const CONF_THRESHOLD = 1;
+const CONF_THRESHOLD = 4;
 
 /**
- * @name checkStake() Performs mempool verification of Ethereum
- * StakeEvent transactions.
+ * Performs mempool verification of Ethereum StakeEvent transactions.
  * 
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
@@ -35,14 +34,13 @@ export function checkStake(tx: any, _: any): Vote {
 }
 
 /**
- * @name deliverStake() Performs state modification of Stake
- * Event transactions (modify staker's balance).
+ * Performs state modification of Stake Event transactions (modify staker's
+ * balance).
  * 
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  * 
  * @todo: options for confirmation threshold
- * @todo: refactor and write some helper funcs, this is ugly
  */
 export function deliverStake(tx: any, state: any): Vote {
     // Check structural validity
@@ -65,8 +63,10 @@ export function deliverStake(tx: any, state: any): Vote {
                 state.events[block][staker].amount === amount &&
                 state.events[block][staker].type === type
             ) {
+                console.log("(temp) before voting "+"\n" + state.events+"\n");
                 // Event is already in state, add confirmation
                 state.events[block][staker].conf += 1;
+                console.log("(temp) Just voted for event. Conf: " + state.events[block][staker].conf)
                 updateMappings(state, staker, block, amount, type);
                 
                 // Voted for valid existing event
@@ -82,7 +82,7 @@ export function deliverStake(tx: any, state: any): Vote {
                 }
 
                 // TEMPORARY (not needed with multiple nodes)
-                 updateMappings(state, staker, block, amount, type);
+                // updateMappings(state, staker, block, amount, type);
 
                 // Voted for valid new event
                 Logger.consensus("Voted for new valid stake event.");
@@ -108,7 +108,7 @@ export function deliverStake(tx: any, state: any): Vote {
             };
 
             // TEMPORARY! Will not be needed with multiple nodes
-             updateMappings(state, staker, block, amount, type);
+            // updateMappings(state, staker, block, amount, type);
 
             // Added new event to state
             Logger.consensus("Voted for valid stake event (new).");
@@ -151,6 +151,15 @@ function isValidStakeEvent(data): boolean {
     } 
 }
 
+/**
+ * Update state upon event confirmation
+ * 
+ * @param state     {object}    current state object 
+ * @param staker    {string}    staker's address
+ * @param block     {number}    relevant block height
+ * @param amount    {number}    amount staked (or unstaked)
+ * @param type      {string}    event type (stake made or removed)
+ */
 function updateMappings(state, staker, block, amount, type) {
     if (
         state.events.hasOwnProperty(block) &&
@@ -208,6 +217,14 @@ function updateMappings(state, staker, block, amount, type) {
     }
 }
 
+/**
+ * Apply event state transition of balances.
+ * 
+ * @param state     {object}    current state object
+ * @param staker    {string}    staker's address
+ * @param amount    {number}    amount staked (or unstaked)
+ * @param type      {string}    event type (add or remove)
+ */
 function applyEvent(state, staker, amount, type): void {
     switch (type) {
         // Staker is adding stake

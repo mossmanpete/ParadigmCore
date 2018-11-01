@@ -41,7 +41,7 @@ export function checkOrder(tx: any, state: any){
         return Vote.invalid(msg.abci.errors.format);
     }
 
-    if(state.mappings.limits.hasOwnProperty(poster)){
+    if(state.limits.hasOwnProperty(poster)){
         Logger.mempool(msg.abci.messages.mempool);
         return Vote.valid(msg.abci.messages.mempool);
     } else {
@@ -74,8 +74,8 @@ export function deliverOrder(tx: any, state: any, q: OrderTracker){
     }
 
     if(
-        state.mappings.limits.hasOwnProperty(poster) &&
-        state.mappings.limits[poster].orderBroadcastLimit > 0
+        state.limits.hasOwnProperty(poster) &&
+        state.limits[poster].orderLimit > 0
     ){
         // This block executed if poster has valid stake 
 
@@ -83,12 +83,12 @@ export function deliverOrder(tx: any, state: any, q: OrderTracker){
         orderCopy.id = Hasher.hashOrder(order);
 
         // Begin state modification
-        state.mappings.limits[poster].orderBroadcastLimit -= 1;
+        state.limits[poster].orderLimit -= 1;
         state.orderCounter += 1;
         // End state modification
 
         // Access remaining quota 
-        let remaining = state.mappings.limits[poster].orderBroadcastLimit;
+        let remaining = state.limits[poster].orderLimit;
 
         // Add order to broadcast queue
         q.add(orderCopy);

@@ -5,7 +5,7 @@
   =========================
 
   @date_initial 24 September 2018
-  @date_modified 29 October 2018
+  @date_modified 31 October 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
@@ -20,9 +20,9 @@ import cors = require('cors');
 import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/messages";
-import LocalPoster from "./LocalPoster";
+import { TxBroadcaster } from "src/abci/TxBroadcaster";
 
-let client: LocalPoster; // tendermint client for RPC
+let client: TxBroadcaster; // tendermint client for RPC
 let app = express();
 
 app.use(cors());
@@ -36,49 +36,39 @@ app.use(function (err, req, res, next) {
     }
 });
 
-app.post("/*", (req, res) => {
-    try {
-        client.send("order", req.body).then(r => {
-            console.log(`(temp) Sent order via LocalPoster: ${r}`);
-            Message.staticSend(res, r);
-        }).catch(e => {
-            console.log(`(temp) Error sending via LocalPoster: ${e}`);
-        });
-    } catch (error) {
-        Logger.apiErr(error.message);
-        Message.staticSendError(res, msg.api.errors.parsing, 400);
-    }
-    /*
-    let payloadStr: string;
-    try {
-        payloadStr = PayloadCipher.encodeFromObject({
-            type: "order",
-            data: req.body
-        });
-    } catch (error) {
-        Logger.apiErr(msg.api.errors.parsing);
-        Message.staticSendError(res, msg.api.errors.parsing, 400);
-    }
+app.post("/*", async (req, res) => {
+    // Create transaction object
+    let tx = {type: "order", data: req.body};
 
-    // TODO fix this
-    console.log("SENDING TX: " + payloadStr);
-    client.broadcastTxSync({tx:payloadStr}).then(r => {
-        res.send(r);
-    }).catch(e => {
-        console.log(e);
-        Message.staticSendError(res, e.message, 500);
-    });
-    */
+    // Execute local ABCI transaction
+    try {
+        // Await ABCI response
+        let response = await client.send(tx);
+
+        // Send response back to client
+        Logger.apiEvt("Successfully executed local ABCI transaction.");
+        Message.staticSend(res, response);
+    } catch (error) {
+        Logger.apiErr("Failed to execute local ABCI transaction");
+        Message.staticSendError(res, "Internal error, try again.", 500);
+    }      
 });
 
-export async function startAPIserver(host, rpcPort, apiPort) {
+/**
+ * Start and bind API server.
+ * 
+ * @param apiPort       {number}        port to bind API server to
+ * @param broadcaster   {TxBroadcaster} local transaction broadcaster
+ */
+export async function startAPIserver(apiPort, broadcaster) {
     try {
         // Create HTTP poster instance
-        client = new LocalPoster("sync", host, rpcPort);
-        
+        client = broadcaster;
+
+        // Start API server
         await app.listen(apiPort);
         Logger.apiEvt(msg.api.messages.servStart)
-        return
+        return;
     } catch (err) {
         throw new Error('Error starting API server');
     }

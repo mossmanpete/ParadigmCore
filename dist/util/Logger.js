@@ -67,5 +67,11 @@ class Logger {
     static apiErr(message) {
         Logger.logError(`${'API Server'.yellow} ${'Error:'.red} ${message}`);
     }
+    static txEvt(message) {
+        Logger.logEvent(`${'Broadcaster:'.red} ${message}`);
+    }
+    static txErr(message) {
+        Logger.logError(`${'Broadcaster'} ${'Error:'.red} ${message}`);
+    }
 }
 exports.Logger = Logger;

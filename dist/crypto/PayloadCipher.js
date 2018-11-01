@@ -95,7 +95,7 @@ class PayloadCipher {
             outStr = dcBuff.toString(PayloadCipher.inEncoding);
         }
         catch (err) {
-            // console.log(err) // debugging (REMOVE)
+            console.log("ERROR:" + err.stack); // debugging (REMOVE)
             throw new Error("Error decoding payload.");
         }
         try {
@@ -114,7 +114,7 @@ class PayloadCipher {
      */
     static ABCIdecode(inBuff) {
         // TODO: consider depreciating and wrapping into other function
-        let inStr = inBuff.toString(this.outEncoding);
+        let inStr = inBuff.toString(this.inEncoding);
         return PayloadCipher.decodeToObject(inStr);
     }
 }
