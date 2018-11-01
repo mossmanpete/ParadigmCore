@@ -1,4 +1,20 @@
 "use strict";
+/**
+  =========================
+  ParadigmCore: Blind Star
+  Transaction.ts @ {master}
+  =========================
+
+  @date_initial 1 November 2018
+  @date_modified 1 November 2018
+  @author Henry Harder
+
+  A class representing an ABCI transaction from a validator. Implements
+  ed25519 signatures from Tendermint validator keypairs.
+
+  @TODO convert to TransactionGenerator that loads private keys only once
+  upon initialization.
+*/
 Object.defineProperty(exports, "__esModule", { value: true });
 const ed25519 = require("ed25519");
 class Transaction {

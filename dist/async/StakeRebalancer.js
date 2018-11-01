@@ -1,21 +1,21 @@
 "use strict";
-/*
+/**
   =========================
   ParadigmCore: Blind Star
   StakeRebalancer.ts @ {master}
   =========================
 
   @date_initial 15 October 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
-  UNSTABLE! (Okay not THAT unstable, but be careful)
-
-  See the spec doc in ../../spec/ethereum-peg.md
+  This class may not be fully stable. See the spec doc in ../../spec/ethereum-peg.md
 
   This is one of the most important and complex pieces of the OrderStream system, and will
   likely be unstable for a while. Assume that if this message is here, it should not be run
   in production.
+
+  UPDATE: as of 1 November, I consider this to be damn close to stability.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 // Third party and stdlib imports
@@ -24,8 +24,8 @@ const url_1 = require("url");
 // ParadigmCore modules/classes
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");
-const Codes_1 = require("../util/Codes");
 const Transaction_1 = require("../abci/Transaction");
+const Codes_1 = require("../util/Codes");
 class StakeRebalancer {
     /**
      * PRIVATE constructor. Do not use. Create new rebalancers with

@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 23 October 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Handler functions for verifying ABCI event witness transactions.
@@ -59,10 +59,8 @@ function deliverWitness(tx, state) {
             if (state.events[block].hasOwnProperty(staker) &&
                 state.events[block][staker].amount === amount &&
                 state.events[block][staker].type === type) {
-                // console.log("(temp) before voting "+"\n" + state.events+"\n");
                 // Event is already in state, add confirmation
                 state.events[block][staker].conf += 1;
-                //console.log("(temp) Just voted for event. Conf: " + state.events[block][staker].conf)
                 updateMappings(state, staker, block, amount, type);
                 // Voted for valid existing event
                 Logger_1.Logger.consensus("Voted for valid stake event (existing).");
@@ -76,7 +74,7 @@ function deliverWitness(tx, state) {
                     "conf": 1
                 };
                 // TEMPORARY (not needed with multiple nodes)
-                updateMappings(state, staker, block, amount, type);
+                // updateMappings(state, staker, block, amount, type);
                 // Voted for valid new event
                 Logger_1.Logger.consensus("Voted for new valid stake event.");
                 return Vote_1.Vote.valid();
@@ -98,7 +96,7 @@ function deliverWitness(tx, state) {
                 "conf": 1
             };
             // TEMPORARY! Will not be needed with multiple nodes
-            updateMappings(state, staker, block, amount, type);
+            // updateMappings(state, staker, block, amount, type);
             // Added new event to state
             Logger_1.Logger.consensus("Voted for valid stake event (new).");
             return Vote_1.Vote.valid();

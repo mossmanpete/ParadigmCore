@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 15 October 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   This class is responsible for executing local ABCI transactions. It
@@ -109,6 +109,15 @@ class TxBroadcaster {
             let res = await this.client.broadcastTxSync({ tx: `"${payload}"` });
             txEmitter.emit('sent', res);
             Logger_1.Logger.txEvt("Transaction sent successfully.");
+        }
+        catch (error) {
+            // Temporary
+            console.log("in broadcaster. Error: " + error);
+            Logger_1.Logger.txErr("Transaction failed.");
+            // Resolve promise to error object
+            txEmitter.emit('failed', error);
+        }
+        finally {
             // If queue is now empty, stop broadcasting
             if (_this.isEmpty()) {
                 this.broadcasting = false;
@@ -116,12 +125,6 @@ class TxBroadcaster {
             }
             // Otherwise, move onto the next Tx
             this.broadcast();
-        }
-        catch (error) {
-            // Temporary
-            Logger_1.Logger.txErr("Transaction failed.");
-            // Resolve promise to error object
-            txEmitter.emit('failed', error);
         }
         return;
     }

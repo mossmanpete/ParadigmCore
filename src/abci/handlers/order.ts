@@ -34,6 +34,7 @@ export function checkOrder(tx: any, state: any){
     let poster; // Recovered poster address from signature
 
     try {
+        // Construct order object, and recover poster signature
         order = new Order(tx.data);
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
@@ -41,9 +42,12 @@ export function checkOrder(tx: any, state: any){
         return Vote.invalid(msg.abci.errors.format);
     }
 
-    if(state.limits.hasOwnProperty(poster)){
+    if(
+        state.limits.hasOwnProperty(poster) &&
+        state.limits[poster].orderLimit > 0
+    ){
         Logger.mempool(msg.abci.messages.mempool);
-        return Vote.valid(msg.abci.messages.mempool);
+        return Vote.valid(`(unconfirmed) OrderID: ${Hasher.hashOrder(order)}`);
     } else {
         Logger.mempoolWarn(msg.abci.messages.noStake);
         return Vote.invalid(msg.abci.messages.noStake);
@@ -63,10 +67,8 @@ export function deliverOrder(tx: any, state: any, q: OrderTracker){
     let poster; // Recovered poster address from signature
 
     try {
-        // Construct Paradigm order object
+        // Construct order object, and recover poster signature
         order = new Order(tx.data);
-
-        // Recover poster's signature, if valid
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
         Logger.consensusWarn(msg.abci.errors.format);
@@ -93,10 +95,9 @@ export function deliverOrder(tx: any, state: any, q: OrderTracker){
         q.add(orderCopy);
 
         Logger.consensus(msg.abci.messages.verified);
-        return Vote.valid(`Remaining quota: ${remaining}`, orderCopy.id)
+        return Vote.valid(`(confirmed) OrderID: ${orderCopy.id}`);
     } else {
         // Executed if poster has no stake
-
         Logger.consensusWarn(msg.abci.messages.noStake)
         return Vote.invalid(msg.abci.messages.noStake);
     }

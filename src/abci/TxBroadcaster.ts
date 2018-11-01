@@ -133,7 +133,14 @@ export class TxBroadcaster {
             txEmitter.emit('sent', res);
 
             Logger.txEvt("Transaction sent successfully.");
+        } catch (error) {
+            // Temporary
+            console.log("in broadcaster. Error: " + error);
+            Logger.txErr("Transaction failed.");
 
+            // Resolve promise to error object
+            txEmitter.emit('failed', error);
+        } finally {
             // If queue is now empty, stop broadcasting
             if(_this.isEmpty()) {
                 this.broadcasting = false;
@@ -142,12 +149,6 @@ export class TxBroadcaster {
 
             // Otherwise, move onto the next Tx
             this.broadcast();
-        } catch (error) {
-            // Temporary
-            Logger.txErr("Transaction failed.");
-
-            // Resolve promise to error object
-            txEmitter.emit('failed', error);
         }
 
         return;

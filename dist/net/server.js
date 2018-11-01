@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 24 September 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
@@ -37,7 +37,6 @@ app.use(function (err, req, res, next) {
 });
 app.post("/*", async (req, res) => {
     // Create transaction object
-    // let tx = {type: "order", data: req.body};
     let tx;
     try {
         tx = new Transaction_1.Transaction("order", req.body);
@@ -55,6 +54,7 @@ app.post("/*", async (req, res) => {
         ExpressMessage_1.Message.staticSend(res, response);
     }
     catch (error) {
+        console.log(error);
         Logger_1.Logger.apiErr("Failed to execute local ABCI transaction");
         ExpressMessage_1.Message.staticSendError(res, "Internal error, try again.", 500);
     }

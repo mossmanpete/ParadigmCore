@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 23 October 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Handler functions for verifying ABCI Rebalance transactions.
@@ -135,13 +135,11 @@ exports.deliverRebalance = deliverRebalance;
  */
 function genLimits(balances, limit) {
     let total = 0; // total amount currenty staked
-    let stakers; // total number of stakers
     let output = {}; // generated output mapping
     // Calculate total balance currently staked
     Object.keys(balances).forEach((k, _) => {
         if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {
             total += balances[k];
-            stakers += 1;
         }
     });
     // Compute the rate-limits for each staker based on stake size
@@ -155,9 +153,6 @@ function genLimits(balances, limit) {
             };
         }
     });
-    // Temporary
-    console.log(`... (Temp) Total staked this round: ${total}`);
-    console.log(`... (Temp) Total stakers this round: ${stakers}`);
     // Return computed output mapping
     return output;
 }

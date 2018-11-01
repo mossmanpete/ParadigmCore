@@ -6,7 +6,7 @@
   =========================
   
   @date_initial 25 September 2018
-  @date_modified 24 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Object that represents the initial and pre-commit state of the OS node.

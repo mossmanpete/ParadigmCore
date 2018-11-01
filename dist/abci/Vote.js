@@ -18,11 +18,10 @@ class Vote {
         This class will be expanded with more errors for the
         different failure points in checkTx (and deliverTx).
     */
-    static valid(message, id) {
+    static valid(message) {
         return {
             code: 0,
-            log: `OrderID: ${id}`,
-            info: message
+            log: message
         };
     }
     static invalid(message) {

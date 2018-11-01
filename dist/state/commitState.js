@@ -6,7 +6,7 @@
   =========================
   
   @date_initial 22 October 2018
-  @date_modified 24 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Object that represents the post-commit state of the OS node.

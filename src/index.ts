@@ -145,6 +145,7 @@ let node: any;                  // Tendermint node instance
         await startRebalancer();
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
+        console.log("(temp) Error: " + error);
         Logger.consensus("failed initializing ABCI application.");
         Logger.logError(msg.abci.errors.fatal);
         process.exit(1);
@@ -153,7 +154,6 @@ let node: any;                  // Tendermint node instance
     // Start HTTP API server
     try {
         Logger.apiEvt("Starting HTTP API server...");
-        // await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
         await startAPIserver(API_PORT, broadcaster);
     } catch (error) {
         Logger.apiErr("failed initializing API server.");

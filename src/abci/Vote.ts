@@ -17,11 +17,10 @@ export class Vote {
         This class will be expanded with more errors for the
         different failure points in checkTx (and deliverTx).
     */
-    public static valid(message?: string, id?: string) {
+    public static valid(message?: string) {
         return {
             code: 0,
-            log: `OrderID: ${id}`,
-            info: message
+            log: message
         }
     }
 

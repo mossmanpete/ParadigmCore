@@ -6,7 +6,7 @@
   =========================
 
   @date_initial 13 September 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Main ParadigmCore state machine and state transition logic.
@@ -299,7 +299,7 @@ function commit(request) {
         Logger_1.Logger.consensusErr(messages_1.messages.abci.errors.broadcast);
     }
     // Temporary
-    console.log(`\n.... cState: ${JSON.stringify(commitState)}\n`);
+    console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
     // Return state's hash to be included in next block header
     return stateHash;
 }
