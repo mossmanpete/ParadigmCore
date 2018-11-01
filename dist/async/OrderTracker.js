@@ -1,3 +1,4 @@
+"use strict";
 /*
   =========================
   ParadigmCore: Blind Star
@@ -10,71 +11,57 @@
   
   Class to store valid orders and trigger broadcast upon consensus round completion.
 */
-
-import { EventEmitter } from "events";
-
-export class OrderTracker {
-    
-    private em: EventEmitter; // event emitter instance
-    private orders: Array<object>; // stores valid orders
-    private streams: Array<object>; // stores valid streams
-
-    private activated: boolean = false;
-
-    private flush() {
-        this.orders = [];
-        this.streams = [];
-    }
-
-    constructor(emitter: EventEmitter) {
+Object.defineProperty(exports, "__esModule", { value: true });
+class OrderTracker {
+    constructor(emitter) {
+        this.activated = false;
         this.em = emitter;
         this.orders = [];
         this.streams = [];
     }
-
-    public activate(): boolean {
+    flush() {
+        this.orders = [];
+        this.streams = [];
+    }
+    activate() {
         this.activated = true;
         return this.activated;
     }
-    
     /**
      * @deprecated Use addOrder()
      */
-    public add(order: object){
+    add(order) {
         this.orders.push(order);
     }
-
-    public addOrder(order: object){
+    addOrder(order) {
         this.orders.push(order);
     }
-
-    public addStream(stream: object){
+    addStream(stream) {
         this.streams.push(stream);
     }
-
-    public triggerBroadcast() {
-        if (!this.activated) return; // do not broadcast if not in sync
-
+    triggerBroadcast() {
+        if (!this.activated)
+            return; // do not broadcast if not in sync
         if (this.orders.length > 0 || this.streams.length > 0) {
             try {
                 // Trigger order broadcast
                 this.orders.forEach(order => {
-                    this.em.emit("order", order) // picked up by websocket server
+                    this.em.emit("order", order); // picked up by websocket server
                 });
-
                 // Trigger stream broadcast
                 this.streams.forEach(stream => {
-                    this.em.emit("stream", stream) // picked up by websocket server
+                    this.em.emit("stream", stream); // picked up by websocket server
                 });
-
                 // Reset tracker
                 this.flush();
-            } catch (err) {
+            }
+            catch (err) {
                 throw new Error("Error triggering event broadcast.");
             }
-
-        } else {
+        }
+        else {
             return;
         }
     }
 }
+exports.OrderTracker = OrderTracker;

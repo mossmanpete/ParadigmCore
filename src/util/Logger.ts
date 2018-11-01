@@ -11,7 +11,8 @@
   Simple Logger class to handle logs to STDOUT.
 */
 
-import { VERSION } from "../config";
+const { VERSION } = process.env;
+
 import { Timestamp } from "./Timestamp"
 import "colors";
 
@@ -83,5 +84,13 @@ export class Logger {
 
     public static apiErr(message: string){
         Logger.logError(`${'API Server'.yellow} ${'Error:'.red} ${message}`);
+    }
+
+    public static txEvt(message: string){
+        Logger.logEvent(`${'Broadcaster:'.red} ${message}`);
+    }
+
+    public static txErr(message: string){
+        Logger.logError(`${'Broadcaster'} ${'Error:'.red} ${message}`);
     }
 }

@@ -5,11 +5,14 @@
   =========================
 
   @date_initial 12 September 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Entry point and startup script for ParadigmCore. 
 */
+
+// Load configuration from environment
+require('dotenv').config();
 
 // Standard lib and 3rd party NPM modules
 import * as _ws from "ws";
@@ -19,38 +22,43 @@ import { EventEmitter } from "events";
 // ParadigmCore classes
 import { Logger } from "./util/Logger";
 import { WebSocketMessage } from "./net/WebSocketMessage";
-import { messages as msg } from "./util/messages";
+import { messages as msg } from "./util/static/messages";
+import { TxBroadcaster } from "./abci/TxBroadcaster";
 
 // State object templates
 import { deliverState as dState } from "./state/deliverState";
-import { commitState as cState} from "./state/commitState";
+import { commitState as cState } from "./state/commitState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
 import { startAPIserver } from "./net/server";
 
-// Configuration and constants
-// TODO: convert to environment variables
-import { 
+// Staking contract ABI
+import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
+
+// Config and constants from environment
+const {
     WS_PORT,
-    TM_HOME, 
-    ABCI_HOST, 
-    ABCI_RPC_PORT, 
-    API_PORT, 
-    WEB3_PROVIDER, 
-    PERIOD_LENGTH, 
-    PERIOD_LIMIT, 
-    STAKE_CONTRACT_ADDR, 
-    STAKE_CONTRACT_ABI, 
+    ABCI_HOST,
+    ABCI_RPC_PORT,
+    API_PORT,
+    WEB3_PROVIDER,
+    PERIOD_LENGTH,
+    PERIOD_LIMIT,
+    STAKE_CONTRACT_ADDR,
     ABCI_PORT,
     VERSION,
     FINALITY_THRESHOLD
-} from "./config";
+}: any = process.env;
+
+// Tendermint config and storage directory
+const TM_HOME = `${process.env.HOME}/.tendermint`;
 
 // "Globals"
-let wss: _ws.Server;          // OrderStream WS server
-let emitter: EventEmitter;    // Emitter to track events
-let node: any;                // Tendermint node instance
+let wss: _ws.Server;            // OrderStream WS server
+let emitter: EventEmitter;      // Emitter to track events
+let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
+let node: any;                  // Tendermint node instance
 
 /**
  * This function executes immediately upon this file being loaded. It is
@@ -71,7 +79,19 @@ let node: any;                // Tendermint node instance
             }
         });
     } catch (error) {
-        Logger.consensusErr(msg.abci.errors.tmFatal);
+        Logger.consensusErr("failed initializing Tendermint.");
+        Logger.logError(msg.abci.errors.tmFatal);
+        process.exit(1);
+    }
+
+    // Construct local ABCI broadcaster instance
+    try {
+        broadcaster = new TxBroadcaster({
+            "client": node.rpc
+        });
+    } catch (error) {
+        Logger.txErr("failed initializing ABCI connection.");
+        Logger.logError(msg.abci.errors.tmFatal);
         process.exit(1);
     }
 
@@ -83,54 +103,61 @@ let node: any;                // Tendermint node instance
         });
         emitter = new EventEmitter(); // parent event emitter
     } catch (error) {
-        Logger.websocketErr(msg.websocket.errors.fatal);
+        Logger.websocketErr("failed initializing WebSocket server.");
+        Logger.logError(msg.websocket.errors.fatal);
         process.exit(1);
     }
 
     // Start ABCI application
     try{
         let options = {
+            // Transaction broadcaster instance
+            "broadcaster": broadcaster,
+        
             // ABCI configuration options
             "emitter": emitter,
             "deliverState": dState,
             "commitState": cState,
             "version": VERSION,
             "abciServPort": ABCI_PORT,
-        
+
             // Rebalancer options
             "provider": WEB3_PROVIDER,
-            "periodLength": PERIOD_LENGTH,
-            "periodLimit": PERIOD_LIMIT,
-            "finalityThreshold": FINALITY_THRESHOLD,
+            "periodLength": parseInt(PERIOD_LENGTH),
+            "periodLimit": parseInt(PERIOD_LIMIT),
+            "finalityThreshold": parseInt(FINALITY_THRESHOLD),
             "stakeAddress": STAKE_CONTRACT_ADDR,
             "stakeABI": STAKE_CONTRACT_ABI,
-            "abciHost": ABCI_HOST,
-            "abciPort": ABCI_RPC_PORT
         }
 
-        // Wait for main process to start
+        // Wait for main ABCI application to start
         await startMain(options);
         Logger.consensus("Waiting for Tendermint to synchronize...");
 
         // Wait for Tendermint to load and synchronize
         await node.synced();
         Logger.consensus("Tendermint initialized and synchronized.");
+        
+        // Activate transaction broadcaster
+        broadcaster.start();
 
         // Start state rebalancer sub-process AFTER sync
         await startRebalancer();
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
+        Logger.consensus("failed initializing ABCI application.");
         Logger.logError(msg.abci.errors.fatal);
-        Logger.logError("Failed at ")
         process.exit(1);
     }
 
     // Start HTTP API server
     try {
         Logger.apiEvt("Starting HTTP API server...");
-        await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
+        // await startAPIserver(ABCI_HOST, ABCI_RPC_PORT, API_PORT);
+        await startAPIserver(API_PORT, broadcaster);
     } catch (error) {
-        Logger.apiErr(msg.api.errors.fatal)
+        Logger.apiErr("failed initializing API server.");
+        Logger.logError(msg.api.errors.fatal)
         process.exit(1);
     }
 
@@ -146,7 +173,7 @@ let node: any;                // Tendermint node instance
         } catch (err) {
             Logger.websocketErr(msg.websocket.errors.connect);
         }
-    
+
         emitter.on("order", order => {
             try {
                 wss.clients.forEach(client => {
@@ -170,9 +197,9 @@ let node: any;                // Tendermint node instance
                 Logger.websocketErr(msg.websocket.errors.broadcast);
             }
         });*/
-        
+
         ws.on('message', message => {
-            if(message === "close") { 
+            if(message === "close") {
                 return ws.close();
             } else {
                 WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);

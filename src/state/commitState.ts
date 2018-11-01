@@ -5,7 +5,7 @@
   =========================
   
   @date_initial 22 October 2018
-  @date_modified 24 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Object that represents the post-commit state of the OS node.
@@ -21,6 +21,10 @@ export let commitState = {
   events: {},
   balances: {},
   limits: {},
+  lastEvent: {
+    add: 0,
+    remove: 0
+  },
   orderCounter: 0,
   lastBlockHeight: 0,
   lastBlockAppHash: null
