@@ -36,7 +36,7 @@ export class OrderTracker {
         this.activated = true;
         return this.activated;
     }
-
+    
     /**
      * @deprecated Use addOrder()
      */

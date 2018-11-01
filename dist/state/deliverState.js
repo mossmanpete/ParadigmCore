@@ -22,6 +22,10 @@ exports.deliverState = {
     events: {},
     balances: {},
     limits: {},
+    lastEvent: {
+        add: 0,
+        remove: 0
+    },
     orderCounter: 0,
     lastBlockHeight: 0,
     lastBlockAppHash: null

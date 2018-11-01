@@ -15,10 +15,10 @@
 
 import * as Paradigm from "paradigm-connect";
 
-import { messages as msg } from "../../util/messages";
+import { messages as msg } from "../../util/static/messages";
 import { OrderTracker } from "../../async/OrderTracker";
 import { Logger } from "../../util/Logger";
-import { Vote } from "../../util/Vote";
+import { Vote } from "../Vote";
 
 let Order = new Paradigm().Order; // Paradigm order constructor
 

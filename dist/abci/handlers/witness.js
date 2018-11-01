@@ -2,14 +2,14 @@
 /**
   =========================
   ParadigmCore: Blind Star
-  stakeHandlers.ts @ {master}
+  witness.ts @ {master}
   =========================
 
   @date_initial 23 October 2018
   @date_modified 29 October 2018
   @author Henry Harder
 
-  Handler functions for verifying ABCI Event Transactions.
+  Handler functions for verifying ABCI event witness transactions.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 const Logger_1 = require("../../util/Logger");
@@ -22,9 +22,8 @@ const { CONF_THRESHOLD } = process.env;
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-function checkStake(tx, state) {
-    // @TODO: consider implications of '<=' vs '<'
-    if (isValidStakeEvent(tx.data, state) /* && state.lastEventHeight <= tx.data.block*/) {
+function checkWitness(tx, state) {
+    if (isValidStakeEvent(tx.data, state)) {
         Logger_1.Logger.mempool("Stake witness transaction accepted.");
         return Vote_1.Vote.valid("Stake witnesss transaction accepted.");
     }
@@ -33,7 +32,7 @@ function checkStake(tx, state) {
         return Vote_1.Vote.invalid("Invalid witness event rejected.");
     }
 }
-exports.checkStake = checkStake;
+exports.checkWitness = checkWitness;
 /**
  * Performs state modification of Stake Event transactions (modify staker's
  * balance).
@@ -43,7 +42,7 @@ exports.checkStake = checkStake;
  *
  * @todo: options for confirmation threshold
  */
-function deliverStake(tx, state) {
+function deliverWitness(tx, state) {
     // Check structural validity
     if (!(isValidStakeEvent(tx.data, state))) {
         Logger_1.Logger.consensusWarn("Invalid witness event rejected.");
@@ -110,7 +109,7 @@ function deliverStake(tx, state) {
         }
     }
 }
-exports.deliverStake = deliverStake;
+exports.deliverWitness = deliverWitness;
 /**
  * Checks if a stake event is structurally valid. Considered
  * state-less verification (validity does not depend on state).
@@ -133,12 +132,9 @@ function isValidStakeEvent(data, state) {
         return false;
     }
     else if (!(data.type === 'add' || data.type === 'remove')) {
-        console.log('failed 1');
-        console.log(data.type);
         return false;
     }
     else if (data.block <= state.lastEvent[data.type]) {
-        console.log('failed 2. block: ' + data.block + ", curr mx: " + state.lastEvent[data.type]);
         return false;
     }
     else {
@@ -221,13 +217,11 @@ function applyEvent(state, staker, amount, type) {
     switch (type) {
         // Staker is adding stake
         case 'add': {
-            console.log("adding. current: " + state.balances[staker] + "adding: " + amount);
             state.balances[staker] += amount;
             break;
         }
         // Staker is removing stake
         case 'remove': {
-            console.log("removing. current: " + state.balances[staker] + "removing: " + amount);
             state.balances[staker] -= amount;
             break;
         }

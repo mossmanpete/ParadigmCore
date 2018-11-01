@@ -5,16 +5,16 @@
   =========================
 
   @date_initial 23 October 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Handler functions for verifying ABCI Rebalance transactions. 
 */
 
-import { Vote } from "../../util/Vote";
+import { Vote } from "../Vote";
 import { Logger } from "../../util/Logger";
 import { StakeRebalancer } from "../../async/StakeRebalancer";
-import { messages as msg } from "../../util/messages";
+import { messages as msg } from "../../util/static/messages";
 
 /**
  * @name checkRebalance() {export function} verify a Rebalance proposal before
@@ -152,15 +152,12 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
  */
 function genLimits(balances: any, limit: number): any {
     let total: number = 0; // total amount currenty staked
-    let stakers: number; // total number of stakers
-
     let output: object = {}; // generated output mapping
 
     // Calculate total balance currently staked
     Object.keys(balances).forEach((k, _) => {
         if (balances.hasOwnProperty(k) && typeof(balances[k]) === 'number') {
             total += balances[k];
-            stakers += 1;
         }
     });
 
@@ -175,10 +172,6 @@ function genLimits(balances: any, limit: number): any {
             }
         }
     });
-
-    // Temporary
-    console.log(`... (Temp) Total staked this round: ${total}`);
-    console.log(`... (Temp) Total stakers this round: ${stakers}`);
     
     // Return computed output mapping
     return output;

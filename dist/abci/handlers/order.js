@@ -13,9 +13,9 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 const Paradigm = require("paradigm-connect");
-const messages_1 = require("../../util/messages");
+const messages_1 = require("../../util/static/messages");
 const Logger_1 = require("../../util/Logger");
-const Vote_1 = require("../../util/Vote");
+const Vote_1 = require("../Vote");
 const Hasher_1 = require("../../crypto/Hasher");
 // Order constructor from paradigm-connect
 let Order = new Paradigm().Order;

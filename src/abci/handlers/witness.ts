@@ -1,18 +1,18 @@
 /** 
   =========================
   ParadigmCore: Blind Star
-  stakeHandlers.ts @ {master}
+  witness.ts @ {master}
   =========================
 
   @date_initial 23 October 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
-  Handler functions for verifying ABCI Event Transactions. 
+  Handler functions for verifying ABCI event witness transactions. 
 */
 
 import { Logger } from "../../util/Logger";
-import { Vote } from "../../util/Vote";
+import { Vote } from "../Vote";
 
 // TEMPORARY
 const { CONF_THRESHOLD } = process.env;
@@ -23,8 +23,8 @@ const { CONF_THRESHOLD } = process.env;
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkStake(tx: any, _: any): Vote {
-    if (isValidStakeEvent(tx.data)) {
+export function checkWitness(tx: any, state: any): Vote {
+    if (isValidStakeEvent(tx.data, state)) {
         Logger.mempool("Stake witness transaction accepted.");
         return Vote.valid("Stake witnesss transaction accepted.");
     } else {
@@ -42,9 +42,9 @@ export function checkStake(tx: any, _: any): Vote {
  * 
  * @todo: options for confirmation threshold
  */
-export function deliverStake(tx: any, state: any): Vote {
+export function deliverWitness(tx: any, state: any): Vote {
     // Check structural validity
-    if (!(isValidStakeEvent(tx.data))) {
+    if (!(isValidStakeEvent(tx.data, state))) {
         Logger.consensusWarn("Invalid witness event rejected.");
         return Vote.invalid();
     }
@@ -62,11 +62,9 @@ export function deliverStake(tx: any, state: any): Vote {
                 state.events[block].hasOwnProperty(staker) &&
                 state.events[block][staker].amount === amount &&
                 state.events[block][staker].type === type
-            ) {
-                console.log("(temp) before voting "+"\n" + state.events+"\n");
+            ) {          
                 // Event is already in state, add confirmation
                 state.events[block][staker].conf += 1;
-                console.log("(temp) Just voted for event. Conf: " + state.events[block][staker].conf)
                 updateMappings(state, staker, block, amount, type);
                 
                 // Voted for valid existing event
@@ -128,7 +126,7 @@ export function deliverStake(tx: any, state: any): Vote {
  * 
  * @param data  {object}    the stake event to validate
  */
-function isValidStakeEvent(data): boolean {
+function isValidStakeEvent(data, state): boolean {
     // TODO: add info about proposer to validation condition
 
     if (
@@ -145,6 +143,10 @@ function isValidStakeEvent(data): boolean {
         typeof(data.block) !== 'number' ||
         typeof(data.amount) !== 'number'
     ) {
+        return false;
+    } else if (!(data.type === 'add' || data.type === 'remove')) {
+        return false;
+    } else if (data.block <= state.lastEvent[data.type]) {
         return false;
     } else {
         return true;
@@ -201,6 +203,11 @@ function updateMappings(state, staker, block, amount, type) {
             // Remove balance entry if now empty
             if (state.balances[staker] === 0) {
                 delete state.balances[staker];
+            }
+
+            // Update highest event block accepted
+            if (state.lastEvent[type] < block) {
+                state.lastEvent[type] = block;
             }
 
             // Done

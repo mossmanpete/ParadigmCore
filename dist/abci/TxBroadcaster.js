@@ -15,7 +15,6 @@
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
-// ParadigmCore classes
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const Logger_1 = require("../util/Logger");
 class TxBroadcaster {

@@ -33,7 +33,7 @@ class Transaction {
             case 'stream': {
                 break;
             }
-            case 'event': {
+            case 'witness': {
                 break;
             }
             case 'rebalance': {
@@ -78,7 +78,7 @@ class Transaction {
             signature: sig.toString('base64')
         };
         // Return transaction object
-        return { types: this.type, data: this.data, proof: this.proof };
+        return { type: this.type, data: this.data, proof: this.proof };
     }
 }
 exports.Transaction = Transaction;

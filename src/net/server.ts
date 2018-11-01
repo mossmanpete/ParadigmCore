@@ -5,7 +5,7 @@
   =========================
 
   @date_initial 24 September 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   HTTP server to enable incoming orders to be recieved as POST requests.
@@ -13,14 +13,17 @@
   @10-16: TODO: support StreamBroadcast type.
 */
 
+// 3rd party imports
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import cors = require('cors');
 
+// ParadigmCore classes and imports
 import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
-import { messages as msg } from "../util/messages";
-import { TxBroadcaster } from "src/abci/TxBroadcaster";
+import { messages as msg } from "../util/static/messages";
+import { TxBroadcaster } from "../abci/TxBroadcaster";
+import { Transaction } from "../abci/Transaction";
 
 let client: TxBroadcaster; // tendermint client for RPC
 let app = express();
@@ -38,7 +41,15 @@ app.use(function (err, req, res, next) {
 
 app.post("/*", async (req, res) => {
     // Create transaction object
-    let tx = {type: "order", data: req.body};
+    // let tx = {type: "order", data: req.body};
+    let tx: Transaction;
+
+    try {
+        tx = new Transaction("order", req.body);
+    } catch (err) {
+        Logger.apiErr("Failed to construct local transaction object.");
+        Message.staticSendError(res, "Internal transaction error, try again.", 500);
+    }
 
     // Execute local ABCI transaction
     try {

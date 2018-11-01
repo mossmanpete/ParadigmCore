@@ -1,14 +1,15 @@
 # ParadigmCore (alpha)
 
-![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.1.2-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg)](./LICENSE) [![Chat Server](https://img.shields.io/badge/chat%20server-join!-red.svg)](https://chat.paradigm.market/)
 
 ## Introduction
-ParadigmCore is the main package that enables the functionality of the OrderStream network. Every OrderStream node in the network must be running ParadigmCore. To read more about the high-level functionality the package enables, check out the [WebSocket API](./docs/websocket-api.md) doc, and the Paradigm Protocol [whitepaper](https://paradigm.market/whitepaper). More documentation will be published soon.
+ParadigmCore is the main package that enables the functionality of the OrderStream network. Every OrderStream node in the network must be running ParadigmCore. To read more about the high-level functionality the package enables, check out the Paradigm Protocol [whitepaper,](https://paradigm.market/whitepaper) and the [WebSocket API](./docs/websocket-api.md) doc. More documentation will be published soon.
 
 This version of ParadigmCore (`blind-star`) is the direct Tendermint implementation of the OrderStream network node software. It is an [ABCI application](https://cosmos.network/docs/sdk/core/app4.html) intended to be used with the [Tendermint](https://github.com/tendermint/tendermint) BFT state replication software. 
 
-ParadigmCore does not include a database (by default) or offer query functionality for historical orders. Instead it provides interfaces for common database solutions that can be used at the discretion of the node's host, depending on production environment. 
+## A Note on Order Storage
+The OrderStream network design follows an asynchronous event-driven architecture. As such, ParadigmCore does not include a database (by default) or offer query functionality for historical orders. Instead it provides interfaces for common database solutions that can be used at the discretion of the node's host, depending on production environment. 
 
 We have released one database interface so far, `ParadigmMongo`, that allows you to store all valid orders (as relayed via ParadigmCore's WS endpoint) in a MongoDB backend server running on your node, or another machine. The repository for `ParadigmMongo` can be found [here](https://github.com/paradigmfoundation/paradigmmongo). You can preview a live version of this software at https://zaidan.paradigm.market/. 
 

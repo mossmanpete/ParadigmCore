@@ -5,7 +5,7 @@
   =========================
 
   @date_initial 13 September 2018
-  @date_modified 29 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Main ParadigmCore state machine and state transition logic.
@@ -15,20 +15,21 @@
 const abci: any = require('abci');
 
 // Log message templates
-import { messages as msg } from "../util/messages";
+import { messages as msg } from "../util/static/messages";
 
 // Custom classes
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Hasher } from "../crypto/Hasher";
-import { Vote } from "../util/Vote"
+import { Vote } from "./Vote"
 import { Logger } from "../util/Logger";
 import { OrderTracker } from "../async/OrderTracker";
 import { StakeRebalancer } from "../async/StakeRebalancer";
 
 // ABCI handler functions
 import { checkOrder, deliverOrder } from "./handlers/order";
-import { checkStake, deliverStake } from "./handlers/stake";
+import { checkWitness, deliverWitness } from "./handlers/witness";
 import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
+import { Transaction } from "./Transaction";
 
 // "Globals"
 let version: string;    // store current application version
@@ -156,14 +157,28 @@ function checkTx(request): Vote {
 
     let tx: any;        // Stores decoded transaction object
     let txType: string; // Stores transaction type
+    let sigOk: boolean; // True if signature is valid
 
+    // Decode the buffered and compressed transaction
     try {
-        // Decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
         txType = tx.type.toLowerCase();
     } catch (err) {
         Logger.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
+    }
+
+    // Verify validator signature
+    // @TODO: add condition to check sig is from a validator
+    try {
+       sigOk = Transaction.verify(tx);
+       if (!sigOk) {
+           Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
+           return Vote.invalid("Invalid validator signature.");   
+       }
+    } catch (err) {
+        Logger.mempoolWarn("Unable to recover validator signature.");
+        return Vote.invalid("Error encountered recovering validator signature.");
     }
 
     /**
@@ -179,8 +194,8 @@ function checkTx(request): Vote {
             return checkStream(tx, commitState);
         }*/
 
-        case "stake": {
-            return checkStake(tx, commitState);;
+        case "witness": {
+            return checkWitness(tx, commitState);;
         }
 
         case "rebalance": {
@@ -207,16 +222,28 @@ function deliverTx(request): Vote {
 
     let tx: any;        // Stores decoded transaction object
     let txType: string; // Stores transaction type
+    let sigOk: boolean; // True if signature is valid
 
+    // Decode the buffered and compressed transaction
     try {
-        // TODO: expand ABCIdecode() to produce rich objects
-        
-        // Decode the buffered and compressed transaction
         tx = PayloadCipher.ABCIdecode(rawTx);
         txType = tx.type.toLowerCase();
     } catch (err) {
         Logger.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
+    }
+
+    // Verify validator signature
+    // @TODO: add condition to check sig is from a validator
+    try {
+       sigOk = Transaction.verify(tx);
+       if (!sigOk) {
+           Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
+           return Vote.invalid("Invalid validator signature.");   
+       }
+    } catch (err) {
+        Logger.mempoolWarn("Unable to recover validator signature.");
+        return Vote.invalid("Error encountered recovering validator signature.");
     }
 
     /**
@@ -232,8 +259,8 @@ function deliverTx(request): Vote {
             return deliverStream(tx, deliverState, tracker);
         }*/
 
-        case "stake": {
-            return deliverStake(tx, deliverState);;
+        case "witness": {
+            return deliverWitness(tx, deliverState);;
         }
 
         case "rebalance": {
@@ -309,7 +336,7 @@ function commit(request): string {
     }
 
     // Temporary
-    console.log(`\n.... cState: ${JSON.stringify(commitState)}\n`);
+    console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
 
     // Return state's hash to be included in next block header
     return stateHash;

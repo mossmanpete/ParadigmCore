@@ -5,7 +5,7 @@
   =========================
 
   @date_initial 15 October 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   This class is responsible for executing local ABCI transactions. It
@@ -16,6 +16,7 @@
 import { EventEmitter } from "events";
 
 // ParadigmCore classes
+import { Transaction } from "./Transaction";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Logger } from "../util/Logger";
 
@@ -82,7 +83,7 @@ export class TxBroadcaster {
      * 
      * @param tx    {object}    raw transaction object to enqueue 
      */
-    public async send(tx: any): Promise<any> {
+    public async send(tx: Transaction): Promise<any> {
         // Create new EventEmitter for this tx
         let ee = new EventEmitter();
         

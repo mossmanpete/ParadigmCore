@@ -5,11 +5,12 @@
   =========================
 
   @date_initial 12 September 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
   Entry point and startup script for ParadigmCore. 
 */
+
 // Load configuration from environment
 require('dotenv').config();
 
@@ -21,7 +22,7 @@ import { EventEmitter } from "events";
 // ParadigmCore classes
 import { Logger } from "./util/Logger";
 import { WebSocketMessage } from "./net/WebSocketMessage";
-import { messages as msg } from "./util/messages";
+import { messages as msg } from "./util/static/messages";
 import { TxBroadcaster } from "./abci/TxBroadcaster";
 
 // State object templates
@@ -33,7 +34,7 @@ import { startMain, startRebalancer } from "./abci/main";
 import { startAPIserver } from "./net/server";
 
 // Staking contract ABI
-import { STAKE_CONTRACT_ABI } from "./util/contractABI";
+import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
 // Config and constants from environment
 const {
@@ -122,9 +123,9 @@ let node: any;                  // Tendermint node instance
 
             // Rebalancer options
             "provider": WEB3_PROVIDER,
-            "periodLength": PERIOD_LENGTH,
-            "periodLimit": PERIOD_LIMIT,
-            "finalityThreshold": FINALITY_THRESHOLD,
+            "periodLength": parseInt(PERIOD_LENGTH),
+            "periodLimit": parseInt(PERIOD_LIMIT),
+            "finalityThreshold": parseInt(FINALITY_THRESHOLD),
             "stakeAddress": STAKE_CONTRACT_ADDR,
             "stakeABI": STAKE_CONTRACT_ABI,
         }

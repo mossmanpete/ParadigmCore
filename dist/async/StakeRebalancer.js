@@ -23,8 +23,9 @@ const Web3 = require("web3");
 const url_1 = require("url");
 // ParadigmCore modules/classes
 const Logger_1 = require("../util/Logger");
-const messages_1 = require("../util/messages");
+const messages_1 = require("../util/static/messages");
 const Codes_1 = require("../util/Codes");
+const Transaction_1 = require("../abci/Transaction");
 class StakeRebalancer {
     /**
      * PRIVATE constructor. Do not use. Create new rebalancers with
@@ -409,16 +410,13 @@ class StakeRebalancer {
      * @param _amt      {number}    amount staked or unstaked
      */
     genEventTx(_staker, _type, _block, _amt) {
-        let tx = {
-            type: "stake",
-            data: {
-                staker: _staker,
-                type: _type,
-                block: _block,
-                amount: _amt
-            },
-            nonce: Math.floor(Math.random() * 10000) // TODO: revisit this       
-        };
+        // Construct and sign transaction object
+        let tx = new Transaction_1.Transaction("witness", {
+            staker: _staker,
+            type: _type,
+            block: _block,
+            amount: _amt
+        });
         return tx;
     }
     /**
@@ -439,19 +437,16 @@ class StakeRebalancer {
             // Generate a mapping based on balances otherwise
             map = StakeRebalancer.genLimits(this.balances, this.periodLimit);
         }
-        // Create transaction object
-        let tx = {
-            type: "rebalance",
-            data: {
-                round: {
-                    number: _round + 1,
-                    startsAt: _start,
-                    endsAt: _start + _length,
-                    limit: this.periodLimit
-                },
-                limits: map
-            }
-        };
+        // Create and sign transaction object
+        let tx = new Transaction_1.Transaction("rebalance", {
+            round: {
+                number: _round + 1,
+                startsAt: _start,
+                endsAt: _start + _length,
+                limit: this.periodLimit
+            },
+            limits: map
+        });
         // Return constructed transaction object
         return tx;
     }

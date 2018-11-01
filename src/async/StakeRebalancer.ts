@@ -1,20 +1,20 @@
-/*
+/**
   =========================
   ParadigmCore: Blind Star
   StakeRebalancer.ts @ {master}
   =========================
 
   @date_initial 15 October 2018
-  @date_modified 31 October 2018
+  @date_modified 1 November 2018
   @author Henry Harder
 
-  UNSTABLE! (Okay not THAT unstable, but be careful)
-
-  See the spec doc in ../../spec/ethereum-peg.md
+  This class may not be fully stable. See the spec doc in ../../spec/ethereum-peg.md
 
   This is one of the most important and complex pieces of the OrderStream system, and will 
   likely be unstable for a while. Assume that if this message is here, it should not be run 
   in production. 
+
+  UPDATE: as of 1 November, I consider this to be damn close to stability.
 */
 
 // Third party and stdlib imports
@@ -25,9 +25,10 @@ import { Provider } from "web3/providers";
 
 // ParadigmCore modules/classes
 import { Logger } from "../util/Logger";
-import { messages as msg } from "../util/messages";
-import { default as err } from "../util/Codes";
+import { messages as msg } from "../util/static/messages";
 import { TxBroadcaster } from "../abci/TxBroadcaster";
+import { Transaction } from '../abci/Transaction';
+import { default as err } from "../util/Codes";
 
 export class StakeRebalancer {
     // Rebalancer instance status
@@ -360,7 +361,7 @@ export class StakeRebalancer {
         let rType = res.event.toLowerCase();                // Raw event type
         let amount = parseInt(res.returnValues.amount);     // Amount staked
         let block = res.blockNumber;                        // Event block
-       
+
         // Generate event object
         let event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
 
@@ -493,16 +494,14 @@ export class StakeRebalancer {
      * @param _amt      {number}    amount staked or unstaked
      */
     private genEventTx(_staker, _type, _block, _amt): object {
-        let tx = {
-            type: "stake", // witness
-            data: {
-                staker: _staker,
-                type: _type,
-                block: _block,
-                amount: _amt
-            },
-            nonce: Math.floor(Math.random() * 10000) // TODO: revisit this       
-        };
+        // Construct and sign transaction object
+        let tx = new Transaction("witness", {
+            staker: _staker,
+            type: _type,
+            block: _block,
+            amount: _amt
+        });
+
         return tx;
     }
 
@@ -524,20 +523,17 @@ export class StakeRebalancer {
             // Generate a mapping based on balances otherwise
             map = StakeRebalancer.genLimits(this.balances, this.periodLimit);
         }
-        
-        // Create transaction object
-        let tx = {
-            type: "rebalance",
-            data: {
-                round: {
-                    number: _round + 1,
-                    startsAt: _start,
-                    endsAt: _start + _length,
-                    limit: this.periodLimit
-                },
-                limits: map
-            }
-        };
+  
+        // Create and sign transaction object
+        let tx = new Transaction("rebalance", {
+            round: {
+                number: _round + 1,
+                startsAt: _start,
+                endsAt: _start + _length,
+                limit: this.periodLimit
+            },
+            limits: map
+        });
 
         // Return constructed transaction object
         return tx;

@@ -13,9 +13,9 @@
 
 import * as Paradigm from "paradigm-connect";
 
-import { messages as msg } from "../../util/messages";
+import { messages as msg } from "../../util/static/messages";
 import { Logger } from "../../util/Logger";
-import { Vote } from "../../util/Vote";
+import { Vote } from "../Vote";
 import { Hasher } from "../../crypto/Hasher";
 import { OrderTracker } from "../../async/OrderTracker";
 
@@ -78,7 +78,6 @@ export function deliverOrder(tx: any, state: any, q: OrderTracker){
         state.limits[poster].orderLimit > 0
     ){
         // This block executed if poster has valid stake 
-
         let orderCopy = order.toJSON();
         orderCopy.id = Hasher.hashOrder(order);
 

@@ -14,12 +14,15 @@
   @10-16: TODO: support StreamBroadcast type.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
+// 3rd party imports
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+// ParadigmCore classes and imports
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
-const messages_1 = require("../util/messages");
+const messages_1 = require("../util/static/messages");
+const Transaction_1 = require("../abci/Transaction");
 let client; // tendermint client for RPC
 let app = express();
 app.use(cors());
@@ -34,7 +37,15 @@ app.use(function (err, req, res, next) {
 });
 app.post("/*", async (req, res) => {
     // Create transaction object
-    let tx = { type: "order", data: req.body };
+    // let tx = {type: "order", data: req.body};
+    let tx;
+    try {
+        tx = new Transaction_1.Transaction("order", req.body);
+    }
+    catch (err) {
+        Logger_1.Logger.apiErr("Failed to construct local transaction object.");
+        ExpressMessage_1.Message.staticSendError(res, "Internal transaction error, try again.", 500);
+    }
     // Execute local ABCI transaction
     try {
         // Await ABCI response

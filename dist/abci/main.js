@@ -15,18 +15,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Tendermint JS ABCI server 
 const abci = require('abci');
 // Log message templates
-const messages_1 = require("../util/messages");
+const messages_1 = require("../util/static/messages");
 // Custom classes
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const Hasher_1 = require("../crypto/Hasher");
-const Vote_1 = require("../util/Vote");
+const Vote_1 = require("./Vote");
 const Logger_1 = require("../util/Logger");
 const OrderTracker_1 = require("../async/OrderTracker");
 const StakeRebalancer_1 = require("../async/StakeRebalancer");
 // ABCI handler functions
 const order_1 = require("./handlers/order");
-const stake_1 = require("./handlers/stake");
+const witness_1 = require("./handlers/witness");
 const rebalance_1 = require("./handlers/rebalance");
+const Transaction_1 = require("./Transaction");
 // "Globals"
 let version; // store current application version
 let handlers; // ABCI handler functions
@@ -140,14 +141,28 @@ function checkTx(request) {
     let rawTx = request.tx;
     let tx; // Stores decoded transaction object
     let txType; // Stores transaction type
+    let sigOk; // True if signature is valid
+    // Decode the buffered and compressed transaction
     try {
-        // Decode the buffered and compressed transaction
         tx = PayloadCipher_1.PayloadCipher.ABCIdecode(rawTx);
         txType = tx.type.toLowerCase();
     }
     catch (err) {
         Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.decompress);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
+    }
+    // Verify validator signature
+    // @TODO: add condition to check sig is from a validator
+    try {
+        sigOk = Transaction_1.Transaction.verify(tx);
+        if (!sigOk) {
+            Logger_1.Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
+            return Vote_1.Vote.invalid("Invalid validator signature.");
+        }
+    }
+    catch (err) {
+        Logger_1.Logger.mempoolWarn("Unable to recover validator signature.");
+        return Vote_1.Vote.invalid("Error encountered recovering validator signature.");
     }
     /**
      * This main switch block selects the propper handler logic
@@ -161,8 +176,8 @@ function checkTx(request) {
         case "stream": {
             return checkStream(tx, commitState);
         }*/
-        case "stake": {
-            return stake_1.checkStake(tx, commitState);
+        case "witness": {
+            return witness_1.checkWitness(tx, commitState);
             ;
         }
         case "rebalance": {
@@ -186,15 +201,28 @@ function deliverTx(request) {
     let rawTx = request.tx;
     let tx; // Stores decoded transaction object
     let txType; // Stores transaction type
+    let sigOk; // True if signature is valid
+    // Decode the buffered and compressed transaction
     try {
-        // TODO: expand ABCIdecode() to produce rich objects
-        // Decode the buffered and compressed transaction
         tx = PayloadCipher_1.PayloadCipher.ABCIdecode(rawTx);
         txType = tx.type.toLowerCase();
     }
     catch (err) {
         Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.decompress);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
+    }
+    // Verify validator signature
+    // @TODO: add condition to check sig is from a validator
+    try {
+        sigOk = Transaction_1.Transaction.verify(tx);
+        if (!sigOk) {
+            Logger_1.Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
+            return Vote_1.Vote.invalid("Invalid validator signature.");
+        }
+    }
+    catch (err) {
+        Logger_1.Logger.mempoolWarn("Unable to recover validator signature.");
+        return Vote_1.Vote.invalid("Error encountered recovering validator signature.");
     }
     /**
      * This main switch block selects the propper handler logic
@@ -208,8 +236,8 @@ function deliverTx(request) {
         case "stream": {
             return deliverStream(tx, deliverState, tracker);
         }*/
-        case "stake": {
-            return stake_1.deliverStake(tx, deliverState);
+        case "witness": {
+            return witness_1.deliverWitness(tx, deliverState);
             ;
         }
         case "rebalance": {
