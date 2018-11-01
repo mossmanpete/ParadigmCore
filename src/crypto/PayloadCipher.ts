@@ -12,7 +12,7 @@
 */
 
 import * as zlib from "zlib";
-import { IN_ENC, OUT_ENC } from "../config";
+const { IN_ENC, OUT_ENC } = process.env;
 
 export class PayloadCipher {
     // encoding for in/output of orders, default utf8
