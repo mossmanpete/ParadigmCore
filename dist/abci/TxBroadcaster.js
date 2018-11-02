@@ -111,8 +111,6 @@ class TxBroadcaster {
             Logger_1.Logger.txEvt("Transaction sent successfully.");
         }
         catch (error) {
-            // Temporary
-            console.log("in broadcaster. Error: " + error);
             Logger_1.Logger.txErr("Transaction failed.");
             // Resolve promise to error object
             txEmitter.emit('failed', error);

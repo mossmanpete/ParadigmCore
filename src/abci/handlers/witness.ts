@@ -15,7 +15,7 @@ import { Logger } from "../../util/Logger";
 import { Vote } from "../Vote";
 
 // TEMPORARY
-const { CONF_THRESHOLD } = process.env;
+const { CONF_THRESHOLD, NODE_ENV } = process.env;
 
 /**
  * Performs mempool verification of Ethereum StakeEvent transactions.
@@ -79,8 +79,10 @@ export function deliverWitness(tx: any, state: any): Vote {
                     "conf": 1
                 }
 
-                // TEMPORARY (not needed with multiple nodes)
-                // updateMappings(state, staker, block, amount, type);
+                // If running with single node, update balances
+                if (NODE_ENV === 'development') {
+                    updateMappings(state, staker, block, amount, type);
+                }
 
                 // Voted for valid new event
                 Logger.consensus("Voted for new valid stake event.");
@@ -105,8 +107,10 @@ export function deliverWitness(tx: any, state: any): Vote {
                 "conf": 1
             };
 
-            // TEMPORARY! Will not be needed with multiple nodes
-            // updateMappings(state, staker, block, amount, type);
+            // If running with single node, update balances
+            if (NODE_ENV === 'development') {
+                updateMappings(state, staker, block, amount, type);
+            }
 
             // Added new event to state
             Logger.consensus("Voted for valid stake event (new).");

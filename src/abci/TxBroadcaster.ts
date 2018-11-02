@@ -134,8 +134,6 @@ export class TxBroadcaster {
 
             Logger.txEvt("Transaction sent successfully.");
         } catch (error) {
-            // Temporary
-            console.log("in broadcaster. Error: " + error);
             Logger.txErr("Transaction failed.");
 
             // Resolve promise to error object
@@ -150,7 +148,6 @@ export class TxBroadcaster {
             // Otherwise, move onto the next Tx
             this.broadcast();
         }
-
         return;
     }
 

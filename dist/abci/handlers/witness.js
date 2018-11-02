@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Logger_1 = require("../../util/Logger");
 const Vote_1 = require("../Vote");
 // TEMPORARY
-const { CONF_THRESHOLD } = process.env;
+const { CONF_THRESHOLD, NODE_ENV } = process.env;
 /**
  * Performs mempool verification of Ethereum StakeEvent transactions.
  *
@@ -73,8 +73,10 @@ function deliverWitness(tx, state) {
                     "type": type,
                     "conf": 1
                 };
-                // TEMPORARY (not needed with multiple nodes)
-                // updateMappings(state, staker, block, amount, type);
+                // If running with single node, update balances
+                if (NODE_ENV === 'development') {
+                    updateMappings(state, staker, block, amount, type);
+                }
                 // Voted for valid new event
                 Logger_1.Logger.consensus("Voted for new valid stake event.");
                 return Vote_1.Vote.valid();
@@ -95,8 +97,10 @@ function deliverWitness(tx, state) {
                 "type": type,
                 "conf": 1
             };
-            // TEMPORARY! Will not be needed with multiple nodes
-            // updateMappings(state, staker, block, amount, type);
+            // If running with single node, update balances
+            if (NODE_ENV === 'development') {
+                updateMappings(state, staker, block, amount, type);
+            }
             // Added new event to state
             Logger_1.Logger.consensus("Voted for valid stake event (new).");
             return Vote_1.Vote.valid();

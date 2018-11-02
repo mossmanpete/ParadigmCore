@@ -16,7 +16,7 @@ require('dotenv').config();
 
 // Standard lib and 3rd party NPM modules
 import * as _ws from "ws";
-import * as tendermint from "tendermint-node";
+import * as tendermint from "../lib/tendermint";
 import { EventEmitter } from "events";
 
 // ParadigmCore classes

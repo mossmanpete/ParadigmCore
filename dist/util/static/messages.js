@@ -73,7 +73,7 @@ exports.messages = {
             iAccept: "Valid initial (genesis) rebalance proposal accepted.",
             iReject: "Invalid initial (genesis) rebalance proposal rejected.",
             accept: "Valid rebalance proposal accepted.",
-            reject: "Invalid rebalance proposla rejected.",
+            reject: "Invalid rebalance proposal rejected.",
             wrongRound: "Rejected proposal for incorrect staking period.",
             noMatch: "Rejected proposal that does not match local mapping."
         },

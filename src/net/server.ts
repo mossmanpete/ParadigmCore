@@ -59,7 +59,6 @@ app.post("/*", async (req, res) => {
         Logger.apiEvt("Successfully executed local ABCI transaction.");
         Message.staticSend(res, response);
     } catch (error) {
-        console.log(error);
         Logger.apiErr("Failed to execute local ABCI transaction");
         Message.staticSendError(res, "Internal error, try again.", 500);
     }      
