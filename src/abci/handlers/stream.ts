@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 1-November-2018
+ * @date (modified) 01-November-2018
  *
  * Handler functions for verifying ABCI Stream transactions, originating
  * from external API calls. Implements state transition logic as specified
