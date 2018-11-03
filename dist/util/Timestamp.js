@@ -1,16 +1,19 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  Timestamp.ts @ {master}
-  =========================
-  
-  @date_initial 10 October 2018
-  @date_modified 27 October 2018
-  @author Henry Harder
-
-  Dumb class for creating a log timestamp.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Timestamp.ts
+ * @module util
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  10-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Dumb class for creating a log timestamp.
+ *
+ * @todo integrate this as a function, or somewhere else.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 class Timestamp extends Date {
     constructor() {

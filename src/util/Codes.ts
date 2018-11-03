@@ -1,25 +1,26 @@
-/**  
-  =========================
-  ParadigmCore: Blind Star
-  Codes.ts @ {master}
-  =========================
-
-  @date_initial 27 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Error codes. Working on integrating better error codes throughout PC.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Codes.ts
+ * @module util
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  27-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Error codes. Working on integrating better error codes throughout PC.
+ */
 
 export default class Codes {
-    static OK           = 0;
-    static NO_BLOCK     = 1;
-    static CONTRACT     = 2;
-    static ABCI_CON     = 3;
-    static URI_SCHEME   = 4;
-    static WEB3_PROV    = 5;
-    static WEB3_INST    = 6;
-    static SUBSCRIBE    = 7;
-    static NO_ABCI      = 8;
-    static TX_FAILED    = 9;
+    public static OK           = 0;
+    public static NO_BLOCK     = 1;
+    public static CONTRACT     = 2;
+    public static ABCI_CON     = 3;
+    public static URI_SCHEME   = 4;
+    public static WEB3_PROV    = 5;
+    public static WEB3_INST    = 6;
+    public static SUBSCRIBE    = 7;
+    public static NO_ABCI      = 8;
+    public static TX_FAILED    = 9;
 }

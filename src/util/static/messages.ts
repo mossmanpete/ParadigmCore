@@ -1,25 +1,28 @@
-/*
-  =========================
-  ParadigmCore: Blind Star
-  messages.ts @ {master}
-  =========================
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name contractABI.ts
+ * @module util/static
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  01-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Log message templates and statuses for various modules.
+ */
 
-  @date_initial 1 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Simple message object to store common ABCI and WS messages.
-*/
+/* tslint:disable */
 
 const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 
 export let messages  = {
     general: {
         messages: {
-            start: "Initialization complete, begining new block production."
+            start:  "Initialization complete, begining new block production."
         }, 
         errors: {
-            fatal: "Fatal error detected. Exiting."
+            fatal:  "Fatal error detected. Exiting."
         }
     },
     websocket: {
@@ -73,7 +76,7 @@ export let messages  = {
             iAccept:    "Valid initial (genesis) rebalance proposal accepted.",
             iReject:    "Invalid initial (genesis) rebalance proposal rejected.",
             accept:     "Valid rebalance proposal accepted.",
-            reject:     "Invalid rebalance proposla rejected.",
+            reject:     "Invalid rebalance proposal rejected.",
             wrongRound: "Rejected proposal for incorrect staking period.",
             noMatch:    "Rejected proposal that does not match local mapping."
         },

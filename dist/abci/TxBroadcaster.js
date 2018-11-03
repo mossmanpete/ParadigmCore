@@ -1,51 +1,55 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  TxBroadcaster.ts @ {master}
-  =========================
-
-  @date_initial 15 October 2018
-  @date_modified 31 October 2018
-  @author Henry Harder
-
-  This class is responsible for executing local ABCI transactions. It
-  implements a queue, and allows multiple "concurrant" usage of a given
-  instance for local ABCI tx's, so only one instance should be used per node.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name TxBroadcaster.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  15-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * This class is responsible for executing local ABCI transactions. It
+ * implements a queue, and allows multiple "concurrant" usage of a given
+ * instance for local ABCI tx's, so only one instance should be used per node.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 const events_1 = require("events");
+// ParadigmCore classes
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const Logger_1 = require("../util/Logger");
 class TxBroadcaster {
     /**
      * Create a new TxBroadcaster instance.
      *
-     * @param options   {object}    Options object with:
+     * @param options       {object}    Options object with:
      *  - options.client    {RpcClient} Tendermint ABCI client
      */
     constructor(options) {
-        let _this = this; // Store this reference
+        // tslint:disable-next-line:variable-name
+        const _this = this; // Store this reference
         // Instance properties
         this.client = options.client; // RPC client
         this.tracker = new events_1.EventEmitter(); // Order tracker
         this.queue = [];
         // Attach error handlers to client
-        this.client.on('error', (err) => {
+        this.client.on("error", (err) => {
             Logger_1.Logger.txErr(`Error in Tendermint connection: ${err}`);
             throw new Error("Tendermint connection encountered error.");
         });
-        this.client.on('close', (err) => {
+        this.client.on("close", (err) => {
             Logger_1.Logger.txErr(`Tendemint client closed: ${err}`);
             throw new Error("Tendermint connection terminated.");
         });
         // Attach handlers to tx tracker
-        this.tracker.on('tx', function () {
+        this.tracker.on("tx", () => {
             // We only need to start broadcasting if we aren't already
-            if (!(_this.broadcasting))
+            if (!(_this.broadcasting)) {
                 _this.broadcast();
+            }
         });
-        // Set initial status 
+        // Set initial status
         this.broadcasting = false;
         this.started = false;
         return;
@@ -70,13 +74,13 @@ class TxBroadcaster {
      */
     async send(tx) {
         // Create new EventEmitter for this tx
-        let ee = new events_1.EventEmitter();
+        const ee = new events_1.EventEmitter();
         // Resolve or reject promise based on EE events
-        let res = new Promise((resolve, reject) => {
+        const res = new Promise((resolve, reject) => {
             // Attach handlers
-            ee.on('sent', resolve);
-            ee.on('failed', reject);
-            ee.on('error', reject);
+            ee.on("sent", resolve);
+            ee.on("failed", reject);
+            ee.on("error", reject);
         });
         // Add transaction and emitter to queue (in array)
         this.enqueue([tx, ee]);
@@ -88,40 +92,45 @@ class TxBroadcaster {
      */
     async broadcast() {
         // Return immediatley if this.start() hasn't been called
-        if (!(this.started))
+        if (!(this.started)) {
             return;
+        }
         // Temporary
-        Logger_1.Logger.txEvt('Sending internal ABCI transaction.');
+        Logger_1.Logger.txEvt("Sending internal ABCI transaction.");
         // Store this reference, update status
-        let _this = this;
+        // tslint:disable-next-line:variable-name
+        const _this = this;
         this.broadcasting = true;
         // Get next Tx in queue, do nothing if empty
-        let txArr = this.dequeue();
-        if (txArr === null || txArr.length !== 2)
+        const txArr = this.dequeue();
+        if (txArr === null || txArr.length !== 2) {
             return;
+        }
         // Unpack txArr
-        let txObject = txArr[0];
-        let txEmitter = txArr[1];
+        const txObject = txArr[0];
+        const txEmitter = txArr[1];
         // Compress and encode Tx
-        let payload = PayloadCipher_1.PayloadCipher.encodeFromObject(txObject);
+        const payload = PayloadCipher_1.PayloadCipher.encodeFromObject(txObject);
         try {
             // Await ABCI response, and resolve promise
-            let res = await this.client.broadcastTxSync({ tx: `"${payload}"` });
-            txEmitter.emit('sent', res);
+            const res = await this.client.broadcastTxSync({ tx: `"${payload}"` });
+            txEmitter.emit("sent", res);
             Logger_1.Logger.txEvt("Transaction sent successfully.");
+        }
+        catch (error) {
+            Logger_1.Logger.txErr("Transaction failed.");
+            // Resolve promise to error object
+            txEmitter.emit("failed", error);
+        }
+        finally {
             // If queue is now empty, stop broadcasting
             if (_this.isEmpty()) {
                 this.broadcasting = false;
+                // tslint:disable-next-line:no-unsafe-finally
                 return;
             }
             // Otherwise, move onto the next Tx
             this.broadcast();
-        }
-        catch (error) {
-            // Temporary
-            Logger_1.Logger.txErr("Transaction failed.");
-            // Resolve promise to error object
-            txEmitter.emit('failed', error);
         }
         return;
     }
@@ -137,24 +146,26 @@ class TxBroadcaster {
      * @param item  {any}   item to add to queue
      */
     enqueue(item) {
-        this.queue.push(item); // Add transaction to queue  
-        this.tracker.emit('tx'); // Trigger broadcast processes
+        this.queue.push(item); // Add transaction to queue
+        this.tracker.emit("tx"); // Trigger broadcast processes
         return;
     }
     /**
      * Returns the top item from the queue, and removes it.
      */
     dequeue() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             return null;
+        }
         return this.queue.shift();
     }
     /**
      * Returns the top item in the queue without removing it.
      */
     front() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             return null;
+        }
     }
 }
 exports.TxBroadcaster = TxBroadcaster;

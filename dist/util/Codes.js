@@ -1,16 +1,17 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  Codes.ts @ {master}
-  =========================
-
-  @date_initial 27 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Error codes. Working on integrating better error codes throughout PC.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Codes.ts
+ * @module util
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  27-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Error codes. Working on integrating better error codes throughout PC.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 class Codes {
 }

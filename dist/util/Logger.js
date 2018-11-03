@@ -1,17 +1,21 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  Logger.ts @ {master}
-  =========================
-
-  @date_initial 25 September 2018
-  @date_modified 19 October 2018
-  @author Henry Harder
-
-  Simple Logger class to handle logs to STDOUT.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Logger.ts
+ * @module util
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  27-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Logger class for modules to log formatted messages to STDOUT.
+ *
+ * @todo Make this less stupid
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
 const { VERSION } = process.env;
 const Timestamp_1 = require("./Timestamp");
 require("colors");
@@ -38,7 +42,7 @@ class Logger {
         Logger.logError(`${'Mempool'.magenta} ${'Error:'.red} ${message}`);
     }
     static mempoolWarn(message) {
-        Logger.logWarning(`${'Mempool'.magenta} ${'Warning:'.yellow} ${message}`);
+        Logger.logWarning(`${'Mempool'.magenta} ${"Warning:".yellow} ${message}`);
     }
     static consensus(message) {
         Logger.logEvent(`${'Consensus:'.cyan} ${message}`);

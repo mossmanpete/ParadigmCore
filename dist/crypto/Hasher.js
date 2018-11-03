@@ -1,34 +1,36 @@
 "use strict";
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Hasher.ts
+ * @module crypto
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  19-August-2018
+ * @date (modified) 02-November-2018
+ *
+ * Hashing class to allow creation of state hashes. Also used to generate
+ * ID's (orderID) for valid orders.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
-/*
-  =========================
-  ParadigmCore: Blind Star
-  Hasher.ts @ {master}
-  =========================
-
-  @date_initial 19 August 2018
-  @date_modified 19 October 2018
-  @author Henry Harder
-
-  Class for preparing and creating OrderID's via salted hash.
-*/
 const hash = require("object-hash");
 const Logger_1 = require("../util/Logger");
 class Hasher {
     /**
-     * hashOrder (public static method) Generate the hash of an order to be used as
-     * the OrderID.
+     * Generate the hash of an order to be used as the OrderID.
      *
      * @param order {paradigm.Order} A Paradigm order object to be hashed
      */
     static hashOrder(order) {
-        let hashPrep = {
-            "subContract": order.subContract,
-            "posterSignature": order.posterSignature,
-            "makerValues": order.makerValues
+        // TODO: change to @type: paradigm.Order
+        const hashPrep = {
+            makerValues: order.makerValues,
+            posterSignature: order.posterSignature,
+            subContract: order.subContract,
         };
         try {
-            let orderHash = hash(hashPrep);
+            const orderHash = hash(hashPrep);
             return orderHash;
         }
         catch (error) {
@@ -36,23 +38,23 @@ class Hasher {
         }
     }
     /**
-     * hashState (public static method) Generate the hash of the state.
+     * Generate a hash of the state.
      *
      * @param state {State} the current state object
      */
     static hashState(state) {
-        let hashPrep = {
-            "roundNumber": state.round.number,
-            "startHeight": state.round.startsAt,
-            "endHeight": state.round.endsAt,
-            "balances": state.balances,
-            "ordernum": state.orderCounter,
-            "events": state.events,
-            "limits": state.limits,
-            "lastHeight": state.lastBlockHeight
+        const hashPrep = {
+            balances: state.balances,
+            endHeight: state.round.endsAt,
+            events: state.events,
+            lastHeight: state.lastBlockHeight,
+            limits: state.limits,
+            ordernum: state.orderCounter,
+            roundNumber: state.round.number,
+            startHeight: state.round.startsAt,
         };
         try {
-            let stateHash = hash(hashPrep);
+            const stateHash = hash(hashPrep);
             return stateHash;
         }
         catch (error) {

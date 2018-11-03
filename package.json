@@ -1,6 +1,6 @@
 {
   "name": "paradigmcore",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Node.js OrderStream Network node implementation",
   "main": "./dist/index.js",
   "scripts": {

@@ -1,33 +1,36 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  server.ts @ {master}
-  =========================
-
-  @date_initial 24 September 2018
-  @date_modified 31 October 2018
-  @author Henry Harder
-
-  HTTP server to enable incoming orders to be recieved as POST requests.
-
-  @10-16: TODO: support StreamBroadcast type.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name server.ts
+ * @module net
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  24-September-2018
+ * @date (modified) 02-November-2018
+ *
+ * ExpressJS server to enable incoming orders to be recieved as POST requests.
+ *
+ * @10-16: TODO: support StreamBroadcast type.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 // 3rd party imports
-const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const express = require("express");
 // ParadigmCore classes and imports
+const Transaction_1 = require("../abci/Transaction");
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");
-const Transaction_1 = require("../abci/Transaction");
-let client; // tendermint client for RPC
-let app = express();
+// "Globals"
+let client; // Tendermint client for RPC
+const app = express();
+// Setup express server
 app.use(cors());
 app.use(bodyParser.json());
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
     try {
         ExpressMessage_1.Message.staticSendError(res, messages_1.messages.api.errors.badJSON, 400);
     }
@@ -37,7 +40,6 @@ app.use(function (err, req, res, next) {
 });
 app.post("/*", async (req, res) => {
     // Create transaction object
-    // let tx = {type: "order", data: req.body};
     let tx;
     try {
         tx = new Transaction_1.Transaction("order", req.body);
@@ -49,7 +51,7 @@ app.post("/*", async (req, res) => {
     // Execute local ABCI transaction
     try {
         // Await ABCI response
-        let response = await client.send(tx);
+        const response = await client.send(tx);
         // Send response back to client
         Logger_1.Logger.apiEvt("Successfully executed local ABCI transaction.");
         ExpressMessage_1.Message.staticSend(res, response);
@@ -75,7 +77,7 @@ async function startAPIserver(apiPort, broadcaster) {
         return;
     }
     catch (err) {
-        throw new Error('Error starting API server');
+        throw new Error("Error starting API server");
     }
 }
 exports.startAPIserver = startAPIserver;

@@ -1,33 +1,35 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  main.ts @ {master}
-  =========================
-
-  @date_initial 13 September 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Main ParadigmCore state machine and state transition logic.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name main.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  15-October-2018
+ * @date (modified) 01-November-2018
+ *
+ * Main ParadigmCore state machine implementation and state transition logic.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
-// Tendermint JS ABCI server 
-const abci = require('abci');
+// Tendermint JS ABCI server
+// tslint:disable-next-line:no-var-requires
+const abci = require("abci");
 // Log message templates
 const messages_1 = require("../util/static/messages");
-// Custom classes
-const PayloadCipher_1 = require("../crypto/PayloadCipher");
-const Hasher_1 = require("../crypto/Hasher");
-const Vote_1 = require("./Vote");
-const Logger_1 = require("../util/Logger");
+// ParadigmCore classes
 const OrderTracker_1 = require("../async/OrderTracker");
 const StakeRebalancer_1 = require("../async/StakeRebalancer");
+const Hasher_1 = require("../crypto/Hasher");
+const PayloadCipher_1 = require("../crypto/PayloadCipher");
+const Logger_1 = require("../util/Logger");
+const Transaction_1 = require("./Transaction");
+const Vote_1 = require("./Vote");
 // ABCI handler functions
 const order_1 = require("./handlers/order");
-const witness_1 = require("./handlers/witness");
 const rebalance_1 = require("./handlers/rebalance");
-const Transaction_1 = require("./Transaction");
+const witness_1 = require("./handlers/witness");
 // "Globals"
 let version; // store current application version
 let handlers; // ABCI handler functions
@@ -55,30 +57,30 @@ async function startMain(options) {
         commitState = options.commitState;
         // Establish ABCI handler functions
         handlers = {
-            info: info,
-            beginBlock: beginBlock,
-            checkTx: checkTx,
-            deliverTx: deliverTx,
-            commit: commit
+            beginBlock,
+            checkTx,
+            commit,
+            deliverTx,
+            info,
         };
         // Queue for valid broadcast transactions (order/stream)
         tracker = new OrderTracker_1.OrderTracker(options.emitter);
         // Configure StakeRebalancer module
         rebalancer = await StakeRebalancer_1.StakeRebalancer.create({
-            provider: options.provider,
+            broadcaster: options.broadcaster,
+            finalityThreshold: options.finalityThreshold,
             periodLength: options.periodLength,
             periodLimit: options.periodLimit,
-            finalityThreshold: options.finalityThreshold,
-            stakeAddress: options.stakeAddress,
+            provider: options.provider,
             stakeABI: options.stakeABI,
-            broadcaster: options.broadcaster
+            stakeAddress: options.stakeAddress,
         });
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
         Logger_1.Logger.consensus(messages_1.messages.abci.messages.servStart);
     }
     catch (err) {
-        throw new Error('Error initializing ABCI application.');
+        throw new Error("Error initializing ABCI application.");
     }
     return;
 }
@@ -89,7 +91,7 @@ exports.startMain = startMain;
 async function startRebalancer() {
     try {
         // Start rebalancer after sync
-        let code = rebalancer.start(); // start listening to Ethereum event
+        const code = rebalancer.start(); // start listening to Ethereum event
         if (code !== 0) {
             Logger_1.Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
             throw new Error();
@@ -113,10 +115,10 @@ Below are implementations of Tendermint ABCI functions.
  */
 function info(_) {
     return {
-        data: 'ParadigmCore ABCI Application',
-        version: version,
+        data: "ParadigmCore ABCI Application",
+        lastBlockAppHash: commitState.lastBlockAppHash,
         lastBlockHeight: commitState.lastBlockHeight,
-        lastBlockAppHash: commitState.lastBlockAppHash
+        version,
     };
 }
 /**
@@ -125,8 +127,8 @@ function info(_) {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function beginBlock(request) {
-    let currHeight = request.header.height;
-    let currProposer = request.header.proposerAddress.toString('hex');
+    const currHeight = request.header.height;
+    const currProposer = request.header.proposerAddress.toString("hex");
     Logger_1.Logger.newRound(currHeight, currProposer);
     return {};
 }
@@ -138,7 +140,7 @@ function beginBlock(request) {
  */
 function checkTx(request) {
     // Raw transaction buffer (encoded and compressed)
-    let rawTx = request.tx;
+    const rawTx = request.tx;
     let tx; // Stores decoded transaction object
     let txType; // Stores transaction type
     let sigOk; // True if signature is valid
@@ -178,7 +180,6 @@ function checkTx(request) {
         }*/
         case "witness": {
             return witness_1.checkWitness(tx, commitState);
-            ;
         }
         case "rebalance": {
             return rebalance_1.checkRebalance(tx, commitState);
@@ -198,7 +199,7 @@ function checkTx(request) {
  */
 function deliverTx(request) {
     // Raw transaction buffer (encoded and compressed)
-    let rawTx = request.tx;
+    const rawTx = request.tx;
     let tx; // Stores decoded transaction object
     let txType; // Stores transaction type
     let sigOk; // True if signature is valid
@@ -238,7 +239,6 @@ function deliverTx(request) {
         }*/
         case "witness": {
             return witness_1.deliverWitness(tx, deliverState);
-            ;
         }
         case "rebalance": {
             return rebalance_1.deliverRebalance(tx, deliverState, rebalancer);
@@ -261,7 +261,7 @@ function commit(request) {
     let stateHash = "";
     try {
         // Calculate difference between cState and dState round height
-        let roundDiff = deliverState.round.number - commitState.round.number;
+        const roundDiff = deliverState.round.number - commitState.round.number;
         switch (roundDiff) {
             case 0: {
                 // No rebalance proposal accepted in this round
@@ -270,9 +270,9 @@ function commit(request) {
             case 1: {
                 // Rebalance proposal accepted in this round
                 // Load round parameters from state
-                let newRound = deliverState.round.number;
-                let newStart = deliverState.round.startsAt;
-                let newEnd = deliverState.round.endsAt;
+                const newRound = deliverState.round.number;
+                const newStart = deliverState.round.startsAt;
+                const newEnd = deliverState.round.endsAt;
                 // Synchronize staking period parameters
                 rebalancer.synchronize(newRound, newStart, newEnd);
                 break;
@@ -299,7 +299,8 @@ function commit(request) {
         Logger_1.Logger.consensusErr(messages_1.messages.abci.errors.broadcast);
     }
     // Temporary
-    console.log(`\n.... cState: ${JSON.stringify(commitState)}\n`);
+    // tslint:disable-next-line:no-console
+    console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
     // Return state's hash to be included in next block header
     return stateHash;
 }

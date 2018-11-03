@@ -1,34 +1,33 @@
-/*
-  =========================
-  ParadigmCore: Blind Star
-  Vote.ts @ {master}
-  =========================
-  
-  @date_initial 24 September 2018
-  @date_modified 25 October 2018
-  @author Henry Harder
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Vote.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  24-September-2018
+ * @date (modified) 02-November-2018
+ *
+ * The Vote class represents a Tendermint ABCI response message.
+ */
 
-  A class to represent a vote based on the logic in 
-  checkTx() and deliverTx().
-*/
-
-export class Vote { 
+export class Vote {
     /*
         This class will be expanded with more errors for the
         different failure points in checkTx (and deliverTx).
     */
-    public static valid(message?: string, id?: string) {
+    public static valid(message?: string) {
         return {
             code: 0,
-            log: `OrderID: ${id}`,
-            info: message
-        }
+            log: message,
+        };
     }
 
     public static invalid(message?: string) {
         return {
             code: 1,
-            log: message
-        }
+            log: message,
+        };
     }
 }
