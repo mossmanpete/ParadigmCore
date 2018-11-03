@@ -31,9 +31,6 @@ import { Transaction } from '../abci/Transaction';
 import { default as err } from "../util/Codes";
 
 export class StakeRebalancer {
-    // Rebalancer instance status
-    private initialized: boolean;   // True if .initialize() successful
-    private started: boolean;       // True if Tendermint is connected
 
     // Web3 instance variables
     private web3provider: URL;  // Web3 provider URI
