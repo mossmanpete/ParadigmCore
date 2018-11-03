@@ -94,8 +94,8 @@ class StakeRebalancer {
             }
             // Calculate which block is reaching maturity
             const matBlock = this.currHeight - this.finalityThreshold;
-            Logger_1.Logger.rebalancer(`(Temporary) Most final block is: ${matBlock}`, this.periodNumber);
-            Logger_1.Logger.rebalancer(`(Temporary) Next round ends at: ${this.periodEnd}`, this.periodNumber);
+            Logger_1.Logger.rebalancer(`Highest final block is: ${matBlock}`, this.periodNumber);
+            Logger_1.Logger.rebalancer(` Round ends at: ${this.periodEnd}`, this.periodNumber);
             // See if any events have reached finality
             if (this.events.hasOwnProperty(matBlock)) {
                 Object.keys(this.events[matBlock]).forEach((k) => {
@@ -180,24 +180,24 @@ class StakeRebalancer {
      * Generates an output address:limit mapping based on a provided
      * address:balance mapping, and a total throughput limit.
      *
-     * @param balances  {object} current address:balance mapping
+     * @param balMap  {object} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
-    static genLimits(balances, limit) {
+    static genLimits(balMap, limit) {
         let total = 0; // Total amount currently staked
         const output = {}; // Generated output mapping
         // Calculate total balance currently staked
-        Object.keys(balances).forEach((k, _) => {
-            if (balances.hasOwnProperty(k) && typeof (balances[k]) === "number") {
-                total += balances[k];
+        Object.keys(balMap).forEach((k, _) => {
+            if (balMap.hasOwnProperty(k) && typeof (balMap[k]) === "number") {
+                total += balMap[k];
             }
         });
         // Compute the rate-limits for each staker based on stake size
-        Object.keys(balances).forEach((k, _) => {
-            if (balances.hasOwnProperty(k) && typeof (balances[k]) === "number") {
+        Object.keys(balMap).forEach((k, _) => {
+            if (balMap.hasOwnProperty(k) && typeof (balMap[k]) === "number") {
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor((balances[k] / total) * limit),
+                    orderLimit: Math.floor((balMap[k] / total) * limit),
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
                 };
@@ -477,7 +477,7 @@ class StakeRebalancer {
                 Logger_1.Logger.rebalancerErr("Local ABCI transaction failed.");
             });
         }
-        catch (e) {
+        catch (error) {
             Logger_1.Logger.rebalancerErr("Failed to execute local ABCI transaction.");
             return Codes_1.default.TX_FAILED;
         }

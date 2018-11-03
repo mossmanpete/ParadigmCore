@@ -71,26 +71,26 @@ export class StakeRebalancer {
      * Generates an output address:limit mapping based on a provided
      * address:balance mapping, and a total throughput limit.
      *
-     * @param balances  {object} current address:balance mapping
+     * @param balMap  {object} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
-    public static genLimits(balances: any, limit: number): any {
+    public static genLimits(balMap: any, limit: number): any {
         let total: number = 0;      // Total amount currently staked
-        const output: object = {};    // Generated output mapping
+        const output: object = {};  // Generated output mapping
 
         // Calculate total balance currently staked
-        Object.keys(balances).forEach((k, _) => {
-            if (balances.hasOwnProperty(k) && typeof(balances[k]) === "number") {
-                total += balances[k];
+        Object.keys(balMap).forEach((k, _) => {
+            if (balMap.hasOwnProperty(k) && typeof(balMap[k]) === "number") {
+                total += balMap[k];
             }
         });
 
         // Compute the rate-limits for each staker based on stake size
-        Object.keys(balances).forEach((k, _) => {
-            if (balances.hasOwnProperty(k) && typeof(balances[k]) === "number") {
+        Object.keys(balMap).forEach((k, _) => {
+            if (balMap.hasOwnProperty(k) && typeof(balMap[k]) === "number") {
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor((balances[k] / total) * limit),
+                    orderLimit: Math.floor((balMap[k] / total) * limit),
 
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
@@ -129,7 +129,7 @@ export class StakeRebalancer {
         }
 
         // Construct and return event object
-        return {staker, type, amount, block};
+        return { staker, type, amount, block };
     }
 
     /* End static methods. */
@@ -420,8 +420,8 @@ export class StakeRebalancer {
 
         // Calculate which block is reaching maturity
         const matBlock = this.currHeight - this.finalityThreshold;
-        Log.rebalancer(`(Temporary) Most final block is: ${matBlock}`, this.periodNumber);
-        Log.rebalancer(`(Temporary) Next round ends at: ${this.periodEnd}`, this.periodNumber);
+        Log.rebalancer(`Highest final block is: ${matBlock}`, this.periodNumber);
+        Log.rebalancer(` Round ends at: ${this.periodEnd}`, this.periodNumber);
 
         // See if any events have reached finality
         if (this.events.hasOwnProperty(matBlock)) {
@@ -574,7 +574,7 @@ export class StakeRebalancer {
             }).catch((_) => {
                 Log.rebalancerErr("Local ABCI transaction failed.");
             });
-        } catch (e) {
+        } catch (error) {
             Log.rebalancerErr("Failed to execute local ABCI transaction.");
             return err.TX_FAILED;
         }

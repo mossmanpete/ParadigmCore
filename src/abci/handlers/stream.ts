@@ -21,7 +21,8 @@ import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
 import { Vote } from "../Vote";
 
-const Order = new Paradigm().Order; // Paradigm order constructor
+// Paradigm order constructor
+const Order = new Paradigm().Order;
 
 /**
  * Used to perform mempool verification of StreamBroadcast transactions.
@@ -54,7 +55,7 @@ export function checkStream(tx: object, state: any) {
  * Execute StreamBroadcast transactions in full, and perform state
  * modification.
  *
- * @param tx {object} decoded transaction body
+ * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
 export function deliverStream(tx: object, state: object, tracker: OrderTracker) {

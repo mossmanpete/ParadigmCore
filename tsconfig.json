@@ -3,7 +3,6 @@
         "outDir": "./dist",
         "baseUrl": "./",
         "target": "es2017",
-        "lib": ["es2017"],
         "module": "commonjs"
     },
     "include":[
@@ -11,5 +10,6 @@
     ],
     "exclude": [
         "./tests/*"
-    ]
+    ],
+    "removeComments": true
 }

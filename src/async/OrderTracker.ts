@@ -9,7 +9,7 @@
  * @date (initial)  24-September-2018
  * @date (modified) 02-November-2018
  *
- * The OrderTracker class stores valid orders submitted within a consensus
+ * The OrderTracker class stores valid txs submitted within a consensus
  * round, and triggers public broadcast at the end of each round.
  */
 
@@ -17,55 +17,48 @@ import { EventEmitter } from "events";
 
 export class OrderTracker {
 
-    private em: EventEmitter; // event emitter instance
-    private orders: object[]; // stores valid orders
-    private streams: object[]; // stores valid streams
-
-    private activated: boolean = false;
+    private ee: EventEmitter;           // Event emitter instance
+    private txs: object[];              // Stores valid Txs
+    private activated: boolean = false; // Events broadcast if true
 
     constructor(emitter: EventEmitter) {
-        this.em = emitter;
-        this.orders = [];
-        this.streams = [];
+        this.ee = emitter;
+        this.txs = [];
     }
 
+    /**
+     * When `.activate` is called, the OrderTracker will emit events
+     * at the end of each block. This is not desirable during sync mode, so
+     * this method allows the tracker to be activated after the blockchain has
+     * synced.
+     */
     public activate(): boolean {
         this.activated = true;
         return this.activated;
     }
 
     /**
-     * @deprecated Use addOrder()
+     * Add a broadcast transaction ("order" or "stream") to the queue.)
      */
-    public add(order: object) {
-        this.orders.push(order);
+    public add(tx: object) {
+        this.txs.push(tx);
     }
 
-    public addOrder(order: object) {
-        this.orders.push(order);
-    }
-
-    public addStream(stream: object) {
-        this.streams.push(stream);
-    }
-
+    /**
+     * Trigger an WebSocket broadcast (via the global Emitter constructed at
+     * startup).
+     */
     public triggerBroadcast() {
-        if (!this.activated) { return; } // do not broadcast if not in sync
+        if (!this.activated) { return; } // Do not broadcast if not in sync
 
-        if (this.orders.length > 0 || this.streams.length > 0) {
+        if (this.txs.length > 0) {
             try {
-                // Trigger order broadcast
-                this.orders.forEach((order) => {
-                    this.em.emit("order", order); // picked up by websocket server
+                // Trigger Tx broadcast
+                this.txs.forEach((tx) => {
+                    this.ee.emit("tx", tx); // Picked up by WebSocket server
                 });
 
-                // Trigger stream broadcast
-                this.streams.forEach((stream) => {
-                    this.em.emit("stream", stream); // picked up by websocket server
-                });
-
-                // Reset tracker
-                this.flush();
+                this.flush(); // Reset tracker
             } catch (err) {
                 throw new Error("Error triggering event broadcast.");
             }
@@ -75,8 +68,10 @@ export class OrderTracker {
         }
     }
 
+    /**
+     * Clear the queue after each consensus round.
+     */
     private flush() {
-        this.orders = [];
-        this.streams = [];
+        this.txs = [];
     }
 }

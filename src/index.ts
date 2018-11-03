@@ -37,24 +37,6 @@ import { startAPIserver } from "./net/server";
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
-// Config and constants from environment
-const {
-    WS_PORT,
-    ABCI_HOST,
-    ABCI_RPC_PORT,
-    API_PORT,
-    WEB3_PROVIDER,
-    PERIOD_LENGTH,
-    PERIOD_LIMIT,
-    STAKE_CONTRACT_ADDR,
-    ABCI_PORT,
-    VERSION,
-    FINALITY_THRESHOLD,
-}: any = process.env;
-
-// Tendermint config and storage directory
-const TM_HOME = `${process.env.HOME}/.tendermint`;
-
 // "Globals"
 let wss: _ws.Server;            // OrderStream WS server
 let emitter: EventEmitter;      // Emitter to track events
@@ -65,18 +47,24 @@ let node: any;                  // Tendermint node instance
  * This function executes immediately upon this file being loaded. It is
  * responsible for starting all dependant modules.
  *
- * Provide configuration options via `config.ts`
+ * Provide configuration options via environment (.env file)
+ *
+ * @param env   {object}    environment variables (expected as process.env)
  */
-(async () => {
+(async (env) => {
     Logger.logStart();
 
     // Configure and start Tendermint core
     Logger.consensus("Starting Tendermint Core...");
     try {
-        await tendermint.init(TM_HOME);
-        node = tendermint.node(TM_HOME, {
+        // Set Tendermint home directory
+        const tmHome = `${env.HOME}/.tendermint`;
+
+        // Initialize and start Tendermint
+        await tendermint.init(tmHome);
+        node = tendermint.node(tmHome, {
             rpc: {
-                laddr: `tcp://${ABCI_HOST}:${ABCI_RPC_PORT}`,
+                laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
         });
     } catch (error) {
@@ -99,7 +87,7 @@ let node: any;                  // Tendermint node instance
     // Start WebSocket server
     Logger.websocketEvt("Starting WebSocket server...");
     try {
-        wss = new _ws.Server({ port: WS_PORT }, () => {
+        wss = new _ws.Server({ port: parseInt(env.WS_PORT, 10) }, () => {
             Logger.websocketEvt(msg.websocket.messages.servStart);
         });
         emitter = new EventEmitter(); // parent event emitter
@@ -117,18 +105,18 @@ let node: any;                  // Tendermint node instance
             emitter,
 
             // ABCI configuration options
-            abciServPort: ABCI_PORT,
+            abciServPort: env.ABCI_PORT,
             commitState: cState,
             deliverState: dState,
-            version: VERSION,
+            version: env.VERSION,
 
             // Rebalancer options
-            finalityThreshold: parseInt(FINALITY_THRESHOLD, 10),
-            periodLength: parseInt(PERIOD_LENGTH, 10),
-            periodLimit: parseInt(PERIOD_LIMIT, 10),
-            provider: WEB3_PROVIDER,
+            finalityThreshold: parseInt(env.FINALITY_THRESHOLD, 10),
+            periodLength: parseInt(env.PERIOD_LENGTH, 10),
+            periodLimit: parseInt(env.PERIOD_LIMIT, 10),
+            provider: env.WEB3_PROVIDER,
             stakeABI: STAKE_CONTRACT_ABI,
-            stakeAddress: STAKE_CONTRACT_ADDR,
+            stakeAddress: env.STAKE_CONTRACT_ADDR,
         };
 
         // Wait for main ABCI application to start
@@ -154,7 +142,7 @@ let node: any;                  // Tendermint node instance
     // Start HTTP API server
     try {
         Logger.apiEvt("Starting HTTP API server...");
-        await startAPIserver(API_PORT, broadcaster);
+        await startAPIserver(env.API_PORT, broadcaster);
     } catch (error) {
         Logger.apiErr("failed initializing API server.");
         Logger.logError(msg.api.errors.fatal);
@@ -174,29 +162,17 @@ let node: any;                  // Tendermint node instance
             Logger.websocketErr(msg.websocket.errors.connect);
         }
 
-        emitter.on("order", (order) => {
+        emitter.on("tx", (tx) => {
             try {
                 wss.clients.forEach((client) => {
                     if ((client.readyState === 1) && (client === ws)) {
-                        WebSocketMessage.sendOrder(client, order);
+                        WebSocketMessage.sendOrder(client, tx);
                     }
                 });
             } catch (err) {
                 Logger.websocketErr(msg.websocket.errors.broadcast);
             }
         });
-
-        /*emitter.on("stream", stream => {
-            try {
-                wss.clients.forEach(client => {
-                    if ((client.readyState === 1) && (client === ws)){
-                        WebSocketMessage.sendStream(client, stream);
-                    }
-                });
-            } catch (err) {
-                Logger.websocketErr(msg.websocket.errors.broadcast);
-            }
-        });*/
 
         ws.on("message", (message) => {
             if (message === "close") {
@@ -208,4 +184,4 @@ let node: any;                  // Tendermint node instance
     });
 
     Logger.logEvent(msg.general.messages.start);
-})();
+})(process.env);
