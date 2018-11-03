@@ -1,35 +1,37 @@
 /**
-  =========================
-  ParadigmCore: Blind Star
-  main.ts @ {master}
-  =========================
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name main.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  15 October 2018
+ * @date (modified) 1 November 2018
+ *
+ * Main ParadigmCore state machine implementation and state transition logic.
+ */
 
-  @date_initial 13 September 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  Main ParadigmCore state machine and state transition logic.
-*/
-
-// Tendermint JS ABCI server 
-const abci: any = require('abci');
+// Tendermint JS ABCI server
+// tslint:disable-next-line:no-var-requires
+const abci: any = require("abci");
 
 // Log message templates
 import { messages as msg } from "../util/static/messages";
 
-// Custom classes
-import { PayloadCipher } from "../crypto/PayloadCipher";
-import { Hasher } from "../crypto/Hasher";
-import { Vote } from "./Vote"
-import { Logger } from "../util/Logger";
+// ParadigmCore classes
 import { OrderTracker } from "../async/OrderTracker";
 import { StakeRebalancer } from "../async/StakeRebalancer";
+import { Hasher } from "../crypto/Hasher";
+import { PayloadCipher } from "../crypto/PayloadCipher";
+import { Logger } from "../util/Logger";
+import { Transaction } from "./Transaction";
+import { Vote } from "./Vote";
 
 // ABCI handler functions
 import { checkOrder, deliverOrder } from "./handlers/order";
-import { checkWitness, deliverWitness } from "./handlers/witness";
 import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
-import { Transaction } from "./Transaction";
+import { checkWitness, deliverWitness } from "./handlers/witness";
 
 // "Globals"
 let version: string;    // store current application version
@@ -45,7 +47,7 @@ let commitState: any;   // commit state
 
 /**
  * Initialize and start the ABCI application.
- * 
+ *
  * @param options {object} Options object with parameters:
  *  - options.version       {string}        application version
  *  - options.emitter       {EventEmitter}  main event emitter object
@@ -63,11 +65,11 @@ export async function startMain(options: any): Promise<null> {
 
         // Establish ABCI handler functions
         handlers = {
-            info: info,
-            beginBlock: beginBlock,
-            checkTx: checkTx,
-            deliverTx: deliverTx,
-            commit: commit
+            beginBlock,
+            checkTx,
+            commit,
+            deliverTx,
+            info,
         };
 
         // Queue for valid broadcast transactions (order/stream)
@@ -75,13 +77,13 @@ export async function startMain(options: any): Promise<null> {
 
         // Configure StakeRebalancer module
         rebalancer = await StakeRebalancer.create({
-          provider: options.provider,
-          periodLength: options.periodLength,
-          periodLimit: options.periodLimit,
-          finalityThreshold: options.finalityThreshold,
-          stakeAddress: options.stakeAddress,
-          stakeABI: options.stakeABI,
-          broadcaster: options.broadcaster
+            broadcaster: options.broadcaster,
+            finalityThreshold: options.finalityThreshold,
+            periodLength: options.periodLength,
+            periodLimit: options.periodLimit,
+            provider: options.provider,
+            stakeABI: options.stakeABI,
+            stakeAddress: options.stakeAddress,
         });
 
         // Start ABCI server (connection to Tendermint core)
@@ -89,7 +91,7 @@ export async function startMain(options: any): Promise<null> {
         Logger.consensus(msg.abci.messages.servStart);
 
     } catch (err) {
-        throw new Error('Error initializing ABCI application.');
+        throw new Error("Error initializing ABCI application.");
     }
     return;
 }
@@ -98,16 +100,16 @@ export async function startMain(options: any): Promise<null> {
  * Start rebalancer module and order tracker module.
  */
 export async function startRebalancer(): Promise<null> {
-  try {
-      // Start rebalancer after sync
-      let code = rebalancer.start(); // start listening to Ethereum event
-      if (code !== 0) {
-        Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
-        throw new Error();
-      }
+    try {
+        // Start rebalancer after sync
+        const code = rebalancer.start(); // start listening to Ethereum event
+        if (code !== 0) {
+            Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
+            throw new Error();
+        }
 
-      // Activate OrderTracker (after Tendermint sync)
-      tracker.activate();
+        // Activate OrderTracker (after Tendermint sync)
+        tracker.activate();
     } catch (err) {
         throw new Error("Error activating stake rebalancer.");
     }
@@ -120,26 +122,26 @@ Below are implementations of Tendermint ABCI functions.
 
 /**
  * Return information about the state and software.
- * 
+ *
  * @param _ {null}
  */
 function info(_): object {
     return {
-        data: 'ParadigmCore ABCI Application',
-        version: version,
+        data: "ParadigmCore ABCI Application",
+        lastBlockAppHash: commitState.lastBlockAppHash,
         lastBlockHeight: commitState.lastBlockHeight,
-        lastBlockAppHash: commitState.lastBlockAppHash
-    }
+        version,
+    };
 }
 
 /**
  * Called at the begining of each new block. Updates proposer and block height.
- * 
+ *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function beginBlock(request): object {
-    let currHeight = request.header.height;
-    let currProposer = request.header.proposerAddress.toString('hex');
+    const currHeight = request.header.height;
+    const currProposer = request.header.proposerAddress.toString("hex");
 
     Logger.newRound(currHeight, currProposer);
     return {};
@@ -148,12 +150,12 @@ function beginBlock(request): object {
 /**
  * Perform light verification on incoming transactions, accept valid
  * transactions to the mempool, and reject invalid ones.
- * 
+ *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function checkTx(request): Vote {
     // Raw transaction buffer (encoded and compressed)
-    let rawTx: Buffer = request.tx;
+    const rawTx: Buffer = request.tx;
 
     let tx: any;        // Stores decoded transaction object
     let txType: string; // Stores transaction type
@@ -174,7 +176,7 @@ function checkTx(request): Vote {
        sigOk = Transaction.verify(tx);
        if (!sigOk) {
            Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
-           return Vote.invalid("Invalid validator signature.");   
+           return Vote.invalid("Invalid validator signature.");
        }
     } catch (err) {
         Logger.mempoolWarn("Unable to recover validator signature.");
@@ -195,7 +197,7 @@ function checkTx(request): Vote {
         }*/
 
         case "witness": {
-            return checkWitness(tx, commitState);;
+            return checkWitness(tx, commitState);
         }
 
         case "rebalance": {
@@ -213,12 +215,12 @@ function checkTx(request): Vote {
 /**
  * Execute a transaction in full: perform state modification, and verify
  * transaction validity.
- * 
+ *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function deliverTx(request): Vote {
     // Raw transaction buffer (encoded and compressed)
-    let rawTx: Buffer = request.tx;
+    const rawTx: Buffer = request.tx;
 
     let tx: any;        // Stores decoded transaction object
     let txType: string; // Stores transaction type
@@ -239,7 +241,7 @@ function deliverTx(request): Vote {
        sigOk = Transaction.verify(tx);
        if (!sigOk) {
            Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
-           return Vote.invalid("Invalid validator signature.");   
+           return Vote.invalid("Invalid validator signature.");
        }
     } catch (err) {
         Logger.mempoolWarn("Unable to recover validator signature.");
@@ -260,7 +262,7 @@ function deliverTx(request): Vote {
         }*/
 
         case "witness": {
-            return deliverWitness(tx, deliverState);;
+            return deliverWitness(tx, deliverState);
         }
 
         case "rebalance": {
@@ -280,7 +282,7 @@ function deliverTx(request): Vote {
 /**
  * Persist application state, synchronize commit and deliver states, and
  * trigger the broadcast of valid orders in that block.
- * 
+ *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function commit(request): string {
@@ -288,7 +290,7 @@ function commit(request): string {
 
     try {
         // Calculate difference between cState and dState round height
-        let roundDiff = deliverState.round.number - commitState.round.number;
+        const roundDiff = deliverState.round.number - commitState.round.number;
 
         switch (roundDiff) {
             case 0: {
@@ -298,11 +300,10 @@ function commit(request): string {
 
             case 1: {
                 // Rebalance proposal accepted in this round
-
                 // Load round parameters from state
-                let newRound = deliverState.round.number;
-                let newStart = deliverState.round.startsAt;
-                let newEnd = deliverState.round.endsAt;
+                const newRound = deliverState.round.number;
+                const newStart = deliverState.round.startsAt;
+                const newEnd = deliverState.round.endsAt;
 
                 // Synchronize staking period parameters
                 rebalancer.synchronize(newRound, newStart, newEnd);
@@ -328,7 +329,7 @@ function commit(request): string {
 
         // Synchronize commit state from delivertx state
         // @TODO: find a better way to deep-clone the state object
-        commitState = JSON.parse(JSON.stringify(deliverState));        
+        commitState = JSON.parse(JSON.stringify(deliverState));
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
@@ -336,6 +337,7 @@ function commit(request): string {
     }
 
     // Temporary
+    // tslint:disable-next-line:no-console
     console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
 
     // Return state's hash to be included in next block header

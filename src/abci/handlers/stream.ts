@@ -1,35 +1,35 @@
-/**  
-  =========================
-  ParadigmCore: Blind Star
-  streamHandlers.ts @ {master}
-  =========================
-
-  @date_initial 23 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Handler functions for verifying ABCI StreamBroadcasts. 
-
-  @10-23 We need paradigm-connect to allow the creation of a custom order type
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name stream.ts
+ * @module abci/handlers
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  23-October-2018
+ * @date (modified) 1-November-2018
+ *
+ * Handler functions for verifying ABCI Stream transactions, originating
+ * from external API calls. Implements state transition logic as specified
+ * in the spec for this TX type.
+ */
 
 import * as Paradigm from "paradigm-connect";
 
-import { messages as msg } from "../../util/static/messages";
 import { OrderTracker } from "../../async/OrderTracker";
 import { Logger } from "../../util/Logger";
+import { messages as msg } from "../../util/static/messages";
 import { Vote } from "../Vote";
 
-let Order = new Paradigm().Order; // Paradigm order constructor
+const Order = new Paradigm().Order; // Paradigm order constructor
 
 /**
- * @name checkStream() {export function} use to perform mempool verification of
- * StreamBroadcast transactions.
- * 
- * @param tx {object} decoded transaction body
+ * Used to perform mempool verification of StreamBroadcast transactions.
+ *
+ * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkStream(tx: object, state: any){
+export function checkStream(tx: object, state: any) {
     let order; // Paradigm order object
     let poster; // Recovered poster address from signature
 
@@ -41,7 +41,7 @@ export function checkStream(tx: object, state: any){
         return Vote.invalid(msg.abci.errors.format);
     }
 
-    if(state.mappings.limits.hasOwnProperty(poster)){
+    if (state.mappings.limits.hasOwnProperty(poster)) {
         Logger.mempool(msg.abci.messages.mempool);
         return Vote.valid(msg.abci.messages.mempool);
     } else {
@@ -51,12 +51,12 @@ export function checkStream(tx: object, state: any){
 }
 
 /**
- * @name deliverStream() {export function} execute StreamBroadcast transactions
- * in full, and perform state modification. 
- * 
+ * Execute StreamBroadcast transactions in full, and perform state
+ * modification.
+ *
  * @param tx {object} decoded transaction body
  * @param state {object} current round state
  */
-export function deliverStream(tx: object, state: object, tracker: OrderTracker){
+export function deliverStream(tx: object, state: object, tracker: OrderTracker) {
     return 0;
 }

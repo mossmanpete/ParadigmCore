@@ -1,16 +1,20 @@
-/** 
-  =========================
-  ParadigmCore: Blind Star
-  witness.ts @ {master}
-  =========================
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name witness.ts
+ * @module abci/handlers
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  23-October-2018
+ * @date (modified) 1-November-2018
+ *
+ * Handler functions for verifying ABCI evet Witness transactions,
+ * originating from validator nodes. Implements state transition logic as
+ * specified in the spec for this TX type.
+ */
 
-  @date_initial 23 October 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  Handler functions for verifying ABCI event witness transactions. 
-*/
-
+ // ParadigmCore classes
 import { Logger } from "../../util/Logger";
 import { Vote } from "../Vote";
 
@@ -19,7 +23,7 @@ const { CONF_THRESHOLD, NODE_ENV } = process.env;
 
 /**
  * Performs mempool verification of Ethereum StakeEvent transactions.
- * 
+ *
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
@@ -36,10 +40,10 @@ export function checkWitness(tx: any, state: any): Vote {
 /**
  * Performs state modification of Stake Event transactions (modify staker's
  * balance).
- * 
+ *
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
- * 
+ *
  * @todo: options for confirmation threshold
  */
 export function deliverWitness(tx: any, state: any): Vote {
@@ -50,10 +54,10 @@ export function deliverWitness(tx: any, state: any): Vote {
     }
 
     // Unpack event data into local variables
-    let staker: string = tx.data.staker;
-    let type: string = tx.data.type;
-    let block: number = tx.data.block;
-    let amount: number = tx.data.amount;
+    const staker: string = tx.data.staker;
+    const type: string = tx.data.type;
+    const block: number = tx.data.block;
+    const amount: number = tx.data.amount;
 
     switch (state.events.hasOwnProperty(block)) {
         // Block is already in state
@@ -62,11 +66,11 @@ export function deliverWitness(tx: any, state: any): Vote {
                 state.events[block].hasOwnProperty(staker) &&
                 state.events[block][staker].amount === amount &&
                 state.events[block][staker].type === type
-            ) {          
+            ) {
                 // Event is already in state, add confirmation
                 state.events[block][staker].conf += 1;
                 updateMappings(state, staker, block, amount, type);
-                
+
                 // Voted for valid existing event
                 Logger.consensus("Voted for valid stake event (existing).");
                 return Vote.valid();
@@ -74,13 +78,13 @@ export function deliverWitness(tx: any, state: any): Vote {
             } else if (!(state.events[block].hasOwnProperty(staker))) {
                 // Block in state, event is not
                 state.events[block][staker] = {
-                    "amount": amount,
-                    "type": type,
-                    "conf": 1
-                }
+                    amount,
+                    conf: 1,
+                    type,
+                };
 
                 // If running with single node, update balances
-                if (NODE_ENV === 'development') {
+                if (NODE_ENV === "development") {
                     updateMappings(state, staker, block, amount, type);
                 }
 
@@ -102,13 +106,13 @@ export function deliverWitness(tx: any, state: any): Vote {
 
             // Add event to block
             state.events[block][staker] = {
-                "amount": amount,
-                "type": type,
-                "conf": 1
+                amount,
+                conf: 1,
+                type,
             };
 
             // If running with single node, update balances
-            if (NODE_ENV === 'development') {
+            if (NODE_ENV === "development") {
                 updateMappings(state, staker, block, amount, type);
             }
 
@@ -127,12 +131,11 @@ export function deliverWitness(tx: any, state: any): Vote {
 /**
  * Checks if a stake event is structurally valid. Considered
  * state-less verification (validity does not depend on state).
- * 
+ *
  * @param data  {object}    the stake event to validate
  */
 function isValidStakeEvent(data, state): boolean {
     // TODO: add info about proposer to validation condition
-
     if (
         !(data.hasOwnProperty("staker") &&
         data.hasOwnProperty("type") &&
@@ -142,25 +145,25 @@ function isValidStakeEvent(data, state): boolean {
     ) {
         return false;
     } else if (
-        typeof(data.staker) !== 'string' ||
-        typeof(data.type) !== 'string' ||
-        typeof(data.block) !== 'number' ||
-        typeof(data.amount) !== 'number'
+        typeof(data.staker) !== "string" ||
+        typeof(data.type) !== "string" ||
+        typeof(data.block) !== "number" ||
+        typeof(data.amount) !== "number"
     ) {
         return false;
-    } else if (!(data.type === 'add' || data.type === 'remove')) {
+    } else if (!(data.type === "add" || data.type === "remove")) {
         return false;
     } else if (data.block <= state.lastEvent[data.type]) {
         return false;
     } else {
         return true;
-    } 
+    }
 }
 
 /**
  * Update state upon event confirmation
- * 
- * @param state     {object}    current state object 
+ *
+ * @param state     {object}    current state object
  * @param staker    {string}    staker's address
  * @param block     {number}    relevant block height
  * @param amount    {number}    amount staked (or unstaked)
@@ -198,7 +201,7 @@ function updateMappings(state, staker, block, amount, type) {
 
             // Remove events that were just applied to state
             delete state.events[block][staker];
-            
+
             // Remove event block entry if empty
             if (Object.keys(state.events[block]).length === 0) {
                 delete state.events[block];
@@ -230,7 +233,7 @@ function updateMappings(state, staker, block, amount, type) {
 
 /**
  * Apply event state transition of balances.
- * 
+ *
  * @param state     {object}    current state object
  * @param staker    {string}    staker's address
  * @param amount    {number}    amount staked (or unstaked)
@@ -239,13 +242,13 @@ function updateMappings(state, staker, block, amount, type) {
 function applyEvent(state, staker, amount, type): void {
     switch (type) {
         // Staker is adding stake
-        case 'add': {
+        case "add": {
             state.balances[staker] += amount;
             break;
         }
 
         // Staker is removing stake
-        case 'remove': {
+        case "remove": {
             state.balances[staker] -= amount;
             break;
         }

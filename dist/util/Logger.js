@@ -38,7 +38,7 @@ class Logger {
         Logger.logError(`${'Mempool'.magenta} ${'Error:'.red} ${message}`);
     }
     static mempoolWarn(message) {
-        Logger.logWarning(`${'Mempool'.magenta} ${'Warning:'.yellow} ${message}`);
+        Logger.logWarning(`${'Mempool'.magenta} ${"Warning:".yellow} ${message}`);
     }
     static consensus(message) {
         Logger.logEvent(`${'Consensus:'.cyan} ${message}`);

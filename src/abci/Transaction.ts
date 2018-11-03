@@ -1,30 +1,25 @@
 /**
-  =========================
-  ParadigmCore: Blind Star
-  Transaction.ts @ {master}
-  =========================
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Transaction.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  01-November-2018
+ * @date (modified) 02-November-2018
+ *
+ * A class representing an ABCI transaction from a validator. Implements
+ * ed25519 signatures from Tendermint validator keypairs.
+ *
+ * @TODO convert to TransactionGenerator that loads private keys only once
+ * upon initialization.
+ */
 
-  @date_initial 1 November 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  A class representing an ABCI transaction from a validator. Implements
-  ed25519 signatures from Tendermint validator keypairs.
-
-  @TODO convert to TransactionGenerator that loads private keys only once
-  upon initialization.
-*/
-
+// Ed25519 signature implementation
 import * as ed25519 from "ed25519";
 
 export class Transaction {
-    // Transaction parameters
-    private type: string;   // ABCI transaction type (order, rebalance, etc)
-    private data: any;      // Actual transaction data (arbitrary)
-    private proof: any;     // Proof object with signature
-
-    // Keypair object (keypair.priv & keypair.pub)
-    private keypair: any;
 
     public static verify(tx: any): boolean {
         let msg: Buffer;    // Raw message buffer
@@ -35,9 +30,9 @@ export class Transaction {
 
         try {
             // Buffer and encode message, signature, and public key
-            msg = Buffer.from(JSON.stringify(tx.data), 'utf8');
-            sig = Buffer.from(tx.proof.signature, 'base64');
-            pub = Buffer.from(tx.proof.from, 'base64');
+            msg = Buffer.from(JSON.stringify(tx.data), "utf8");
+            sig = Buffer.from(tx.proof.signature, "base64");
+            pub = Buffer.from(tx.proof.from, "base64");
 
             // Verify signature
             isValid = ed25519.Verify(msg, sig, pub);
@@ -46,31 +41,41 @@ export class Transaction {
         }
 
         // Confirm Verify() function return boolean
-        if (typeof(isValid) !== 'boolean') return false;
+        if (typeof(isValid) !== "boolean") { return false; }
 
         // Otherwise, return result
         return isValid;
     }
 
+    /* End static methods. */
+
+    // Transaction parameters
+    private type: string;   // ABCI transaction type (order, rebalance, etc)
+    private data: any;      // Actual transaction data (arbitrary)
+    private proof: any;     // Proof object with signature
+
+    // Keypair object (keypair.priv & keypair.pub)
+    private keypair: any;
+
     constructor(type: string, data: any) {
         // Validate Tx type
         switch (type) {
-            case 'order': { break; }
-            case 'stream': { break; }
-            case 'witness': { break; }
-            case 'rebalance': { break; }
+            case "order": { break; }
+            case "stream": { break; }
+            case "witness": { break; }
+            case "rebalance": { break; }
             default: {
                 throw new Error("Invalid transaction type.");
             }
         }
 
         // Destructure keys from environment
-        let { PRIV_KEY, PUB_KEY } = process.env;
+        const { PRIV_KEY, PUB_KEY } = process.env;
 
         // Buffer and encode keys
         this.keypair = {
-            pub:    Buffer.from(PUB_KEY, 'base64'),
-            priv:   Buffer.from(PRIV_KEY, 'base64')
+            priv:   Buffer.from(PRIV_KEY, "base64"),
+            pub:    Buffer.from(PUB_KEY, "base64"),
         };
 
         // Verify keypair
@@ -92,7 +97,7 @@ export class Transaction {
 
         try {
             // Buffer message and generate signature
-            msg = Buffer.from(JSON.stringify(this.data), 'utf8');
+            msg = Buffer.from(JSON.stringify(this.data), "utf8");
             sig = ed25519.Sign(msg, this.keypair.priv);
         } catch (err) {
             // console.log(err) // debug
@@ -101,9 +106,9 @@ export class Transaction {
 
         // Generate proof object
         this.proof = {
-            from: this.keypair.pub.toString('base64'),
-            signature: sig.toString('base64')
-        }
+            from: this.keypair.pub.toString("base64"),
+            signature: sig.toString("base64"),
+        };
 
         // Return transaction object
         return { type: this.type, data: this.data, proof: this.proof };
