@@ -25,7 +25,7 @@ import { Provider } from "web3/providers";
 import { Transaction } from "../abci/Transaction";
 import { TxBroadcaster } from "../abci/TxBroadcaster";
 import { default as err } from "../util/Codes";
-import { Logger } from "../util/Logger";
+import { Logger as Log } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
 
 export class StakeRebalancer {
@@ -268,8 +268,8 @@ export class StakeRebalancer {
     public synchronize(round: number, startsAt: number, endsAt: number): void {
         // Check that new round is the next round
         if (round !== (this.periodNumber + 1)) {
-            Logger.rebalancerErr("New round is not one greater than current.");
-            Logger.rebalancerErr("Node may be out of state with network.");
+            Log.rebalancerErr("New round is not one greater than current.");
+            Log.rebalancerErr("Node may be out of state with network.");
         }
 
         // Update parameters
@@ -355,7 +355,7 @@ export class StakeRebalancer {
      */
     private handleStake = (e: any, res: any) => {
         if (e !== null) {
-            Logger.rebalancerErr(msg.rebalancer.errors.badStakeEvent);
+            Log.rebalancerErr(msg.rebalancer.errors.badStakeEvent);
             return;
         }
 
@@ -394,7 +394,7 @@ export class StakeRebalancer {
      */
     private handleBlock = (e: any, res: any) => {
         if (e !== null) {
-            Logger.rebalancerErr(msg.rebalancer.errors.badBlockEvent);
+            Log.rebalancerErr(msg.rebalancer.errors.badBlockEvent);
             return;
         }
 
@@ -403,7 +403,7 @@ export class StakeRebalancer {
 
         // See if this is the first new block
         if ((this.periodNumber === 0) && (res.number > this.initHeight)) {
-            Logger.rebalancer("Proposing parameters for initial period.", 0);
+            Log.rebalancer("Proposing parameters for initial period.", 0);
 
             // Prepare proposal tx
             const tx = this.genRebalanceTx(0, res.number, this.periodLength);
@@ -411,7 +411,7 @@ export class StakeRebalancer {
             // Attempt to submit
             const code = this.execAbciTx(tx);
             if (code !== err.OK) {
-                Logger.rebalancerErr(`Tx failed with code: ${code}.`);
+                Log.rebalancerErr(`Tx failed with code: ${code}.`);
             }
 
             // Exit block handler function early on first block
@@ -420,8 +420,8 @@ export class StakeRebalancer {
 
         // Calculate which block is reaching maturity
         const matBlock = this.currHeight - this.finalityThreshold;
-        Logger.rebalancer(`(Temporary) Most final block is: ${matBlock}`, this.periodNumber);
-        Logger.rebalancer(`(Temporary) Next round ends at: ${this.periodEnd}`, this.periodNumber);
+        Log.rebalancer(`(Temporary) Most final block is: ${matBlock}`, this.periodNumber);
+        Log.rebalancer(`(Temporary) Next round ends at: ${this.periodEnd}`, this.periodNumber);
 
         // See if any events have reached finality
         if (this.events.hasOwnProperty(matBlock)) {
@@ -444,7 +444,7 @@ export class StakeRebalancer {
             // Execute ABCI transaction
             const code = this.execAbciTx(tx);
             if (code !== err.OK) {
-                Logger.rebalancerErr(`Tx failed with code: ${code}`);
+                Log.rebalancerErr(`Tx failed with code: ${code}`);
             }
         }
 
@@ -478,7 +478,7 @@ export class StakeRebalancer {
                 break;
             }
             default: {
-                Logger.rebalancerErr("Received unknown event type.");
+                Log.rebalancerErr("Received unknown event type.");
                 return;
             }
         }
@@ -556,7 +556,7 @@ export class StakeRebalancer {
 
         const code = this.execAbciTx(tx);
         if (code !== 0) {
-            Logger.rebalancerErr("Event Tx failed.");
+            Log.rebalancerErr("Event Tx failed.");
         }
         return;
     }
@@ -570,12 +570,12 @@ export class StakeRebalancer {
     private execAbciTx(tx: any): number {
         try {
             this.broadcaster.send(tx).then((_) => {
-                Logger.rebalancer("Executed local ABCI Tx.", this.periodNumber);
+                Log.rebalancer("Executed local ABCI Tx.", this.periodNumber);
             }).catch((_) => {
-                Logger.rebalancerErr("Local ABCI transaction failed.");
+                Log.rebalancerErr("Local ABCI transaction failed.");
             });
         } catch (e) {
-            Logger.rebalancerErr("Failed to execute local ABCI transaction.");
+            Log.rebalancerErr("Failed to execute local ABCI transaction.");
             return err.TX_FAILED;
         }
 

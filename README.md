@@ -17,8 +17,9 @@ Valid orders are relayed via WebSocket protocol, by default from the following e
 ```
 ws://localhost:4242/
 ```
+## Usage
 
-## Download and Install Dependencies
+### Download and Install Dependencies
 
 First, make sure you have recent versions of Node.js, NPM, and TypeScript installed.
 You should then clone this repository into a clean working directory. Something like `$HOME/paradigmcore`:
@@ -27,14 +28,14 @@ You should then clone this repository into a clean working directory. Something 
 
 From there, `cd paradigmcore` and install dependencies: `npm i`
 
-## Build
+### Build
 This version is primarily implemented in TypeScript, and should be compiled to update the JS files in `./dist`. Modify `tsconfig.json` to the correct target for your environment, then run:
 ```
 npm run build OR tsc
 ```
 You can just run `tsc` if the default `tsconfig.json` is used.
 
-## Run (this section is being updated)
+### Run (this section is being updated)
 UPDATE: Tendermint now runs in-process with ParadigmCore, you do not need to run a separate Tendermint node anymore.
 
 To run, you must have a tendermint node runing on the same machine on the expected port. With tendermint's binary installed, run:
@@ -45,10 +46,10 @@ Assuming you have already configured the node with `tendermint init`, this will 
 ```
 npm run start OR node ./dist/index.js
 ```
-## Websocket API (valid order event stream)
+### Websocket API (valid order event stream)
 see [`./docs/websocket-api.md`](./docs/websocket-api.md).
 
-## HTTP API (propose an order)
+### HTTP API (propose an order)
 This part will be expanded on soon. The primary interface endpoint (currently is) exposed as:
 ```
 HTTP POST: localhost:4243
