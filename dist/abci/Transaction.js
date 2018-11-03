@@ -1,21 +1,23 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  Transaction.ts @ {master}
-  =========================
-
-  @date_initial 1 November 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  A class representing an ABCI transaction from a validator. Implements
-  ed25519 signatures from Tendermint validator keypairs.
-
-  @TODO convert to TransactionGenerator that loads private keys only once
-  upon initialization.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Transaction.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  01-November-2018
+ * @date (modified) 02-November-2018
+ *
+ * A class representing an ABCI transaction from a validator. Implements
+ * ed25519 signatures from Tendermint validator keypairs.
+ *
+ * @TODO convert to TransactionGenerator that loads private keys only once
+ * upon initialization.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
+// Ed25519 signature implementation
 const ed25519 = require("ed25519");
 class Transaction {
     static verify(tx) {
@@ -25,9 +27,9 @@ class Transaction {
         let isValid; // Result of verification
         try {
             // Buffer and encode message, signature, and public key
-            msg = Buffer.from(JSON.stringify(tx.data), 'utf8');
-            sig = Buffer.from(tx.proof.signature, 'base64');
-            pub = Buffer.from(tx.proof.from, 'base64');
+            msg = Buffer.from(JSON.stringify(tx.data), "utf8");
+            sig = Buffer.from(tx.proof.signature, "base64");
+            pub = Buffer.from(tx.proof.from, "base64");
             // Verify signature
             isValid = ed25519.Verify(msg, sig, pub);
         }
@@ -35,24 +37,25 @@ class Transaction {
             return false;
         }
         // Confirm Verify() function return boolean
-        if (typeof (isValid) !== 'boolean')
+        if (typeof (isValid) !== "boolean") {
             return false;
+        }
         // Otherwise, return result
         return isValid;
     }
     constructor(type, data) {
         // Validate Tx type
         switch (type) {
-            case 'order': {
+            case "order": {
                 break;
             }
-            case 'stream': {
+            case "stream": {
                 break;
             }
-            case 'witness': {
+            case "witness": {
                 break;
             }
-            case 'rebalance': {
+            case "rebalance": {
                 break;
             }
             default: {
@@ -60,11 +63,11 @@ class Transaction {
             }
         }
         // Destructure keys from environment
-        let { PRIV_KEY, PUB_KEY } = process.env;
+        const { PRIV_KEY, PUB_KEY } = process.env;
         // Buffer and encode keys
         this.keypair = {
-            pub: Buffer.from(PUB_KEY, 'base64'),
-            priv: Buffer.from(PRIV_KEY, 'base64')
+            priv: Buffer.from(PRIV_KEY, "base64"),
+            pub: Buffer.from(PUB_KEY, "base64"),
         };
         // Verify keypair
         if (this.keypair.pub.length !== 32 || this.keypair.priv.length !== 64) {
@@ -81,7 +84,7 @@ class Transaction {
         let sig; // Raw signature buffer
         try {
             // Buffer message and generate signature
-            msg = Buffer.from(JSON.stringify(this.data), 'utf8');
+            msg = Buffer.from(JSON.stringify(this.data), "utf8");
             sig = ed25519.Sign(msg, this.keypair.priv);
         }
         catch (err) {
@@ -90,8 +93,8 @@ class Transaction {
         }
         // Generate proof object
         this.proof = {
-            from: this.keypair.pub.toString('base64'),
-            signature: sig.toString('base64')
+            from: this.keypair.pub.toString("base64"),
+            signature: sig.toString("base64"),
         };
         // Return transaction object
         return { type: this.type, data: this.data, proof: this.proof };

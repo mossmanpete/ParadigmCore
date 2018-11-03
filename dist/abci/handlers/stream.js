@@ -1,29 +1,29 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  streamHandlers.ts @ {master}
-  =========================
-
-  @date_initial 23 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Handler functions for verifying ABCI StreamBroadcasts.
-
-  @10-23 We need paradigm-connect to allow the creation of a custom order type
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name stream.ts
+ * @module abci/handlers
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  23-October-2018
+ * @date (modified) 01-November-2018
+ *
+ * Handler functions for verifying ABCI Stream transactions, originating
+ * from external API calls. Implements state transition logic as specified
+ * in the spec for this TX type.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 const Paradigm = require("paradigm-connect");
-const messages_1 = require("../../util/static/messages");
 const Logger_1 = require("../../util/Logger");
+const messages_1 = require("../../util/static/messages");
 const Vote_1 = require("../Vote");
-let Order = new Paradigm().Order; // Paradigm order constructor
+const Order = new Paradigm().Order; // Paradigm order constructor
 /**
- * @name checkStream() {export function} use to perform mempool verification of
- * StreamBroadcast transactions.
+ * Used to perform mempool verification of StreamBroadcast transactions.
  *
- * @param tx {object} decoded transaction body
+ * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
 function checkStream(tx, state) {
@@ -48,8 +48,8 @@ function checkStream(tx, state) {
 }
 exports.checkStream = checkStream;
 /**
- * @name deliverStream() {export function} execute StreamBroadcast transactions
- * in full, and perform state modification.
+ * Execute StreamBroadcast transactions in full, and perform state
+ * modification.
  *
  * @param tx {object} decoded transaction body
  * @param state {object} current round state

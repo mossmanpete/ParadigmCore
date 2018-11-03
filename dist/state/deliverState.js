@@ -1,17 +1,19 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  deliverState.ts @ {master}
-  =========================
-  
-  @date_initial 25 September 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  Object that represents the initial and pre-commit state of the OS node.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name commitState.ts
+ * @module state
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  22-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Object representing the initial and pre-commit state of the network.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
 exports.deliverState = {
     round: {
         number: 0,

@@ -1,17 +1,19 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  messages.ts @ {master}
-  =========================
-
-  @date_initial 1 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Simple message object to store common ABCI and WS messages.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name contractABI.ts
+ * @module util/static
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  01-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Log message templates and statuses for various modules.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
 const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 exports.messages = {
     general: {

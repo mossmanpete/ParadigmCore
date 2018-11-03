@@ -1,16 +1,18 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  PayloadCipher.ts @ {master}
-  =========================
-
-  @date_initial 21 September 2018
-  @date_modified 19 October 2018
-  @author Henry Harder
-
-  Compression and encoding (and decompression and decoding) for ABCI transactions.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name PayloadCipher.ts
+ * @module crypto
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  21-September-2018
+ * @date (modified) 02-November-2018
+ *
+ * Compression and encoding (and decompression and decoding) for local ABCI
+ * transactions.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 const zlib = require("zlib");
 const { IN_ENC, OUT_ENC } = process.env;
@@ -44,7 +46,7 @@ class PayloadCipher {
      * @param payload {string} raw input string (uncompressed)
      */
     static encodeFromString(payload) {
-        let rawStr = payload; // raw input string
+        const rawStr = payload; // raw input string
         let inBuff; // raw input buffer
         let cpBuff; // compressed buffer
         let outStr; // encoded output string
@@ -95,7 +97,6 @@ class PayloadCipher {
             outStr = dcBuff.toString(PayloadCipher.inEncoding);
         }
         catch (err) {
-            console.log("ERROR:" + err.stack); // debugging (REMOVE)
             throw new Error("Error decoding payload.");
         }
         try {
@@ -114,7 +115,7 @@ class PayloadCipher {
      */
     static ABCIdecode(inBuff) {
         // TODO: consider depreciating and wrapping into other function
-        let inStr = inBuff.toString(this.inEncoding);
+        const inStr = inBuff.toString(PayloadCipher.inEncoding);
         return PayloadCipher.decodeToObject(inStr);
     }
 }

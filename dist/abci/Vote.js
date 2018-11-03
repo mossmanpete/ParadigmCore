@@ -1,17 +1,17 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  Vote.ts @ {master}
-  =========================
-  
-  @date_initial 24 September 2018
-  @date_modified 25 October 2018
-  @author Henry Harder
-
-  A class to represent a vote based on the logic in
-  checkTx() and deliverTx().
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Vote.ts
+ * @module abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  24-September-2018
+ * @date (modified) 02-November-2018
+ *
+ * The Vote class represents a Tendermint ABCI response message.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 class Vote {
     /*
@@ -21,13 +21,13 @@ class Vote {
     static valid(message) {
         return {
             code: 0,
-            log: message
+            log: message,
         };
     }
     static invalid(message) {
         return {
             code: 1,
-            log: message
+            log: message,
         };
     }
 }

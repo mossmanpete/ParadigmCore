@@ -1,29 +1,31 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  rebalanceHandlers.ts @ {master}
-  =========================
-
-  @date_initial 23 October 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  Handler functions for verifying ABCI Rebalance transactions.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name rebalance.ts
+ * @module abci/handlers
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  23-October-2018
+ * @date (modified) 01-November-2018
+ *
+ * Handler functions for verifying ABCI Rebalance transactions, originating
+ * from validator nodes. Implements state transition logic as specified in the
+ * spec for this TX type.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
-const Vote_1 = require("../Vote");
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");
+const Vote_1 = require("../Vote");
 /**
- * @name checkRebalance() {export function} verify a Rebalance proposal before
- * accepting it into the local mempool.
+ * Verify a Rebalance proposal before accepting it into the local mempool.
  *
- * @param tx {object} decoded transaction body
+ * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
 function checkRebalance(tx, state) {
-    let proposal = tx.data;
+    const proposal = tx.data;
     switch (state.round.number) {
         case 0: {
             if (proposal.round.number === 1) {
@@ -39,7 +41,7 @@ function checkRebalance(tx, state) {
         }
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
-                // Accept valid rebalance proposal to mempool 
+                // Accept valid rebalance proposal to mempool
                 Logger_1.Logger.mempool(messages_1.messages.rebalancer.messages.accept);
                 return Vote_1.Vote.valid(messages_1.messages.rebalancer.messages.accept);
             }
@@ -61,16 +63,15 @@ exports.checkRebalance = checkRebalance;
  * @param rb {StakeRebalancer} the current rebalancer instance
  */
 function deliverRebalance(tx, state, rb) {
-    let proposal = tx.data;
+    const proposal = tx.data;
     switch (state.round.number) {
         case 0: {
             if (proposal.round.number === 1) {
-                // Accept valid initial rebalance proposal to mempool
                 /**
                  * NOTE: no mapping is accepted until subsequent rebalance
                  * transactions are executed. The first proposal only serves to
                  * establish the parameters for the first staking period.
-                */
+                 */
                 // Begin state modification
                 state.round.number += 1;
                 state.round.startsAt = proposal.round.startsAt;
@@ -89,12 +90,12 @@ function deliverRebalance(tx, state, rb) {
         }
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
-                // Accept valid rebalance proposal to mempool 
-                let propLimits = proposal.limits;
+                // Accept valid rebalance proposal to mempool
+                const propLimits = proposal.limits;
                 // CHANGE THIS: debug genLimits
-                let localLimits = genLimits(state.balances, state.round.limit);
+                const localLimits = genLimits(state.balances, state.round.limit);
                 if (JSON.stringify(propLimits) === JSON.stringify(localLimits)) {
-                    // If proposed mapping matches mapping constructed from 
+                    // If proposed mapping matches mapping constructed from
                     // in state balances.
                     // Begin state modificiation
                     state.round.number += 1;
@@ -135,21 +136,21 @@ exports.deliverRebalance = deliverRebalance;
  */
 function genLimits(balances, limit) {
     let total = 0; // total amount currenty staked
-    let output = {}; // generated output mapping
+    const output = {}; // generated output mapping
     // Calculate total balance currently staked
     Object.keys(balances).forEach((k, _) => {
-        if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {
+        if (balances.hasOwnProperty(k) && typeof (balances[k]) === "number") {
             total += balances[k];
         }
     });
     // Compute the rate-limits for each staker based on stake size
     Object.keys(balances).forEach((k, _) => {
-        if (balances.hasOwnProperty(k) && typeof (balances[k]) === 'number') {
+        if (balances.hasOwnProperty(k) && typeof (balances[k]) === "number") {
             output[k] = {
                 // orderLimit is proportional to stake size
                 orderLimit: Math.floor((balances[k] / total) * limit),
                 // streamLimit is always 1, regardless of stake size
-                streamLimit: 1
+                streamLimit: 1,
             };
         }
     });

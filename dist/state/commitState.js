@@ -1,17 +1,19 @@
 "use strict";
-/*
-  =========================
-  ParadigmCore: Blind Star
-  commitState.ts @ {master}
-  =========================
-  
-  @date_initial 22 October 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  Object that represents the post-commit state of the OS node.
-*/
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name commitState.ts
+ * @module state
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  22-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Object representing the post-commit state of the network.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
+/* tslint:disable */
 exports.commitState = {
     round: {
         number: 0,

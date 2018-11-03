@@ -1,17 +1,21 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  witness.ts @ {master}
-  =========================
-
-  @date_initial 23 October 2018
-  @date_modified 1 November 2018
-  @author Henry Harder
-
-  Handler functions for verifying ABCI event witness transactions.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name witness.ts
+ * @module abci/handlers
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  23-October-2018
+ * @date (modified) 01-November-2018
+ *
+ * Handler functions for verifying ABCI evet Witness transactions,
+ * originating from validator nodes. Implements state transition logic as
+ * specified in the spec for this TX type.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
+// ParadigmCore classes
 const Logger_1 = require("../../util/Logger");
 const Vote_1 = require("../Vote");
 // TEMPORARY
@@ -49,10 +53,10 @@ function deliverWitness(tx, state) {
         return Vote_1.Vote.invalid();
     }
     // Unpack event data into local variables
-    let staker = tx.data.staker;
-    let type = tx.data.type;
-    let block = tx.data.block;
-    let amount = tx.data.amount;
+    const staker = tx.data.staker;
+    const type = tx.data.type;
+    const block = tx.data.block;
+    const amount = tx.data.amount;
     switch (state.events.hasOwnProperty(block)) {
         // Block is already in state
         case true: {
@@ -69,12 +73,12 @@ function deliverWitness(tx, state) {
             else if (!(state.events[block].hasOwnProperty(staker))) {
                 // Block in state, event is not
                 state.events[block][staker] = {
-                    "amount": amount,
-                    "type": type,
-                    "conf": 1
+                    amount,
+                    conf: 1,
+                    type,
                 };
                 // If running with single node, update balances
-                if (NODE_ENV === 'development') {
+                if (NODE_ENV === "development") {
                     updateMappings(state, staker, block, amount, type);
                 }
                 // Voted for valid new event
@@ -93,12 +97,12 @@ function deliverWitness(tx, state) {
             state.events[block] = {};
             // Add event to block
             state.events[block][staker] = {
-                "amount": amount,
-                "type": type,
-                "conf": 1
+                amount,
+                conf: 1,
+                type,
             };
             // If running with single node, update balances
-            if (NODE_ENV === 'development') {
+            if (NODE_ENV === "development") {
                 updateMappings(state, staker, block, amount, type);
             }
             // Added new event to state
@@ -127,13 +131,13 @@ function isValidStakeEvent(data, state) {
         Object.keys(data).length === 4)) {
         return false;
     }
-    else if (typeof (data.staker) !== 'string' ||
-        typeof (data.type) !== 'string' ||
-        typeof (data.block) !== 'number' ||
-        typeof (data.amount) !== 'number') {
+    else if (typeof (data.staker) !== "string" ||
+        typeof (data.type) !== "string" ||
+        typeof (data.block) !== "number" ||
+        typeof (data.amount) !== "number") {
         return false;
     }
-    else if (!(data.type === 'add' || data.type === 'remove')) {
+    else if (!(data.type === "add" || data.type === "remove")) {
         return false;
     }
     else if (data.block <= state.lastEvent[data.type]) {
@@ -218,12 +222,12 @@ function updateMappings(state, staker, block, amount, type) {
 function applyEvent(state, staker, amount, type) {
     switch (type) {
         // Staker is adding stake
-        case 'add': {
+        case "add": {
             state.balances[staker] += amount;
             break;
         }
         // Staker is removing stake
-        case 'remove': {
+        case "remove": {
             state.balances[staker] -= amount;
             break;
         }

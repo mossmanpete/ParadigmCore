@@ -2,7 +2,7 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name StakeRebalancer
+ * @name StakeRebalancer.ts
  * ===========================
  *
  * @author Henry Harder

@@ -4,5 +4,6 @@
 /node_modules
 /tendermint/bin/tendermint
 
-/dist/*/*.js
+/dist/**/**/*.js
+/dist/**/*.js
 /dist/*.js

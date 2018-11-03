@@ -1,16 +1,17 @@
 "use strict";
 /**
-  =========================
-  ParadigmCore: Blind Star
-  Queue.ts @ {master}
-  =========================
-
-  @date_initial 28 October 2018
-  @date_modified 29 October 2018
-  @author Henry Harder
-
-  Simple (custom) generalized queue implementation. Used in Broadcaster class.
-*/
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name Queue.ts
+ * @module util
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  28-October-2018
+ * @date (modified) 02-November-2018
+ *
+ * Generalized queue implementation. Currently used in Broadcaster class.
+ */
 Object.defineProperty(exports, "__esModule", { value: true });
 class Queue {
     constructor() {
@@ -30,16 +31,18 @@ class Queue {
      * Removes and returns the first item from the queue.
      */
     remove() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             return null;
+        }
         return this.items.shift();
     }
     /**
      * Returns the first item in the queue.
      */
     front() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             return null;
+        }
         return this.items[0];
     }
     /**
