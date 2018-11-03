@@ -9,9 +9,9 @@ ParadigmCore is the main package that enables the functionality of the OrderStre
 This version of ParadigmCore (`blind-star`) is the direct Tendermint implementation of the OrderStream network node software. It is an [ABCI application](https://cosmos.network/docs/sdk/core/app4.html) intended to be used with the [Tendermint](https://github.com/tendermint/tendermint) BFT state replication software. 
 
 ## A Note on Order Storage
-The OrderStream network design follows an asynchronous event-driven architecture. As such, ParadigmCore does not include a database (by default) or offer query functionality for historical orders. Instead it provides interfaces for common database solutions that can be used at the discretion of the node's host, depending on production environment. 
+The OrderStream network design follows an asynchronous event-driven architecture for order message broadcast. As such, ParadigmCore does not include a database (by default) or offer query functionality for historical orders. Instead it provides a simple interface that allows the derivation of an order book that can then be stored in a database.
 
-We have released one database interface so far, `ParadigmMongo`, that allows you to store all valid orders (as relayed via ParadigmCore's WS endpoint) in a MongoDB backend server running on your node, or another machine. The repository for `ParadigmMongo` can be found [here](https://github.com/paradigmfoundation/paradigmmongo). You can preview a live version of this software at https://zaidan.paradigm.market/. 
+We have released one database driver so far, `ParadigmMongo`, that allows you to store all valid orders (as relayed via ParadigmCore's WS endpoint) in a MongoDB backend server running on your node, or another machine. The repository for `ParadigmMongo` can be found [here](https://github.com/paradigmfoundation/paradigmmongo). You can preview a live version of this software at https://zaidan.io/. 
 
 Valid orders are relayed via WebSocket protocol, by default from the following endpoint (this can be proxied to public or used by any application/middleware):
 ```
