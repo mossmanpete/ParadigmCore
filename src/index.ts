@@ -10,10 +10,13 @@
  *
  * Entry point and startup script for ParadigmCore.
  */
+// tslint:disable
 
 // Load configuration from environment
-// tslint:disable-next-line:no-var-requires
 require("dotenv").config();
+
+// Monkey-patch special BigInt methods
+import "./util/static/monkeyPatch";
 
 // Standard lib and 3rd party NPM modules
 import { EventEmitter } from "events";

@@ -56,7 +56,7 @@ function deliverWitness(tx, state) {
     const staker = tx.data.staker;
     const type = tx.data.type;
     const block = tx.data.block;
-    const amount = tx.data.amount;
+    const amount = BigInt.fromString(tx.data.amount);
     switch (state.events.hasOwnProperty(block)) {
         // Block is already in state
         case true: {
@@ -134,7 +134,7 @@ function isValidStakeEvent(data, state) {
     else if (typeof (data.staker) !== "string" ||
         typeof (data.type) !== "string" ||
         typeof (data.block) !== "number" ||
-        typeof (data.amount) !== "number") {
+        typeof (data.amount) !== "string") {
         return false;
     }
     else if (!(data.type === "add" || data.type === "remove")) {
@@ -173,7 +173,7 @@ function updateMappings(state, staker, block, amount, type) {
                 }
                 // Staker does not have a current balance
                 case false: {
-                    state.balances[staker] = 0;
+                    state.balances[staker] = BigInt(0);
                     applyEvent(state, staker, amount, type);
                     break;
                 }

@@ -47,11 +47,11 @@ export class Hasher {
    */
   public static hashState(state: any): string {
     const hashPrep: object = {
-      balances: state.balances,
+      balances: JSON.stringify(state.balances),
       endHeight: state.round.endsAt,
-      events: state.events,
+      events: JSON.stringify(state.events),
       lastHeight: state.lastBlockHeight,
-      limits: state.limits,
+      limits: JSON.stringify(state.limits),
       ordernum: state.orderCounter,
       roundNumber: state.round.number,
       startHeight: state.round.startsAt,
@@ -62,7 +62,6 @@ export class Hasher {
       return stateHash;
 
     } catch (error) {
-      Logger.logError("(Temporary log) Error generating state hash.");
       throw new Error("Error generating state hash.");
     }
   }

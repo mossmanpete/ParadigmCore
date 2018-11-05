@@ -16,6 +16,7 @@
  */
 
 // Third party and stdlib imports
+import * as _ from "lodash";
 import { URL } from "url";
 import Web3 = require("web3");
 import Contract from "web3/eth/contract";
@@ -51,7 +52,7 @@ export class StakeRebalancer {
             // Create new rebalancer instance
             instance = new StakeRebalancer(options);
 
-            // Initialize instance
+            // Initialize instance (and store response code)
             const code = await instance.initialize();
 
             // Reject promise if initialization failed
@@ -71,26 +72,29 @@ export class StakeRebalancer {
      * Generates an output address:limit mapping based on a provided
      * address:balance mapping, and a total throughput limit.
      *
-     * @param balMap  {object} current address:balance mapping
+     * @param bals      {object} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
-    public static genLimits(balMap: any, limit: number): any {
-        let total: number = 0;      // Total amount currently staked
-        const output: object = {};  // Generated output mapping
+    public static genLimits(bals: any, limit: number): any {
+        let total: any = BigInt(0);  // Total amount currently staked
+        const output: object = {};      // Generated output mapping
 
         // Calculate total balance currently staked
-        Object.keys(balMap).forEach((k, _) => {
-            if (balMap.hasOwnProperty(k) && typeof(balMap[k]) === "number") {
-                total += balMap[k];
+        Object.keys(bals).forEach((k, v) => {
+            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+                total += bals[k];
             }
         });
 
         // Compute the rate-limits for each staker based on stake size
-        Object.keys(balMap).forEach((k, _) => {
-            if (balMap.hasOwnProperty(k) && typeof(balMap[k]) === "number") {
+        Object.keys(bals).forEach((k, v) => {
+            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+                const pLimit: number = (bals[k].toNumber() /  total.toNumber());
+
+                // Create limit object for each address
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor((balMap[k] / total) * limit),
+                    orderLimit: Math.floor(pLimit * limit),
 
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
@@ -307,7 +311,7 @@ export class StakeRebalancer {
 
         // Log connection message
         provider.on("connect", () => {
-            Log.rebalancer("Successfully connected to Web3 provider.");
+            Log.rebalancer("Successfully connected to web3 provider.");
         });
 
         // Attempt to reconnect on termination
@@ -397,8 +401,8 @@ export class StakeRebalancer {
         // Pull event parameters
         const staker = res.returnValues.staker.toLowerCase();  // Address
         const rType = res.event.toLowerCase();                 // Raw event type
-        const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
-        // const amount = BigInt(res.returnValues.amount);  // Amount staked
+        // const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
+        const amount = BigInt.fromString((res.returnValues.amount));  // Amount staked
         const block = res.blockNumber;                         // Event block
 
         // Generate event object
@@ -607,9 +611,9 @@ export class StakeRebalancer {
      */
     private execAbciTx(tx: any): number {
         try {
-            this.broadcaster.send(tx).then((_) => {
+            this.broadcaster.send(tx).then((response) => {
                 Log.rebalancer("Executed local ABCI Tx.", this.periodNumber);
-            }).catch((_) => {
+            }).catch((error) => {
                 Log.rebalancerErr("Local ABCI transaction failed.");
             });
         } catch (error) {

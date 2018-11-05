@@ -3,7 +3,8 @@
         "outDir": "./dist",
         "baseUrl": "./",
         "target": "es2017",
-        "module": "commonjs"
+        "module": "commonjs",
+        "typeRoots": ["node_modules/@types", "src/typings/typings"]
     },
     "include":[
         "./src"

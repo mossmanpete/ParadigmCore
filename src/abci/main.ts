@@ -12,9 +12,10 @@
  * Main ParadigmCore state machine implementation and state transition logic.
  */
 
-// Tendermint JS ABCI server
+// 3rd party and STDLIB imports
 // tslint:disable-next-line:no-var-requires
 const abci: any = require("abci");
+import * as _ from "lodash";
 
 // Log message templates
 import { messages as msg } from "../util/static/messages";
@@ -57,6 +58,7 @@ let commitState: any;   // commit state
  */
 export async function startMain(options: any): Promise<null> {
     try {
+        // Set application version
         version = options.version;
 
         // Load state objects
@@ -125,7 +127,7 @@ Below are implementations of Tendermint ABCI functions.
  *
  * @param _ {null}
  */
-function info(_): object {
+function info(): object {
     return {
         data: "ParadigmCore ABCI Application",
         lastBlockAppHash: commitState.lastBlockAppHash,
@@ -143,8 +145,7 @@ function beginBlock(request): object {
     const currHeight = request.header.height;
     const currProposer = request.header.proposerAddress.toString("hex");
 
-    // tslint:disable-next-line:no-console
-    console.log("BeginBlock request object: " + JSON.stringify(request));
+    // update validator set here
 
     Logger.newRound(currHeight, currProposer);
     return {};
@@ -329,8 +330,8 @@ function commit(request): string {
         tracker.triggerBroadcast();
 
         // Synchronize commit state from delivertx state
-        // @TODO: find a better way to deep-clone the state object
-        commitState = JSON.parse(JSON.stringify(deliverState));
+        commitState = _.cloneDeep(deliverState);
+
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
