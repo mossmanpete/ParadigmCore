@@ -67,8 +67,12 @@ export class Logger {
         Logger.logWarning(`${'Consensus'.cyan} ${'Warning:'.yellow} ${message}`);
     }
 
-    public static rebalancer(message: string, round: number){
-        Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
+    public static rebalancer(message: string, round?: number){
+        if (round) {
+            Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
+        } else {
+            Logger.logEvent(`${'Rebalancer:'.green} ${message}`);
+        }
     }
 
     public static rebalancerErr(message: string){

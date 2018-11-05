@@ -19,11 +19,11 @@
 import { URL } from "url";
 import Web3 = require("web3");
 import Contract from "web3/eth/contract";
-import { Provider } from "web3/providers";
+import { HttpProvider, WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
-import { Transaction } from "../abci/Transaction";
-import { TxBroadcaster } from "../abci/TxBroadcaster";
+import { Transaction } from "../abci/util/Transaction";
+import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { default as err } from "../util/Codes";
 import { Logger as Log } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
@@ -158,7 +158,7 @@ export class StakeRebalancer {
 
     // Staking contract configuration
     private stakeContract: Contract;    // Staking contract instance
-    private stakeABI: object[];    // Staking contract ABI
+    private stakeABI: object[];         // Staking contract ABI
     private stakeAddress: string;       // Staking contract address
 
     // Tendermint ABCI connection
@@ -283,56 +283,91 @@ export class StakeRebalancer {
      * Used to connect to Web3 provider. Called during initialization, and
      * if a web3 disconnect is detected.
      */
-    private connectWeb3(): number {
-        let provider: Provider;
+    private getProvider(): WebsocketProvider | HttpProvider {
+        let provider: WebsocketProvider | HttpProvider;
 
+        // Pull provider URL and protocol from instance
+        const protocol = this.web3provider.protocol;
+        const url = this.web3provider.href;
+
+        // Supports HTTP and WS
+        try {
+            if (protocol === "ws:" || protocol === "wss:") {
+                provider = new Web3.providers.WebsocketProvider(url);
+            } else if (protocol === "http:" || protocol === "https:") {
+                provider = new Web3.providers.HttpProvider(url);
+            } else {
+                // Invalid provider URI scheme
+                throw new Error("Invalid provider URI.");
+            }
+        } catch (_) {
+            // Unable to establish provider
+            throw new Error("Unable to connect to provider.");
+        }
+
+        // Log connection message
+        provider.on("connect", () => {
+            Log.rebalancer("Successfully connected to Web3 provider.");
+        });
+
+        // Attempt to reconnect on termination
+        provider.on("end", () => {
+            Log.rebalancerErr("Web3 connection end. Attempting to reconnect...");
+            try {
+                this.web3.setProvider(this.getProvider());
+            } catch (error) {
+                Log.rebalancerErr("Failed reconnecting to web3 provider.");
+            }
+        });
+
+        // Attempt to reconnect on any error
+        provider.on("end", () => {
+            Log.rebalancerErr("Web3 error. Attempting to reconnect...");
+            try {
+                this.web3.setProvider(this.getProvider());
+            } catch (error) {
+                Log.rebalancerErr("Failed reconnecting to web3 provider.");
+            }
+        });
+
+        return provider;
+    }
+
+    /**
+     * Used to create web3 instance (based on provider generated in
+     * `this.getProvider()` method).
+     */
+    private connectWeb3(): number {
         if (typeof(this.web3) !== "undefined") {
+            // If already connected to web3 instance
             this.web3 = new Web3(this.web3.currentProvider);
             return err.OK;
         } else {
-            const protocol = this.web3provider.protocol;
-            const url = this.web3provider.href;
-
-            // Supports HTTP and WS
+            // Create new Web3 instance
             try {
-                if (protocol === "ws:" || protocol === "wss:") {
-                    provider = new Web3.providers.WebsocketProvider(url);
-                } else if (protocol === "http:" || protocol === "https:") {
-                    provider = new Web3.providers.HttpProvider(url);
-                } else {
-                    // Invalid provider URI scheme
-                    return err.URI_SCHEME;
-                }
-            } catch (_) {
-                // Unable to establish provider
-                return err.WEB3_PROV;
+                this.web3 = new Web3(this.getProvider());
+            } catch (error) {
+                return err.WEB3_INST; // Unable to create web3 instance
             }
-
-            // Create Web3 instance
-            try {
-                this.web3 = new Web3(provider);
-            } catch (_) {
-                // Unable to create web3 instance
-                return err.WEB3_INST;
-            }
-
             return err.OK;
         }
     }
 
     /**
      * Subscribe to relevant Ethereum events and attach handlers.
+     *
+     * @param from  {number}    the block from which to subscribe to events
      */
-    private subscribe(): number {
+    private subscribe(from: number = 0): number {
         try {
             // Subscribe to 'stakeMade' events
             this.stakeContract.events.StakeMade({
-                fromBlock: 0,
+                fromBlock: from,
             }, this.handleStake);
 
             // Subscribe to 'stakeRemoved' events
             this.stakeContract.events.StakeRemoved({
-                fromBlock: 0,
+                fromBlock: from,
             }, this.handleStake);
 
             // Subscribe to new blocks
@@ -363,6 +398,7 @@ export class StakeRebalancer {
         const staker = res.returnValues.staker.toLowerCase();  // Address
         const rType = res.event.toLowerCase();                 // Raw event type
         const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
+        // const amount = BigInt(res.returnValues.amount);  // Amount staked
         const block = res.blockNumber;                         // Event block
 
         // Generate event object
@@ -420,8 +456,10 @@ export class StakeRebalancer {
 
         // Calculate which block is reaching maturity
         const matBlock = this.currHeight - this.finalityThreshold;
-        Log.rebalancer(`Highest final block is: ${matBlock}`, this.periodNumber);
-        Log.rebalancer(` Round ends at: ${this.periodEnd}`, this.periodNumber);
+        Log.rebalancer(
+            `New mature block: ${matBlock}. Round ends at: ${this.periodEnd}`,
+            this.periodNumber,
+        );
 
         // See if any events have reached finality
         if (this.events.hasOwnProperty(matBlock)) {

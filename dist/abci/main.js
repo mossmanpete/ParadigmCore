@@ -24,8 +24,8 @@ const StakeRebalancer_1 = require("../async/StakeRebalancer");
 const Hasher_1 = require("../crypto/Hasher");
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const Logger_1 = require("../util/Logger");
-const Transaction_1 = require("./Transaction");
-const Vote_1 = require("./Vote");
+const Transaction_1 = require("./util/Transaction");
+const Vote_1 = require("./util/Vote");
 // ABCI handler functions
 const order_1 = require("./handlers/order");
 const rebalance_1 = require("./handlers/rebalance");
@@ -129,6 +129,8 @@ function info(_) {
 function beginBlock(request) {
     const currHeight = request.header.height;
     const currProposer = request.header.proposerAddress.toString("hex");
+    // tslint:disable-next-line:no-console
+    console.log("BeginBlock request object: " + JSON.stringify(request));
     Logger_1.Logger.newRound(currHeight, currProposer);
     return {};
 }
@@ -250,7 +252,6 @@ function deliverTx(request) {
         }
     }
 }
-// TODO: implement endBlock()
 /**
  * Persist application state, synchronize commit and deliver states, and
  * trigger the broadcast of valid orders in that block.

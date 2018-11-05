@@ -21,7 +21,7 @@ import * as _ws from "ws";
 import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
-import { TxBroadcaster } from "./abci/TxBroadcaster";
+import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { WebSocketMessage } from "./net/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";

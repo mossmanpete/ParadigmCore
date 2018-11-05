@@ -16,7 +16,7 @@
 
  // ParadigmCore classes
 import { Logger } from "../../util/Logger";
-import { Vote } from "../Vote";
+import { Vote } from "../util/Vote";
 
 // TEMPORARY
 const { CONF_THRESHOLD, NODE_ENV } = process.env;

@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name PayloadCipher.ts
- * @module crypto
+ * @module src/crypto
  * ===========================
  *
  * @author Henry Harder

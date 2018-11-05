@@ -20,7 +20,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const url_1 = require("url");
 const Web3 = require("web3");
 // ParadigmCore modules/classes
-const Transaction_1 = require("../abci/Transaction");
+const Transaction_1 = require("../abci/util/Transaction");
 const Codes_1 = require("../util/Codes");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");
@@ -48,6 +48,7 @@ class StakeRebalancer {
             const staker = res.returnValues.staker.toLowerCase(); // Address
             const rType = res.event.toLowerCase(); // Raw event type
             const amount = parseInt(res.returnValues.amount, 10); // Amount staked
+            // const amount = BigInt(res.returnValues.amount);  // Amount staked
             const block = res.blockNumber; // Event block
             // Generate event object
             const event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
@@ -94,8 +95,7 @@ class StakeRebalancer {
             }
             // Calculate which block is reaching maturity
             const matBlock = this.currHeight - this.finalityThreshold;
-            Logger_1.Logger.rebalancer(`Highest final block is: ${matBlock}`, this.periodNumber);
-            Logger_1.Logger.rebalancer(` Round ends at: ${this.periodEnd}`, this.periodNumber);
+            Logger_1.Logger.rebalancer(`New mature block: ${matBlock}. Round ends at: ${this.periodEnd}`, this.periodNumber);
             // See if any events have reached finality
             if (this.events.hasOwnProperty(matBlock)) {
                 Object.keys(this.events[matBlock]).forEach((k) => {
@@ -306,55 +306,89 @@ class StakeRebalancer {
      * Used to connect to Web3 provider. Called during initialization, and
      * if a web3 disconnect is detected.
      */
-    connectWeb3() {
+    getProvider() {
         let provider;
+        // Pull provider URL and protocol from instance
+        const protocol = this.web3provider.protocol;
+        const url = this.web3provider.href;
+        // Supports HTTP and WS
+        try {
+            if (protocol === "ws:" || protocol === "wss:") {
+                provider = new Web3.providers.WebsocketProvider(url);
+            }
+            else if (protocol === "http:" || protocol === "https:") {
+                provider = new Web3.providers.HttpProvider(url);
+            }
+            else {
+                // Invalid provider URI scheme
+                throw new Error("Invalid provider URI.");
+            }
+        }
+        catch (_) {
+            // Unable to establish provider
+            throw new Error("Unable to connect to provider.");
+        }
+        // Log connection message
+        provider.on("connect", () => {
+            Logger_1.Logger.rebalancer("Successfully connected to Web3 provider.");
+        });
+        // Attempt to reconnect on termination
+        provider.on("end", () => {
+            Logger_1.Logger.rebalancerErr("Web3 connection end. Attempting to reconnect...");
+            try {
+                this.web3.setProvider(this.getProvider());
+            }
+            catch (error) {
+                Logger_1.Logger.rebalancerErr("Failed reconnecting to web3 provider.");
+            }
+        });
+        // Attempt to reconnect on any error
+        provider.on("end", () => {
+            Logger_1.Logger.rebalancerErr("Web3 error. Attempting to reconnect...");
+            try {
+                this.web3.setProvider(this.getProvider());
+            }
+            catch (error) {
+                Logger_1.Logger.rebalancerErr("Failed reconnecting to web3 provider.");
+            }
+        });
+        return provider;
+    }
+    /**
+     * Used to create web3 instance (based on provider generated in
+     * `this.getProvider()` method).
+     */
+    connectWeb3() {
         if (typeof (this.web3) !== "undefined") {
+            // If already connected to web3 instance
             this.web3 = new Web3(this.web3.currentProvider);
             return Codes_1.default.OK;
         }
         else {
-            const protocol = this.web3provider.protocol;
-            const url = this.web3provider.href;
-            // Supports HTTP and WS
+            // Create new Web3 instance
             try {
-                if (protocol === "ws:" || protocol === "wss:") {
-                    provider = new Web3.providers.WebsocketProvider(url);
-                }
-                else if (protocol === "http:" || protocol === "https:") {
-                    provider = new Web3.providers.HttpProvider(url);
-                }
-                else {
-                    // Invalid provider URI scheme
-                    return Codes_1.default.URI_SCHEME;
-                }
+                this.web3 = new Web3(this.getProvider());
             }
-            catch (_) {
-                // Unable to establish provider
-                return Codes_1.default.WEB3_PROV;
-            }
-            // Create Web3 instance
-            try {
-                this.web3 = new Web3(provider);
-            }
-            catch (_) {
-                // Unable to create web3 instance
-                return Codes_1.default.WEB3_INST;
+            catch (error) {
+                return Codes_1.default.WEB3_INST; // Unable to create web3 instance
             }
             return Codes_1.default.OK;
         }
     }
     /**
      * Subscribe to relevant Ethereum events and attach handlers.
+     *
+     * @param from  {number}    the block from which to subscribe to events
      */
-    subscribe() {
+    subscribe(from = 0) {
         try {
             // Subscribe to 'stakeMade' events
             this.stakeContract.events.StakeMade({
-                fromBlock: 0,
+                fromBlock: from,
             }, this.handleStake);
             // Subscribe to 'stakeRemoved' events
             this.stakeContract.events.StakeRemoved({
-                fromBlock: 0,
+                fromBlock: from,
             }, this.handleStake);
             // Subscribe to new blocks
             this.web3.eth.subscribe("newBlockHeaders", this.handleBlock);

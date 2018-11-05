@@ -20,8 +20,8 @@ import cors = require("cors");
 import * as express from "express";
 
 // ParadigmCore classes and imports
-import { Transaction } from "../abci/Transaction";
-import { TxBroadcaster } from "../abci/TxBroadcaster";
+import { Transaction } from "../abci/util/Transaction";
+import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";

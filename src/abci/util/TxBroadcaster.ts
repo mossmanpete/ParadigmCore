@@ -17,8 +17,8 @@
 import { EventEmitter } from "events";
 
 // ParadigmCore classes
-import { PayloadCipher } from "../crypto/PayloadCipher";
-import { Logger } from "../util/Logger";
+import { PayloadCipher } from "../../crypto/PayloadCipher";
+import { Logger } from "../../util/Logger";
 import { Transaction } from "./Transaction";
 
 export class TxBroadcaster {
@@ -132,15 +132,17 @@ export class TxBroadcaster {
 
         try {
             // Await ABCI response, and resolve promise
-            const res = await this.client.broadcastTxSync({ tx: `"${payload}"` });
-            txEmitter.emit("sent", res);
+            const res = await this.client.broadcastTxSync({
+                tx: `"${ payload }"`,
+            });
 
+            // Resolve promise to response object
+            txEmitter.emit("sent", res);
             Logger.txEvt("Transaction sent successfully.");
         } catch (error) {
-            Logger.txErr("Transaction failed.");
-
-            // Resolve promise to error object
+            // Reject promise to error object
             txEmitter.emit("failed", error);
+            Logger.txErr("Transaction failed.");
         } finally {
             // If queue is now empty, stop broadcasting
             if (_this.isEmpty()) {

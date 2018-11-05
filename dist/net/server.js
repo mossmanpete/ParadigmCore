@@ -20,7 +20,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require("express");
 // ParadigmCore classes and imports
-const Transaction_1 = require("../abci/Transaction");
+const Transaction_1 = require("../abci/util/Transaction");
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");

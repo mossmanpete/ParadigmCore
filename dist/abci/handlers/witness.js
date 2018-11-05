@@ -17,7 +17,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // ParadigmCore classes
 const Logger_1 = require("../../util/Logger");
-const Vote_1 = require("../Vote");
+const Vote_1 = require("../util/Vote");
 // TEMPORARY
 const { CONF_THRESHOLD, NODE_ENV } = process.env;
 /**

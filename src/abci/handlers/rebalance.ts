@@ -18,7 +18,7 @@
 import { StakeRebalancer } from "../../async/StakeRebalancer";
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
-import { Vote } from "../Vote";
+import { Vote } from "../util/Vote";
 
 /**
  * Verify a Rebalance proposal before accepting it into the local mempool.

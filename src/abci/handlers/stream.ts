@@ -19,7 +19,7 @@ import * as Paradigm from "paradigm-connect";
 import { OrderTracker } from "../../async/OrderTracker";
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
-import { Vote } from "../Vote";
+import { Vote } from "../util/Vote";
 
 // Paradigm order constructor
 const Order = new Paradigm().Order;

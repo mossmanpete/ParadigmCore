@@ -17,7 +17,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");
-const Vote_1 = require("../Vote");
+const Vote_1 = require("../util/Vote");
 /**
  * Verify a Rebalance proposal before accepting it into the local mempool.
  *

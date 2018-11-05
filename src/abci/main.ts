@@ -25,8 +25,8 @@ import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Logger } from "../util/Logger";
-import { Transaction } from "./Transaction";
-import { Vote } from "./Vote";
+import { Transaction } from "./util/Transaction";
+import { Vote } from "./util/Vote";
 
 // ABCI handler functions
 import { checkOrder, deliverOrder } from "./handlers/order";
@@ -142,6 +142,9 @@ function info(_): object {
 function beginBlock(request): object {
     const currHeight = request.header.height;
     const currProposer = request.header.proposerAddress.toString("hex");
+
+    // tslint:disable-next-line:no-console
+    console.log("BeginBlock request object: " + JSON.stringify(request));
 
     Logger.newRound(currHeight, currProposer);
     return {};
@@ -276,8 +279,6 @@ function deliverTx(request): Vote {
         }
     }
 }
-
-// TODO: implement endBlock()
 
 /**
  * Persist application state, synchronize commit and deliver states, and
