@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name rebalance.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -14,11 +14,14 @@
  * spec for this TX type.
  */
 
- // ParadigmCore imports
+// 3rd party and STDLIB imports
+import * as _ from "lodash";
+
+// ParadigmCore imports
 import { StakeRebalancer } from "../../async/StakeRebalancer";
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
-import { Vote } from "../Vote";
+import { Vote } from "../util/Vote";
 
 /**
  * Verify a Rebalance proposal before accepting it into the local mempool.
@@ -67,6 +70,7 @@ export function checkRebalance(tx: any, state: any) {
 export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
     const proposal = tx.data;
 
+    // Main verification switch block
     switch (state.round.number) {
         case 0: {
             if (proposal.round.number === 1) {
@@ -83,7 +87,7 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
 
                 // TODO: make sure limit is agreed upon
                 state.round.limit = proposal.round.limit;
-                // state.mappings.limits = proposal.mapping;
+                // End state modification
 
                 Logger.consensus(msg.rebalancer.messages.iAccept);
                 return Vote.valid();
@@ -96,14 +100,14 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
 
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
-                // Accept valid rebalance proposal to mempool
-
+                // Limits from proposal
                 const propLimits = proposal.limits;
 
-                // CHANGE THIS: debug genLimits
+                // Compute limits from in-state balances
                 const localLimits = genLimits(state.balances, state.round.limit);
 
-                if (JSON.stringify(propLimits) === JSON.stringify(localLimits)) {
+                // TODO: add condition around period length
+                if (_.isEqual(propLimits, localLimits)) {
                     // If proposed mapping matches mapping constructed from
                     // in state balances.
 
@@ -141,26 +145,30 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
  * @description Generates a rate-limit mapping based on staked balances and
  * the total order limit per staking period.
  *
- * @param balances  {object} current in-state staked balances
+ * @param bals  {object} current in-state staked balances
  * @param limit     {number} the total number of orders accepted in the period
  */
-function genLimits(balances: any, limit: number): any {
-    let total: number = 0; // total amount currenty staked
-    const output: object = {}; // generated output mapping
+function genLimits(bals: any, limit: number): any {
+    let total: any = BigInt(0); // Total amount currenty staked
+    const output: object = {};  // Computed output mapping
 
     // Calculate total balance currently staked
-    Object.keys(balances).forEach((k, _) => {
-        if (balances.hasOwnProperty(k) && typeof(balances[k]) === "number") {
-            total += balances[k];
+    Object.keys(bals).forEach((k, v) => {
+        if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+            total += bals[k];
         }
     });
 
     // Compute the rate-limits for each staker based on stake size
-    Object.keys(balances).forEach((k, _) => {
-        if (balances.hasOwnProperty(k) && typeof(balances[k]) === "number") {
+    Object.keys(bals).forEach((k, v) => {
+        if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+            const pLimit: number = (bals[k].toNumber() /  total.toNumber());
+
+            // Create limit object for each address
             output[k] = {
                 // orderLimit is proportional to stake size
-                orderLimit: Math.floor((balances[k] / total) * limit),
+                orderLimit: Math.floor(pLimit * limit),
+
                 // streamLimit is always 1, regardless of stake size
                 streamLimit: 1,
             };

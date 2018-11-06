@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name witness.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 05-November-2018
  *
  * Handler functions for verifying ABCI evet Witness transactions,
  * originating from validator nodes. Implements state transition logic as
@@ -16,7 +16,7 @@
 
  // ParadigmCore classes
 import { Logger } from "../../util/Logger";
-import { Vote } from "../Vote";
+import { Vote } from "../util/Vote";
 
 // TEMPORARY
 const { CONF_THRESHOLD, NODE_ENV } = process.env;
@@ -57,7 +57,7 @@ export function deliverWitness(tx: any, state: any): Vote {
     const staker: string = tx.data.staker;
     const type: string = tx.data.type;
     const block: number = tx.data.block;
-    const amount: number = tx.data.amount;
+    const amount: BigInt = BigInt.fromString(tx.data.amount);
 
     switch (state.events.hasOwnProperty(block)) {
         // Block is already in state
@@ -148,7 +148,7 @@ function isValidStakeEvent(data, state): boolean {
         typeof(data.staker) !== "string" ||
         typeof(data.type) !== "string" ||
         typeof(data.block) !== "number" ||
-        typeof(data.amount) !== "number"
+        typeof(data.amount) !== "string"
     ) {
         return false;
     } else if (!(data.type === "add" || data.type === "remove")) {
@@ -190,7 +190,7 @@ function updateMappings(state, staker, block, amount, type) {
 
                 // Staker does not have a current balance
                 case false: {
-                    state.balances[staker] = 0;
+                    state.balances[staker] = BigInt(0);
                     applyEvent(state, staker, amount, type);
                     break;
                 }

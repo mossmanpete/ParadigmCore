@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Vote.ts
- * @module abci
+ * @module src/abci
  * ===========================
  *
  * @author Henry Harder

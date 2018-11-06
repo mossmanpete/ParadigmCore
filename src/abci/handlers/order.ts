@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name order.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -22,7 +22,7 @@ import { OrderTracker } from "../../async/OrderTracker";
 import { Hasher } from "../../crypto/Hasher";
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
-import { Vote } from "../Vote";
+import { Vote } from "../util/Vote";
 
 // Order constructor from paradigm-connect
 const Order = new Paradigm().Order;

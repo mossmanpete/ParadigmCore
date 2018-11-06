@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name contractABI.ts
- * @module util/static
+ * @module src/util/static
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  01-October-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * Log message templates and statuses for various modules.
  */
@@ -44,7 +44,8 @@ export let messages  = {
             fatal:      "Fatal error initializing application. Exiting.",
             tmFatal:    "Fatal error starting Tendermint core. Exiting.",
             broadcast:  "Error broadcasting orders (may require process termination).",
-            txType:     "Invalid transaction type rejected." 
+            txType:     "Invalid transaction type rejected.",
+            signature:  "Error encountered recovering validator signature." 
         },
         messages: {
             incoming:   {
@@ -56,6 +57,7 @@ export let messages  = {
             verified:   "New order verified and added to OrderStream queue (deliverTx).",
             servStart:  `ABCI server started on port ${ABCI_PORT}.`,
             roundDiff:  "This round deliverTx state is more than 1 period ahead of commited state.",
+            badSig:     "Rejected ABCI transaction with invalid validator signature."
         }
     },
     api: {

@@ -3,19 +3,20 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name main.ts
- * @module abci
+ * @module src/abci
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 05-November-2018
  *
  * Main ParadigmCore state machine implementation and state transition logic.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-// Tendermint JS ABCI server
+// 3rd party and STDLIB imports
 // tslint:disable-next-line:no-var-requires
 const abci = require("abci");
+const _ = require("lodash");
 // Log message templates
 const messages_1 = require("../util/static/messages");
 // ParadigmCore classes
@@ -24,8 +25,8 @@ const StakeRebalancer_1 = require("../async/StakeRebalancer");
 const Hasher_1 = require("../crypto/Hasher");
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const Logger_1 = require("../util/Logger");
-const Transaction_1 = require("./Transaction");
-const Vote_1 = require("./Vote");
+const Transaction_1 = require("./util/Transaction");
+const Vote_1 = require("./util/Vote");
 // ABCI handler functions
 const order_1 = require("./handlers/order");
 const rebalance_1 = require("./handlers/rebalance");
@@ -51,6 +52,7 @@ let commitState; // commit state
  */
 async function startMain(options) {
     try {
+        // Set application version
         version = options.version;
         // Load state objects
         deliverState = options.deliverState;
@@ -94,7 +96,7 @@ async function startRebalancer() {
         const code = rebalancer.start(); // start listening to Ethereum event
         if (code !== 0) {
             Logger_1.Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
-            throw new Error();
+            throw new Error(code.toString());
         }
         // Activate OrderTracker (after Tendermint sync)
         tracker.activate();
@@ -106,14 +108,12 @@ async function startRebalancer() {
 }
 exports.startRebalancer = startRebalancer;
 /*
-Below are implementations of Tendermint ABCI functions.
+Below are implementations of Tendermint ABCI handler functions.
 */
 /**
  * Return information about the state and software.
- *
- * @param _ {null}
  */
-function info(_) {
+function info() {
     return {
         data: "ParadigmCore ABCI Application",
         lastBlockAppHash: commitState.lastBlockAppHash,
@@ -129,6 +129,7 @@ function info(_) {
 function beginBlock(request) {
     const currHeight = request.header.height;
     const currProposer = request.header.proposerAddress.toString("hex");
+    // @TODO: update validator set here
     Logger_1.Logger.newRound(currHeight, currProposer);
     return {};
 }
@@ -153,18 +154,24 @@ function checkTx(request) {
         Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.decompress);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
-    // Verify validator signature
-    // @TODO: add condition to check sig is from a validator
+    /*
+      Verify validator signature. Currently, then validation condition depends
+      on weather or not the signature matches the reported origin of the
+      ABCI transaction. In the future, the condition will check the above AND
+      that the validator's address is in the current validator set.
+    */
     try {
         sigOk = Transaction_1.Transaction.verify(tx);
         if (!sigOk) {
-            Logger_1.Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
-            return Vote_1.Vote.invalid("Invalid validator signature.");
+            // Invalid validator signature
+            Logger_1.Logger.mempoolWarn(messages_1.messages.abci.messages.badSig);
+            return Vote_1.Vote.invalid(messages_1.messages.abci.messages.badSig);
         }
     }
     catch (err) {
-        Logger_1.Logger.mempoolWarn("Unable to recover validator signature.");
-        return Vote_1.Vote.invalid("Error encountered recovering validator signature.");
+        // Error recovering signature
+        Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.signature);
+        return Vote_1.Vote.invalid(messages_1.messages.abci.errors.signature);
     }
     /**
      * This main switch block selects the propper handler logic
@@ -212,18 +219,24 @@ function deliverTx(request) {
         Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.decompress);
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
-    // Verify validator signature
-    // @TODO: add condition to check sig is from a validator
+    /*
+      Verify validator signature. Currently, then validation condition depends
+      on weather or not the signature matches the reported origin of the
+      ABCI transaction. In the future, the condition will check the above AND
+      that the validator's address is in the current validator set.
+    */
     try {
         sigOk = Transaction_1.Transaction.verify(tx);
         if (!sigOk) {
-            Logger_1.Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
-            return Vote_1.Vote.invalid("Invalid validator signature.");
+            // Invalid validator signature
+            Logger_1.Logger.mempoolWarn(messages_1.messages.abci.messages.badSig);
+            return Vote_1.Vote.invalid(messages_1.messages.abci.messages.badSig);
         }
     }
     catch (err) {
-        Logger_1.Logger.mempoolWarn("Unable to recover validator signature.");
-        return Vote_1.Vote.invalid("Error encountered recovering validator signature.");
+        // Error recovering signature
+        Logger_1.Logger.mempoolWarn(messages_1.messages.abci.errors.signature);
+        return Vote_1.Vote.invalid(messages_1.messages.abci.errors.signature);
     }
     /**
      * This main switch block selects the propper handler logic
@@ -250,7 +263,6 @@ function deliverTx(request) {
         }
     }
 }
-// TODO: implement endBlock()
 /**
  * Persist application state, synchronize commit and deliver states, and
  * trigger the broadcast of valid orders in that block.
@@ -263,12 +275,12 @@ function commit(request) {
         // Calculate difference between cState and dState round height
         const roundDiff = deliverState.round.number - commitState.round.number;
         switch (roundDiff) {
+            // No rebalance proposal accepted in this round
             case 0: {
-                // No rebalance proposal accepted in this round
                 break;
             }
+            // Rebalance proposal accepted in this round
             case 1: {
-                // Rebalance proposal accepted in this round
                 // Load round parameters from state
                 const newRound = deliverState.round.number;
                 const newStart = deliverState.round.startsAt;
@@ -291,8 +303,7 @@ function commit(request) {
         // Trigger broadcast of orders and streams
         tracker.triggerBroadcast();
         // Synchronize commit state from delivertx state
-        // @TODO: find a better way to deep-clone the state object
-        commitState = JSON.parse(JSON.stringify(deliverState));
+        commitState = _.cloneDeep(deliverState);
         Logger_1.Logger.consensus(`Commit and broadcast complete. Current state hash: ${stateHash}`);
     }
     catch (err) {

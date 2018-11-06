@@ -2,19 +2,20 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name main.ts
- * @module abci
+ * @module src/abci
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 05-November-2018
  *
  * Main ParadigmCore state machine implementation and state transition logic.
  */
 
-// Tendermint JS ABCI server
+// 3rd party and STDLIB imports
 // tslint:disable-next-line:no-var-requires
 const abci: any = require("abci");
+import * as _ from "lodash";
 
 // Log message templates
 import { messages as msg } from "../util/static/messages";
@@ -25,8 +26,8 @@ import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Logger } from "../util/Logger";
-import { Transaction } from "./Transaction";
-import { Vote } from "./Vote";
+import { Transaction } from "./util/Transaction";
+import { Vote } from "./util/Vote";
 
 // ABCI handler functions
 import { checkOrder, deliverOrder } from "./handlers/order";
@@ -57,6 +58,7 @@ let commitState: any;   // commit state
  */
 export async function startMain(options: any): Promise<null> {
     try {
+        // Set application version
         version = options.version;
 
         // Load state objects
@@ -105,7 +107,7 @@ export async function startRebalancer(): Promise<null> {
         const code = rebalancer.start(); // start listening to Ethereum event
         if (code !== 0) {
             Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
-            throw new Error();
+            throw new Error(code.toString());
         }
 
         // Activate OrderTracker (after Tendermint sync)
@@ -117,15 +119,13 @@ export async function startRebalancer(): Promise<null> {
 }
 
 /*
-Below are implementations of Tendermint ABCI functions.
+Below are implementations of Tendermint ABCI handler functions.
 */
 
 /**
  * Return information about the state and software.
- *
- * @param _ {null}
  */
-function info(_): object {
+function info(): object {
     return {
         data: "ParadigmCore ABCI Application",
         lastBlockAppHash: commitState.lastBlockAppHash,
@@ -142,6 +142,8 @@ function info(_): object {
 function beginBlock(request): object {
     const currHeight = request.header.height;
     const currProposer = request.header.proposerAddress.toString("hex");
+
+    // @TODO: update validator set here
 
     Logger.newRound(currHeight, currProposer);
     return {};
@@ -170,17 +172,23 @@ function checkTx(request): Vote {
         return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    // Verify validator signature
-    // @TODO: add condition to check sig is from a validator
+    /*
+      Verify validator signature. Currently, then validation condition depends
+      on weather or not the signature matches the reported origin of the
+      ABCI transaction. In the future, the condition will check the above AND
+      that the validator's address is in the current validator set.
+    */
     try {
-       sigOk = Transaction.verify(tx);
-       if (!sigOk) {
-           Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
-           return Vote.invalid("Invalid validator signature.");
-       }
+        sigOk = Transaction.verify(tx);
+        if (!sigOk) {
+            // Invalid validator signature
+            Logger.mempoolWarn(msg.abci.messages.badSig);
+            return Vote.invalid(msg.abci.messages.badSig);
+        }
     } catch (err) {
-        Logger.mempoolWarn("Unable to recover validator signature.");
-        return Vote.invalid("Error encountered recovering validator signature.");
+        // Error recovering signature
+        Logger.mempoolWarn(msg.abci.errors.signature);
+        return Vote.invalid(msg.abci.errors.signature);
     }
 
     /**
@@ -235,17 +243,23 @@ function deliverTx(request): Vote {
         return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    // Verify validator signature
-    // @TODO: add condition to check sig is from a validator
+    /*
+      Verify validator signature. Currently, then validation condition depends
+      on weather or not the signature matches the reported origin of the
+      ABCI transaction. In the future, the condition will check the above AND
+      that the validator's address is in the current validator set.
+    */
     try {
        sigOk = Transaction.verify(tx);
        if (!sigOk) {
-           Logger.mempoolWarn("Rejected ABCI transaction with invalid signature.");
-           return Vote.invalid("Invalid validator signature.");
+           // Invalid validator signature
+           Logger.mempoolWarn(msg.abci.messages.badSig);
+           return Vote.invalid(msg.abci.messages.badSig);
        }
     } catch (err) {
-        Logger.mempoolWarn("Unable to recover validator signature.");
-        return Vote.invalid("Error encountered recovering validator signature.");
+        // Error recovering signature
+        Logger.mempoolWarn(msg.abci.errors.signature);
+        return Vote.invalid(msg.abci.errors.signature);
     }
 
     /**
@@ -277,8 +291,6 @@ function deliverTx(request): Vote {
     }
 }
 
-// TODO: implement endBlock()
-
 /**
  * Persist application state, synchronize commit and deliver states, and
  * trigger the broadcast of valid orders in that block.
@@ -293,13 +305,11 @@ function commit(request): string {
         const roundDiff = deliverState.round.number - commitState.round.number;
 
         switch (roundDiff) {
-            case 0: {
-                // No rebalance proposal accepted in this round
-                break;
-            }
+            // No rebalance proposal accepted in this round
+            case 0: { break; }
 
+            // Rebalance proposal accepted in this round
             case 1: {
-                // Rebalance proposal accepted in this round
                 // Load round parameters from state
                 const newRound = deliverState.round.number;
                 const newStart = deliverState.round.startsAt;
@@ -328,8 +338,8 @@ function commit(request): string {
         tracker.triggerBroadcast();
 
         // Synchronize commit state from delivertx state
-        // @TODO: find a better way to deep-clone the state object
-        commitState = JSON.parse(JSON.stringify(deliverState));
+        commitState = _.cloneDeep(deliverState);
+
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {

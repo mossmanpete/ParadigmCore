@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name server.ts
- * @module net
+ * @module src/net
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * ExpressJS server to enable incoming orders to be recieved as POST requests.
  *
@@ -20,8 +20,8 @@ import cors = require("cors");
 import * as express from "express";
 
 // ParadigmCore classes and imports
-import { Transaction } from "../abci/Transaction";
-import { TxBroadcaster } from "../abci/TxBroadcaster";
+import { Transaction } from "../abci/util/Transaction";
+import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
@@ -62,7 +62,7 @@ app.post("/*", async (req, res) => {
         Logger.apiEvt("Successfully executed local ABCI transaction.");
         Message.staticSend(res, response);
     } catch (error) {
-        Logger.apiErr("Failed to execute local ABCI transaction");
+        Logger.apiErr("Failed to execute local ABCI transaction.");
         Message.staticSendError(res, "Internal error, try again.", 500);
     }
 });
@@ -83,6 +83,6 @@ export async function startAPIserver(apiPort, broadcaster) {
         Logger.apiEvt(msg.api.messages.servStart);
         return;
     } catch (err) {
-        throw new Error("Error starting API server");
+        throw new Error("Error starting API server.");
     }
 }

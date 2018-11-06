@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name commitState.ts
- * @module state
+ * @module src/state
  * ===========================
  *
  * @author Henry Harder

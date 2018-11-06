@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name ExpressMessage.ts
- * @module net
+ * @module src/net
  * ===========================
  *
  * @author Henry Harder

@@ -3,12 +3,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Codes.ts
- * @module util
+ * @module src/util
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  27-October-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * Error codes. Working on integrating better error codes throughout PC.
  */

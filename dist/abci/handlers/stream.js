@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name stream.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -15,11 +15,13 @@
  * in the spec for this TX type.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+// ParadigmConnect contains Order class and methods
 const Paradigm = require("paradigm-connect");
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");
-const Vote_1 = require("../Vote");
-const Order = new Paradigm().Order; // Paradigm order constructor
+const Vote_1 = require("../util/Vote");
+// Paradigm order constructor
+const Order = new Paradigm().Order;
 /**
  * Used to perform mempool verification of StreamBroadcast transactions.
  *
@@ -51,7 +53,7 @@ exports.checkStream = checkStream;
  * Execute StreamBroadcast transactions in full, and perform state
  * modification.
  *
- * @param tx {object} decoded transaction body
+ * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
 function deliverStream(tx, state, tracker) {

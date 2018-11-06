@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Queue.ts
- * @module util
+ * @module src/util
  * ===========================
  *
  * @author Henry Harder

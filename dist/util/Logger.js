@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Logger.ts
- * @module util
+ * @module src/util
  * ===========================
  *
  * @author Henry Harder
@@ -54,7 +54,12 @@ class Logger {
         Logger.logWarning(`${'Consensus'.cyan} ${'Warning:'.yellow} ${message}`);
     }
     static rebalancer(message, round) {
-        Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
+        if (round) {
+            Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
+        }
+        else {
+            Logger.logEvent(`${'Rebalancer:'.green} ${message}`);
+        }
     }
     static rebalancerErr(message) {
         Logger.logError(`${'Rebalancer'.green} ${'Error:'.red} ${message}`);

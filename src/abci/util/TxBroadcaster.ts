@@ -2,23 +2,24 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name TxBroadcaster.ts
- * @module abci
+ * @module src/abci
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * This class is responsible for executing local ABCI transactions. It
  * implements a queue, and allows multiple "concurrant" usage of a given
  * instance for local ABCI tx's, so only one instance should be used per node.
  */
 
+// 3rd party and STDLIB imports
 import { EventEmitter } from "events";
 
 // ParadigmCore classes
-import { PayloadCipher } from "../crypto/PayloadCipher";
-import { Logger } from "../util/Logger";
+import { PayloadCipher } from "../../crypto/PayloadCipher";
+import { Logger } from "../../util/Logger";
 import { Transaction } from "./Transaction";
 
 export class TxBroadcaster {
@@ -37,7 +38,7 @@ export class TxBroadcaster {
      */
     constructor(options: any) {
         // tslint:disable-next-line:variable-name
-        const _this = this;   // Store this reference
+        const _this = this;   // Store 'this' reference
 
         // Instance properties
         this.client = options.client;       // RPC client
@@ -91,10 +92,11 @@ export class TxBroadcaster {
 
         // Resolve or reject promise based on EE events
         const res = new Promise((resolve, reject) => {
+
             // Attach handlers
-            ee.on("sent", resolve);
-            ee.on("failed", reject);
-            ee.on("error", reject);
+            ee.on("sent", resolve);     // Successful request, resolve to resp.
+            ee.on("failed", reject);    // Failed request, resolve to error.
+            ee.on("error", reject);     // Error in EE, resolve to null.
         });
 
         // Add transaction and emitter to queue (in array)
@@ -111,7 +113,7 @@ export class TxBroadcaster {
         // Return immediatley if this.start() hasn't been called
         if (!(this.started)) { return; }
 
-        // Temporary
+        // Temporary?
         Logger.txEvt("Sending internal ABCI transaction.");
 
         // Store this reference, update status
@@ -132,16 +134,19 @@ export class TxBroadcaster {
 
         try {
             // Await ABCI response, and resolve promise
-            const res = await this.client.broadcastTxSync({ tx: `"${payload}"` });
-            txEmitter.emit("sent", res);
+            const res = await this.client.broadcastTxSync({
+                tx: `"${ payload }"`,
+            });
 
+            // Resolve promise to response object
+            txEmitter.emit("sent", res);
             Logger.txEvt("Transaction sent successfully.");
         } catch (error) {
-            Logger.txErr("Transaction failed.");
-
-            // Resolve promise to error object
+            // Reject promise to error object
             txEmitter.emit("failed", error);
+            Logger.txErr("Transaction failed.");
         } finally {
+            // @TODO: should this be outside 'finally'?
             // If queue is now empty, stop broadcasting
             if (_this.isEmpty()) {
                 this.broadcasting = false;
@@ -181,12 +186,4 @@ export class TxBroadcaster {
         if (this.isEmpty()) { return null; }
         return this.queue.shift();
     }
-
-    /**
-     * Returns the top item in the queue without removing it.
-     */
-    private front(): any {
-        if (this.isEmpty()) { return null; }
-    }
-
 }

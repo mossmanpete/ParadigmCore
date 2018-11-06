@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name rebalance.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -15,9 +15,11 @@
  * spec for this TX type.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+// 3rd party and STDLIB imports
+const _ = require("lodash");
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");
-const Vote_1 = require("../Vote");
+const Vote_1 = require("../util/Vote");
 /**
  * Verify a Rebalance proposal before accepting it into the local mempool.
  *
@@ -64,6 +66,7 @@ exports.checkRebalance = checkRebalance;
  */
 function deliverRebalance(tx, state, rb) {
     const proposal = tx.data;
+    // Main verification switch block
     switch (state.round.number) {
         case 0: {
             if (proposal.round.number === 1) {
@@ -78,7 +81,7 @@ function deliverRebalance(tx, state, rb) {
                 state.round.endsAt = proposal.round.endsAt;
                 // TODO: make sure limit is agreed upon
                 state.round.limit = proposal.round.limit;
-                // state.mappings.limits = proposal.mapping;
+                // End state modification
                 Logger_1.Logger.consensus(messages_1.messages.rebalancer.messages.iAccept);
                 return Vote_1.Vote.valid();
             }
@@ -90,11 +93,12 @@ function deliverRebalance(tx, state, rb) {
         }
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
-                // Accept valid rebalance proposal to mempool
+                // Limits from proposal
                 const propLimits = proposal.limits;
-                // CHANGE THIS: debug genLimits
+                // Compute limits from in-state balances
                 const localLimits = genLimits(state.balances, state.round.limit);
-                if (JSON.stringify(propLimits) === JSON.stringify(localLimits)) {
+                // TODO: add condition around period length
+                if (_.isEqual(propLimits, localLimits)) {
                     // If proposed mapping matches mapping constructed from
                     // in state balances.
                     // Begin state modificiation
@@ -131,24 +135,26 @@ exports.deliverRebalance = deliverRebalance;
  * @description Generates a rate-limit mapping based on staked balances and
  * the total order limit per staking period.
  *
- * @param balances  {object} current in-state staked balances
+ * @param bals  {object} current in-state staked balances
  * @param limit     {number} the total number of orders accepted in the period
  */
-function genLimits(balances, limit) {
-    let total = 0; // total amount currenty staked
-    const output = {}; // generated output mapping
+function genLimits(bals, limit) {
+    let total = BigInt(0); // Total amount currenty staked
+    const output = {}; // Computed output mapping
     // Calculate total balance currently staked
-    Object.keys(balances).forEach((k, _) => {
-        if (balances.hasOwnProperty(k) && typeof (balances[k]) === "number") {
-            total += balances[k];
+    Object.keys(bals).forEach((k, v) => {
+        if (bals.hasOwnProperty(k) && _.isEqual(typeof (bals[k]), "bigint")) {
+            total += bals[k];
         }
     });
     // Compute the rate-limits for each staker based on stake size
-    Object.keys(balances).forEach((k, _) => {
-        if (balances.hasOwnProperty(k) && typeof (balances[k]) === "number") {
+    Object.keys(bals).forEach((k, v) => {
+        if (bals.hasOwnProperty(k) && _.isEqual(typeof (bals[k]), "bigint")) {
+            const pLimit = (bals[k].toNumber() / total.toNumber());
+            // Create limit object for each address
             output[k] = {
                 // orderLimit is proportional to stake size
-                orderLimit: Math.floor((balances[k] / total) * limit),
+                orderLimit: Math.floor(pLimit * limit),
                 // streamLimit is always 1, regardless of stake size
                 streamLimit: 1,
             };

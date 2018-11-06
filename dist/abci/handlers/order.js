@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name order.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -20,7 +20,7 @@ const Paradigm = require("paradigm-connect");
 const Hasher_1 = require("../../crypto/Hasher");
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");
-const Vote_1 = require("../Vote");
+const Vote_1 = require("../util/Vote");
 // Order constructor from paradigm-connect
 const Order = new Paradigm().Order;
 /**

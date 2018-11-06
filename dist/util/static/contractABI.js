@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name contractABI.ts
- * @module util/static
+ * @module src/util/static
  * ===========================
  *
  * @author Henry Harder

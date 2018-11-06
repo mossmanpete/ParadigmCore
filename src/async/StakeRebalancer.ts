@@ -2,11 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name StakeRebalancer.ts
+ * @module src/async
  * ===========================
  *
  * @author Henry Harder
- * @date (initial)  15 October 2018
- * @date (modified) 1 November 2018
+ * @date (initial)  15-October-2018
+ * @date (modified) 05-November-2018
  *
  * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -16,16 +17,17 @@
  */
 
 // Third party and stdlib imports
+import * as _ from "lodash";
 import { URL } from "url";
 import Web3 = require("web3");
 import Contract from "web3/eth/contract";
-import { Provider } from "web3/providers";
+import { HttpProvider, WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
-import { Transaction } from "../abci/Transaction";
-import { TxBroadcaster } from "../abci/TxBroadcaster";
+import { Transaction } from "../abci/util/Transaction";
+import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { default as err } from "../util/Codes";
-import { Logger } from "../util/Logger";
+import { Logger as Log } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
 
 export class StakeRebalancer {
@@ -51,7 +53,7 @@ export class StakeRebalancer {
             // Create new rebalancer instance
             instance = new StakeRebalancer(options);
 
-            // Initialize instance
+            // Initialize instance (and store response code)
             const code = await instance.initialize();
 
             // Reject promise if initialization failed
@@ -71,26 +73,29 @@ export class StakeRebalancer {
      * Generates an output address:limit mapping based on a provided
      * address:balance mapping, and a total throughput limit.
      *
-     * @param balances  {object} current address:balance mapping
+     * @param bals      {object} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
-    public static genLimits(balances: any, limit: number): any {
-        let total: number = 0;      // Total amount currently staked
-        const output: object = {};    // Generated output mapping
+    public static genLimits(bals: any, limit: number): any {
+        let total: any = BigInt(0);  // Total amount currently staked
+        const output: object = {};      // Generated output mapping
 
         // Calculate total balance currently staked
-        Object.keys(balances).forEach((k, _) => {
-            if (balances.hasOwnProperty(k) && typeof(balances[k]) === "number") {
-                total += balances[k];
+        Object.keys(bals).forEach((k, v) => {
+            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+                total += bals[k];
             }
         });
 
         // Compute the rate-limits for each staker based on stake size
-        Object.keys(balances).forEach((k, _) => {
-            if (balances.hasOwnProperty(k) && typeof(balances[k]) === "number") {
+        Object.keys(bals).forEach((k, v) => {
+            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+                const pLimit: number = (bals[k].toNumber() /  total.toNumber());
+
+                // Create limit object for each address
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor((balances[k] / total) * limit),
+                    orderLimit: Math.floor(pLimit * limit),
 
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
@@ -129,7 +134,7 @@ export class StakeRebalancer {
         }
 
         // Construct and return event object
-        return {staker, type, amount, block};
+        return { staker, type, amount, block };
     }
 
     /* End static methods. */
@@ -158,7 +163,7 @@ export class StakeRebalancer {
 
     // Staking contract configuration
     private stakeContract: Contract;    // Staking contract instance
-    private stakeABI: object[];    // Staking contract ABI
+    private stakeABI: object[];         // Staking contract ABI
     private stakeAddress: string;       // Staking contract address
 
     // Tendermint ABCI connection
@@ -236,7 +241,7 @@ export class StakeRebalancer {
             return err.CONTRACT; // Unable to initialize staking contract
         }
 
-        // Only returns OK upon successful initialization
+        // Only returns OK (0) upon successful initialization
         this.initialized = true;
         return err.OK;
     }
@@ -268,8 +273,8 @@ export class StakeRebalancer {
     public synchronize(round: number, startsAt: number, endsAt: number): void {
         // Check that new round is the next round
         if (round !== (this.periodNumber + 1)) {
-            Logger.rebalancerErr("New round is not one greater than current.");
-            Logger.rebalancerErr("Node may be out of state with network.");
+            Log.rebalancerErr("New round is not one greater than current.");
+            Log.rebalancerErr("Node may be out of state with network.");
         }
 
         // Update parameters
@@ -283,56 +288,91 @@ export class StakeRebalancer {
      * Used to connect to Web3 provider. Called during initialization, and
      * if a web3 disconnect is detected.
      */
-    private connectWeb3(): number {
-        let provider: Provider;
+    private getProvider(): WebsocketProvider | HttpProvider {
+        let provider: WebsocketProvider | HttpProvider;
 
+        // Pull provider URL and protocol from instance
+        const protocol = this.web3provider.protocol;
+        const url = this.web3provider.href;
+
+        // Supports HTTP and WS
+        try {
+            if (protocol === "ws:" || protocol === "wss:") {
+                provider = new Web3.providers.WebsocketProvider(url);
+            } else if (protocol === "http:" || protocol === "https:") {
+                provider = new Web3.providers.HttpProvider(url);
+            } else {
+                // Invalid provider URI scheme
+                throw new Error("Invalid provider URI.");
+            }
+        } catch (_) {
+            // Unable to establish provider
+            throw new Error("Unable to connect to provider.");
+        }
+
+        // Log connection message
+        provider.on("connect", () => {
+            Log.rebalancer("Successfully connected to web3 provider.");
+        });
+
+        // Attempt to reconnect on termination
+        provider.on("end", () => {
+            Log.rebalancerErr("Web3 connection end. Attempting to reconnect...");
+            try {
+                this.web3.setProvider(this.getProvider());
+            } catch (error) {
+                Log.rebalancerErr("Failed reconnecting to web3 provider.");
+            }
+        });
+
+        // Attempt to reconnect on any error
+        provider.on("end", () => {
+            Log.rebalancerErr("Web3 error. Attempting to reconnect...");
+            try {
+                this.web3.setProvider(this.getProvider());
+            } catch (error) {
+                Log.rebalancerErr("Failed reconnecting to web3 provider.");
+            }
+        });
+
+        return provider;
+    }
+
+    /**
+     * Used to create web3 instance (based on provider generated in
+     * `this.getProvider()` method).
+     */
+    private connectWeb3(): number {
         if (typeof(this.web3) !== "undefined") {
+            // If already connected to web3 instance
             this.web3 = new Web3(this.web3.currentProvider);
             return err.OK;
         } else {
-            const protocol = this.web3provider.protocol;
-            const url = this.web3provider.href;
-
-            // Supports HTTP and WS
+            // Create new Web3 instance
             try {
-                if (protocol === "ws:" || protocol === "wss:") {
-                    provider = new Web3.providers.WebsocketProvider(url);
-                } else if (protocol === "http:" || protocol === "https:") {
-                    provider = new Web3.providers.HttpProvider(url);
-                } else {
-                    // Invalid provider URI scheme
-                    return err.URI_SCHEME;
-                }
-            } catch (_) {
-                // Unable to establish provider
-                return err.WEB3_PROV;
+                this.web3 = new Web3(this.getProvider());
+            } catch (error) {
+                return err.WEB3_INST; // Unable to create web3 instance
             }
-
-            // Create Web3 instance
-            try {
-                this.web3 = new Web3(provider);
-            } catch (_) {
-                // Unable to create web3 instance
-                return err.WEB3_INST;
-            }
-
             return err.OK;
         }
     }
 
     /**
      * Subscribe to relevant Ethereum events and attach handlers.
+     *
+     * @param from  {number}    the block from which to subscribe to events
      */
-    private subscribe(): number {
+    private subscribe(from: number = 0): number {
         try {
             // Subscribe to 'stakeMade' events
             this.stakeContract.events.StakeMade({
-                fromBlock: 0,
+                fromBlock: from,
             }, this.handleStake);
 
             // Subscribe to 'stakeRemoved' events
             this.stakeContract.events.StakeRemoved({
-                fromBlock: 0,
+                fromBlock: from,
             }, this.handleStake);
 
             // Subscribe to new blocks
@@ -355,14 +395,15 @@ export class StakeRebalancer {
      */
     private handleStake = (e: any, res: any) => {
         if (e !== null) {
-            Logger.rebalancerErr(msg.rebalancer.errors.badStakeEvent);
+            Log.rebalancerErr(msg.rebalancer.errors.badStakeEvent);
             return;
         }
 
         // Pull event parameters
         const staker = res.returnValues.staker.toLowerCase();  // Address
         const rType = res.event.toLowerCase();                 // Raw event type
-        const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
+        // const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
+        const amount = BigInt.fromString((res.returnValues.amount));  // Amount staked
         const block = res.blockNumber;                         // Event block
 
         // Generate event object
@@ -394,7 +435,7 @@ export class StakeRebalancer {
      */
     private handleBlock = (e: any, res: any) => {
         if (e !== null) {
-            Logger.rebalancerErr(msg.rebalancer.errors.badBlockEvent);
+            Log.rebalancerErr(msg.rebalancer.errors.badBlockEvent);
             return;
         }
 
@@ -403,7 +444,7 @@ export class StakeRebalancer {
 
         // See if this is the first new block
         if ((this.periodNumber === 0) && (res.number > this.initHeight)) {
-            Logger.rebalancer("Proposing parameters for initial period.", 0);
+            Log.rebalancer("Proposing parameters for initial period.", 0);
 
             // Prepare proposal tx
             const tx = this.genRebalanceTx(0, res.number, this.periodLength);
@@ -411,7 +452,7 @@ export class StakeRebalancer {
             // Attempt to submit
             const code = this.execAbciTx(tx);
             if (code !== err.OK) {
-                Logger.rebalancerErr(`Tx failed with code: ${code}.`);
+                Log.rebalancerErr(`Tx failed with code: ${code}.`);
             }
 
             // Exit block handler function early on first block
@@ -420,8 +461,10 @@ export class StakeRebalancer {
 
         // Calculate which block is reaching maturity
         const matBlock = this.currHeight - this.finalityThreshold;
-        Logger.rebalancer(`(Temporary) Most final block is: ${matBlock}`, this.periodNumber);
-        Logger.rebalancer(`(Temporary) Next round ends at: ${this.periodEnd}`, this.periodNumber);
+        Log.rebalancer(
+            `New mature block: ${matBlock}. Round ends at: ${this.periodEnd}`,
+            this.periodNumber,
+        );
 
         // See if any events have reached finality
         if (this.events.hasOwnProperty(matBlock)) {
@@ -444,7 +487,7 @@ export class StakeRebalancer {
             // Execute ABCI transaction
             const code = this.execAbciTx(tx);
             if (code !== err.OK) {
-                Logger.rebalancerErr(`Tx failed with code: ${code}`);
+                Log.rebalancerErr(`Tx failed with code: ${code}`);
             }
         }
 
@@ -478,7 +521,7 @@ export class StakeRebalancer {
                 break;
             }
             default: {
-                Logger.rebalancerErr("Received unknown event type.");
+                Log.rebalancerErr("Received unknown event type.");
                 return;
             }
         }
@@ -536,7 +579,7 @@ export class StakeRebalancer {
                 endsAt: start + length,
                 limit: this.periodLimit,
                 number: round + 1,
-                startsAt: start,
+                startsAt: start - 1,    // TODO: find a test case for this
             },
         });
 
@@ -556,7 +599,7 @@ export class StakeRebalancer {
 
         const code = this.execAbciTx(tx);
         if (code !== 0) {
-            Logger.rebalancerErr("Event Tx failed.");
+            Log.rebalancerErr("Event Tx failed.");
         }
         return;
     }
@@ -569,13 +612,13 @@ export class StakeRebalancer {
      */
     private execAbciTx(tx: any): number {
         try {
-            this.broadcaster.send(tx).then((_) => {
-                Logger.rebalancer("Executed local ABCI Tx.", this.periodNumber);
-            }).catch((_) => {
-                Logger.rebalancerErr("Local ABCI transaction failed.");
+            this.broadcaster.send(tx).then((response) => {
+                Log.rebalancer("Executed local ABCI Tx.", this.periodNumber);
+            }).catch((error) => {
+                Log.rebalancerErr("Local ABCI transaction failed.");
             });
-        } catch (e) {
-            Logger.rebalancerErr("Failed to execute local ABCI transaction.");
+        } catch (error) {
+            Log.rebalancerErr("Failed to execute local ABCI transaction.");
             return err.TX_FAILED;
         }
 
