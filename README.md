@@ -6,17 +6,19 @@
 ## Introduction
 ParadigmCore is the main package that enables the functionality of the OrderStream network. Every OrderStream node in the network must be running ParadigmCore. To read more about the high-level functionality the package enables, check out the Paradigm Protocol [whitepaper,](https://paradigm.market/whitepaper) and the [WebSocket API](./docs/websocket-api.md) doc. More documentation will be published soon.
 
-This version of ParadigmCore (`blind-star`) is the direct Tendermint implementation of the OrderStream network node software. It is an [ABCI application](https://cosmos.network/docs/sdk/core/app4.html) intended to be used with the [Tendermint](https://github.com/tendermint/tendermint) BFT state replication software. 
+This version of ParadigmCore (`blind-star`) is the direct Tendermint implementation of the OrderStream network node software. It is an [ABCI application](https://cosmos.network/docs/sdk/core/app4.html) intended to be used with [Tendermint Core](https://github.com/tendermint/tendermint) BFT state replication and consensus.
 
-## A Note on Order Storage
+#### Primary Endpoint
+By default, valid orders are relayed via WebSocket to all connected parties. Below is the default endpoint (this should be proxied to public or used by local applications/middleware):
+```
+ws://localhost:4242/
+```
+
+#### A Note on Order Storage
 The OrderStream network design follows an asynchronous and event-driven architecture, being specifically designed solely for order message broadcast. As such, ParadigmCore does not include a database (by default) or offer query functionality for historical orders. Instead it provides a simple interface that allows for applications to derive order books that can be stored in an out-of-state database.
 
 We have released one database driver so far, `ParadigmMongo`, that allows you to store all valid orders (as relayed via ParadigmCore's WS endpoint) in a MongoDB backend server running on your node, or another machine. The repository for `ParadigmMongo` can be found [here](https://github.com/paradigmfoundation/paradigmmongo). You can preview a live version of this software at https://zaidan.io/. 
 
-Valid orders are relayed via WebSocket protocol, by default from the following endpoint (this can be proxied to public or used by any application/middleware):
-```
-ws://localhost:4242/
-```
 ## Usage
 
 ### Download and Install Dependencies
@@ -28,26 +30,41 @@ You should then clone this repository into a clean working directory. Something 
 
 From there, `cd paradigmcore` and install dependencies: `npm i`
 
+#### Install Tendermint
+
+ParadigmCore ships with a semi-custom helper library (found in `./lib/tendermint`) that is used to manage the Tendermint ABCI server and transaction transport, but also allows you to quickly install a recent Tendermint binary. The ParadigmCore manages the initialization and configuration of Tendermint Core, so there is no need to separately install, build, or run the binary. Download the binary by running:
+```
+npm run getTendermint
+```
+After running ParadigmCore for the first time (see below), there will be a new directory containing the chain data and validator private keys. This directory can be specified via your environment, but using the template environment will be placed at `~/.tendermint` (also known as `$HOME/.tendermint`).
+
 ### Build
-This version is primarily implemented in TypeScript, and should be compiled to update the JS files in `./dist`. Modify `tsconfig.json` to the correct target for your environment, then run:
+This version is implemented in TypeScript, and should be compiled before running to update the JS files in `./dist`. Modify `tsconfig.json` to set the correct target and options for your environment, then run:
 ```
 npm run build OR tsc
 ```
 You can just run `tsc` if the default `tsconfig.json` is used.
 
-### Run (this section is being updated)
-UPDATE: Tendermint now runs in-process with ParadigmCore, you do not need to run a separate Tendermint node anymore.
+### Configure
+ParadigmCore is configured via it's runtime environment (your machine). You can provide configuration options via environment variables (recommended) or in a `.env` file which will be loaded into the Node.js runtime environment upon process startup (accesed internally using the global `process.env`).
 
-To run, you must have a tendermint node runing on the same machine on the expected port. With tendermint's binary installed, run:
+There are several options that must be set before startup, including you validator private and public key (found in `{TENDERMINT_DIRECTORY}/config/priv_validator.json`, web3 provider, among other consensus parameters.
+
+A sample configuration environment is included in [`./lib/other/.env.template`](./lib/other/.env.template). Although it shows which fields are required, it cannot be used without supplying your own Tendermint keypair. 
+
+### Run
+After configuring your environment, start ParadigmCore with: 
 ```
-tendermint node
+npm run start
 ```
-Assuming you have already configured the node with `tendermint init`, this will listen on the ABCI port. Then, start ParadigmCore with:
+
+Alternatively, run the compiled startup script directly with:
 ```
-npm run start OR node ./dist/index.js
+node ./dist/index.js
 ```
+
 ### Websocket API (valid order event stream)
-see [`./docs/websocket-api.md`](./docs/websocket-api.md).
+See [`./docs/websocket-api.md`](./docs/websocket-api.md).
 
 ### HTTP API (propose an order)
 This part will be expanded on soon. The primary interface endpoint (currently is) exposed as:
