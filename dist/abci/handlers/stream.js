@@ -1,36 +1,13 @@
 "use strict";
-/**
- * ===========================
- * ParadigmCore: Blind Star
- * @name stream.ts
- * @module src/abci/handlers
- * ===========================
- *
- * @author Henry Harder
- * @date (initial)  23-October-2018
- * @date (modified) 01-November-2018
- *
- * Handler functions for verifying ABCI Stream transactions, originating
- * from external API calls. Implements state transition logic as specified
- * in the spec for this TX type.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-// ParadigmConnect contains Order class and methods
 const Paradigm = require("paradigm-connect");
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");
 const Vote_1 = require("../util/Vote");
-// Paradigm order constructor
 const Order = new Paradigm().Order;
-/**
- * Used to perform mempool verification of StreamBroadcast transactions.
- *
- * @param tx    {object} decoded transaction body
- * @param state {object} current round state
- */
 function checkStream(tx, state) {
-    let order; // Paradigm order object
-    let poster; // Recovered poster address from signature
+    let order;
+    let poster;
     try {
         order = new Order(tx);
         poster = order.recoverPoster().toLowerCase();
@@ -49,13 +26,6 @@ function checkStream(tx, state) {
     }
 }
 exports.checkStream = checkStream;
-/**
- * Execute StreamBroadcast transactions in full, and perform state
- * modification.
- *
- * @param tx    {object} decoded transaction body
- * @param state {object} current round state
- */
 function deliverStream(tx, state, tracker) {
     return 0;
 }

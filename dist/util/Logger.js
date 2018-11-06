@@ -1,21 +1,5 @@
 "use strict";
-/**
- * ===========================
- * ParadigmCore: Blind Star
- * @name Logger.ts
- * @module src/util
- * ===========================
- *
- * @author Henry Harder
- * @date (initial)  27-October-2018
- * @date (modified) 02-November-2018
- *
- * Logger class for modules to log formatted messages to STDOUT.
- *
- * @todo Make this less stupid
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-/* tslint:disable */
 const { VERSION } = process.env;
 const Timestamp_1 = require("./Timestamp");
 require("colors");

@@ -1,19 +1,5 @@
 "use strict";
-/**
- * ===========================
- * ParadigmCore: Blind Star
- * @name commitState.ts
- * @module src/state
- * ===========================
- *
- * @author Henry Harder
- * @date (initial)  22-October-2018
- * @date (modified) 02-November-2018
- *
- * Object representing the post-commit state of the network.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-/* tslint:disable */
 exports.commitState = {
     round: {
         number: 0,

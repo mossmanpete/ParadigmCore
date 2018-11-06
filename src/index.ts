@@ -72,6 +72,9 @@ let node: any;                  // Tendermint node instance
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
         });
+
+        // node.stdout.pipe(process.stdout); // for debugging tendermint
+        
     } catch (error) {
         Logger.consensusErr("failed initializing Tendermint.");
         Logger.logError(msg.abci.errors.tmFatal);

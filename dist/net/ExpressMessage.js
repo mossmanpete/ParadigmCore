@@ -1,17 +1,4 @@
 "use strict";
-/**
- * ===========================
- * ParadigmCore: Blind Star
- * @name ExpressMessage.ts
- * @module src/net
- * ===========================
- *
- * @author Henry Harder
- * @date (initial)  19-August-2018
- * @date (modified) 02-November-2018
- *
- * Simple class for creating and sending JSON messages using ExpressJS.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
 class Message {
     static staticSendError(res, message, error) {

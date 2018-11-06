@@ -10,6 +10,8 @@
  * @date (modified) 05-November-2018
  *
  * Monkey-patch 'BigInt' object with custom functions.
+ *
+ * (subtle nod to TC39)
  */
 
 // tslint:disable

@@ -1,19 +1,5 @@
 "use strict";
-/**
- * ===========================
- * ParadigmCore: Blind Star
- * @name contractABI.ts
- * @module src/util/static
- * ===========================
- *
- * @author Henry Harder
- * @date (initial)  01-October-2018
- * @date (modified) 05-November-2018
- *
- * Log message templates and statuses for various modules.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
-/* tslint:disable */
 const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 exports.messages = {
     general: {
