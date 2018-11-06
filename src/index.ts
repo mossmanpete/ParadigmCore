@@ -2,14 +2,16 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name index.ts
+ * @module src
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 05-November-2018
  *
- * Entry point and startup script for ParadigmCore.
+ * Startup script for ParadigmCore. Provide configuration through environment.
  */
+
 // tslint:disable
 
 // Load configuration from environment

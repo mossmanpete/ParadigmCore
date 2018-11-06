@@ -2,11 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name StakeRebalancer.ts
+ * @module src/async
  * ===========================
  *
  * @author Henry Harder
- * @date (initial)  15 October 2018
- * @date (modified) 1 November 2018
+ * @date (initial)  15-October-2018
+ * @date (modified) 05-November-2018
  *
  * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -240,7 +241,7 @@ export class StakeRebalancer {
             return err.CONTRACT; // Unable to initialize staking contract
         }
 
-        // Only returns OK upon successful initialization
+        // Only returns OK (0) upon successful initialization
         this.initialized = true;
         return err.OK;
     }

@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name witness.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 05-November-2018
  *
  * Handler functions for verifying ABCI evet Witness transactions,
  * originating from validator nodes. Implements state transition logic as

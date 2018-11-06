@@ -7,14 +7,14 @@
  *
  * @author Henry Harder
  * @date (initial)  21-September-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * Compression and encoding (and decompression and decoding) for local ABCI
  * transactions.
  */
 
 import * as zlib from "zlib";
-const { IN_ENC, OUT_ENC } = process.env;
+const { IN_ENC, OUT_ENC } = process.env;    // @TODO: hardcode?
 
 export class PayloadCipher {
 

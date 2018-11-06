@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Transaction.ts
- * @module abci
+ * @module src/abci
  * ===========================
  *
  * @author Henry Harder
@@ -87,7 +87,7 @@ export class Transaction {
         this.type = type;
         this.data = data;
 
-        // Return unsigned transaction
+        // Return signed transaction
         return this.sign();
     }
 
@@ -100,7 +100,6 @@ export class Transaction {
             msg = Buffer.from(JSON.stringify(this.data), "utf8");
             sig = ed25519.Sign(msg, this.keypair.priv);
         } catch (err) {
-            // console.log(err) // debug
             throw new Error("Failed to generate signature.");
         }
 

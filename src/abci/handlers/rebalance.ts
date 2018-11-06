@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name rebalance.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -87,7 +87,7 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
 
                 // TODO: make sure limit is agreed upon
                 state.round.limit = proposal.round.limit;
-                // state.mappings.limits = proposal.mapping;
+                // End state modification
 
                 Logger.consensus(msg.rebalancer.messages.iAccept);
                 return Vote.valid();
@@ -149,8 +149,8 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
  * @param limit     {number} the total number of orders accepted in the period
  */
 function genLimits(bals: any, limit: number): any {
-    let total: any = BigInt(0); // total amount currenty staked
-    const output: object = {}; // generated output mapping
+    let total: any = BigInt(0); // Total amount currenty staked
+    const output: object = {};  // Computed output mapping
 
     // Calculate total balance currently staked
     Object.keys(bals).forEach((k, v) => {
