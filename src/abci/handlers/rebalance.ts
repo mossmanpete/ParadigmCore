@@ -106,7 +106,7 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
                 // Compute limits from in-state balances
                 const localLimits = genLimits(state.balances, state.round.limit);
 
-                // if (JSON.stringify(propLimits) === JSON.stringify(localLimits)) {
+                // TODO: add condition around period length
                 if (_.isEqual(propLimits, localLimits)) {
                     // If proposed mapping matches mapping constructed from
                     // in state balances.

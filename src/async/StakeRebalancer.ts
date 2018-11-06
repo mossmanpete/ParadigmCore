@@ -578,7 +578,7 @@ export class StakeRebalancer {
                 endsAt: start + length,
                 limit: this.periodLimit,
                 number: round + 1,
-                startsAt: start,
+                startsAt: start - 1,    // TODO: find a test case for this
             },
         });
 
