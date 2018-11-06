@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Logger.ts
- * @module util
+ * @module src/util
  * ===========================
  *
  * @author Henry Harder

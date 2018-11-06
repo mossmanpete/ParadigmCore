@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name OrderTracker.ts
- * @module async
+ * @module src/async
  * ===========================
  *
  * @author Henry Harder

@@ -3,12 +3,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name server.ts
- * @module net
+ * @module src/net
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * ExpressJS server to enable incoming orders to be recieved as POST requests.
  *
@@ -57,7 +57,7 @@ app.post("/*", async (req, res) => {
         ExpressMessage_1.Message.staticSend(res, response);
     }
     catch (error) {
-        Logger_1.Logger.apiErr("Failed to execute local ABCI transaction");
+        Logger_1.Logger.apiErr("Failed to execute local ABCI transaction.");
         ExpressMessage_1.Message.staticSendError(res, "Internal error, try again.", 500);
     }
 });
@@ -77,7 +77,7 @@ async function startAPIserver(apiPort, broadcaster) {
         return;
     }
     catch (err) {
-        throw new Error("Error starting API server");
+        throw new Error("Error starting API server.");
     }
 }
 exports.startAPIserver = startAPIserver;

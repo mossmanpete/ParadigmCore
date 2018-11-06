@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name stream.ts
- * @module abci/handlers
+ * @module src/abci/handlers
  * ===========================
  *
  * @author Henry Harder
@@ -15,6 +15,7 @@
  * in the spec for this TX type.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+// ParadigmConnect contains Order class and methods
 const Paradigm = require("paradigm-connect");
 const Logger_1 = require("../../util/Logger");
 const messages_1 = require("../../util/static/messages");

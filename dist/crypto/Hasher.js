@@ -3,12 +3,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Hasher.ts
- * @module crypto
+ * @module src/crypto
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * Hashing class to allow creation of state hashes. Also used to generate
  * ID's (orderID) for valid orders.

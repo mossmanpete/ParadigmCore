@@ -8,14 +8,14 @@
  *
  * @author Henry Harder
  * @date (initial)  21-September-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 05-November-2018
  *
  * Compression and encoding (and decompression and decoding) for local ABCI
  * transactions.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 const zlib = require("zlib");
-const { IN_ENC, OUT_ENC } = process.env;
+const { IN_ENC, OUT_ENC } = process.env; // @TODO: hardcode?
 class PayloadCipher {
     /**
      * encodeFromObject (public static method): Construct encoded and compressed

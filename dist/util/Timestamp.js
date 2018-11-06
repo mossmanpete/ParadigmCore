@@ -3,7 +3,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name Timestamp.ts
- * @module util
+ * @module src/util
  * ===========================
  *
  * @author Henry Harder
