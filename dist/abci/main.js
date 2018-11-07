@@ -74,8 +74,29 @@ function info() {
     };
 }
 function beginBlock(request) {
-    const currHeight = request.header.height;
+    const currHeight = request.header.height.low;
     const currProposer = request.header.proposerAddress.toString("hex");
+    const lastVotes = request.lastCommitInfo.votes;
+    if (lastVotes !== undefined && lastVotes.length > 0) {
+        lastVotes.forEach((vote) => {
+            const valHex = vote.validator.address.toString("hex");
+            const valPower = vote.validator.power.low;
+            if (!(deliverState.validators.hasOwnProperty(valHex))) {
+                deliverState.validators[valHex] = {
+                    lastProposed: null,
+                    lastVoted: null,
+                    totalVotes: 0,
+                    votePower: null,
+                };
+            }
+            deliverState.validators[valHex].totalVotes += 1;
+            deliverState.validators[valHex].lastVoted = (currHeight - 1);
+            if (valHex === currProposer) {
+                deliverState.validators[valHex].lastProposed = currHeight;
+            }
+            deliverState.validators[valHex].votePower = valPower;
+        });
+    }
     Logger_1.Logger.newRound(currHeight, currProposer);
     return {};
 }

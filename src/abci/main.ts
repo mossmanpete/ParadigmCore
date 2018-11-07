@@ -140,10 +140,43 @@ function info(): object {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function beginBlock(request): object {
-    const currHeight = request.header.height;
-    const currProposer = request.header.proposerAddress.toString("hex");
+    // Parse height and proposer from header
+    const currHeight: number = request.header.height.low; // @TODO: consider
+    const currProposer: string = request.header.proposerAddress.toString("hex");
 
-    // @TODO: update validator set here
+    // Store array of last votes
+    const lastVotes: object[] | undefined = request.lastCommitInfo.votes;
+
+    // Parse validators that voted on the last block
+    if (lastVotes !== undefined && lastVotes.length > 0) {
+        // Iterate over votes array (supplied by Tendermint)
+        lastVotes.forEach((vote: any) => {
+            const valHex = vote.validator.address.toString("hex");
+            const valPower = vote.validator.power.low;  // @TODO re-examine
+
+            // Create entry if validator has not voted yet
+            if (!(deliverState.validators.hasOwnProperty(valHex))) {
+                deliverState.validators[valHex] = {
+                    lastProposed: null,
+                    lastVoted: null,
+                    totalVotes: 0,
+                    votePower: null,
+                };
+            }
+
+            // Update vote and height trackers
+            deliverState.validators[valHex].totalVotes += 1;
+            deliverState.validators[valHex].lastVoted = (currHeight - 1);
+
+            // Record if they are proposer
+            if (valHex === currProposer) {
+                deliverState.validators[valHex].lastProposed = currHeight;
+            }
+
+            // Update (or re-record) validator vote power
+            deliverState.validators[valHex].votePower = valPower;
+        });
+    }
 
     Logger.newRound(currHeight, currProposer);
     return {};

@@ -16,7 +16,8 @@
  * upon initialization.
  */
 
-// Ed25519 signature implementation
+// Ed25519 signature implementation and crypto
+import { createHash } from "crypto";
 import * as ed25519 from "ed25519";
 
 export class Transaction {
@@ -103,9 +104,16 @@ export class Transaction {
             throw new Error("Failed to generate signature.");
         }
 
+        // Generate address (sha256 hash of pub key)
+        // see: ...tendermint/docs/spec/blockchain/encoding.md
+        const rawAddrHash = createHash("sha256");
+        rawAddrHash.update(this.keypair.pub);
+        const addr = rawAddrHash.digest("hex").slice(0, 40);
+
         // Generate proof object
         this.proof = {
             from: this.keypair.pub.toString("base64"),
+            fromAddr: addr,
             signature: sig.toString("base64"),
         };
 

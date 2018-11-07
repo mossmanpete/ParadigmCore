@@ -29,6 +29,7 @@ export let commitState = {
     remove: 0
   },
   orderCounter: 0,
+  validators: {},
   lastBlockHeight: 0,
   lastBlockAppHash: null
 };
