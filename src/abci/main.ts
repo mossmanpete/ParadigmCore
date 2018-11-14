@@ -13,7 +13,6 @@
  */
 
 // 3rd party and STDLIB imports
-// tslint:disable-next-line:no-var-requires
 const abci: any = require("abci");
 import * as _ from "lodash";
 

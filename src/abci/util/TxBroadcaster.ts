@@ -85,7 +85,7 @@ export class TxBroadcaster {
      *
      * @param tx    {object}    raw transaction object to enqueue
      */
-    public async send(tx: SignedTransaction): Promise<any> {
+    public async send(tx: SignedTransaction): Promise<object> {
         // Create new EventEmitter for this tx
         const ee = new EventEmitter();
 
@@ -106,7 +106,7 @@ export class TxBroadcaster {
     /**
      * Internal broadcast function. Executes ABCI transactions via a queue.
      */
-    private async broadcast() {
+    private async broadcast(): Promise<void> {
         // Return immediatley if this.start() hasn't been called
         if (!(this.started)) { return; }
 

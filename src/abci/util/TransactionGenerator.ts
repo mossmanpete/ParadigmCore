@@ -149,9 +149,9 @@ export class TransactionGenerator {
     /**
      * Create and sign an ABCI transaction. Returns a signed transaction object.
      *
-     * @param rawTx {object} raw and unsigned transaction object
+     * @param rawTx {RawTransaction} raw and unsigned transaction object
      */
-    public create(rawTx: any): SignedTransaction {
+    public create(rawTx: RawTransaction): SignedTransaction {
         if (!TransactionGenerator.isValidInput(rawTx)) {
             throw new Error("Invalid transaction data.");
         }
@@ -183,7 +183,7 @@ export class TransactionGenerator {
      *
      * @param tx    {object}    raw (unencoded) transaction object.
      */
-    public verify(tx: any): boolean {
+    public verify(tx: SignedTransaction): boolean {
         let isValid: boolean; // Result of verification
 
         try {
