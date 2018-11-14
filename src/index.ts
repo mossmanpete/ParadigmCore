@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 13-November-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
