@@ -1,5 +1,5 @@
-// Import TransactionGenerator class
-const TxGen = require("../dist/abci/util/TransactionGenerator").TransactionGenerator;
+// Import TxGenerator class
+const TxGen = require("../dist/abci/util/TxGenerator").TxGenerator;
 
 // Dummy Tendermint Keys
 const privStr = '489ad37b451f4bd2baa077e39451fd16cab9d048ea9a19334de5bf552f8460b7da38c90ac19b29f107b0b344245c3795500ba24abe643456fc33dfe1d5e91b05';

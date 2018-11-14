@@ -24,7 +24,7 @@ import Contract from "web3/eth/contract";
 import { HttpProvider, WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
-import { TransactionGenerator } from "src/abci/util/TransactionGenerator";
+import { TxGenerator } from "src/abci/util/TxGenerator";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { default as err } from "../util/Codes";
 import { Logger as Log } from "../util/Logger";
@@ -169,7 +169,7 @@ export class StakeRebalancer {
 
     // Tendermint ABCI utility classes
     private broadcaster: TxBroadcaster;   // ABCI Tx broadcaster and queue
-    private txGenerator: TransactionGenerator;  // Builds and signs transactions
+    private txGenerator: TxGenerator;  // Builds and signs transactions
 
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold

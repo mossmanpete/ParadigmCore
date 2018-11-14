@@ -9,7 +9,7 @@ const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");
 let client;
 let generator;
-const app = express();
+let app = express();
 app.use(helmet());
 app.use(cors());
 app.use(bodyParser.json());

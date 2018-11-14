@@ -85,7 +85,7 @@ export class TxBroadcaster {
      *
      * @param tx    {object}    raw transaction object to enqueue
      */
-    public async send(tx: SignedTransaction): Promise<object> {
+    public async send(tx: SignedTransaction): Promise<any> {
         // Create new EventEmitter for this tx
         const ee = new EventEmitter();
 

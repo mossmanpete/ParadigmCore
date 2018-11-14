@@ -17,7 +17,7 @@
 import { createHash as hash } from "crypto";
 import { Sign, Verify } from "ed25519";
 
-export class TransactionGenerator {
+export class TxGenerator {
 
     /**
      * Returns true if an ABCI transaction is structurally valid.
@@ -152,7 +152,7 @@ export class TransactionGenerator {
      * @param rawTx {RawTransaction} raw and unsigned transaction object
      */
     public create(rawTx: RawTransaction): SignedTransaction {
-        if (!TransactionGenerator.isValidInput(rawTx)) {
+        if (!TxGenerator.isValidInput(rawTx)) {
             throw new Error("Invalid transaction data.");
         }
 
@@ -167,6 +167,7 @@ export class TransactionGenerator {
             throw new Error("Failed to generate signature.");
         }
 
+        // Append proof object to raw transaction and return
         return {
             ...rawTx,
             proof: {

@@ -21,7 +21,7 @@ import * as express from "express";
 import * as helmet from "helmet";
 
 // ParadigmCore classes and imports
-import { TransactionGenerator } from "src/abci/util/TransactionGenerator";
+import { TxGenerator } from "src/abci/util/TxGenerator";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
@@ -29,8 +29,8 @@ import { messages as msg } from "../util/static/messages";
 
 // "Globals"
 let client: TxBroadcaster;              // Tendermint client for RPC
-let generator: TransactionGenerator;    // Generates and signs ABCI tx's
-const app = express();
+let generator: TxGenerator;    // Generates and signs ABCI tx's
+let app = express();
 
 // Setup express server
 app.use(helmet());          // More secure headers

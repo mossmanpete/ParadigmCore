@@ -15,8 +15,8 @@
 // Load configuration from environment
 require("dotenv").config();
 
-// Monkey-patch special BigInt methods (semi-temporary)
-import "./util/static/monkeyPatch";
+// Patch special BigInt methods (semi-temporary)
+import "./util/static/intPatch";
 
 // Standard lib and 3rd party NPM modules
 import { EventEmitter } from "events";
@@ -24,8 +24,8 @@ import * as _ws from "ws";
 import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
-import { TransactionGenerator } from "./abci/util/TransactionGenerator";
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
+import { TxGenerator } from "./abci/util/TxGenerator";
 import { WebSocketMessage } from "./net/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";
@@ -42,11 +42,11 @@ import { startAPIserver } from "./net/server";
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
 // "Globals"
-let wss: _ws.Server;                    // OrderStream WS server
-let emitter: EventEmitter;              // Emitter to track events
-let broadcaster: TxBroadcaster;         // Internal ABCI transaction broadcaster
-let generator: TransactionGenerator;    // Signs and builds ABCI tx's
-let node: any;                          // Tendermint node instance
+let wss: _ws.Server;            // OrderStream WS server
+let emitter: EventEmitter;      // Emitter to track events
+let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
+let generator: TxGenerator;     // Signs and builds ABCI tx's
+let node: any;                  // Tendermint node instance
 
 /**
  * This function executes immediately upon this file being loaded. It is
@@ -91,7 +91,7 @@ let node: any;                          // Tendermint node instance
 
     // Construct transaction generator instance
     try {
-        generator = new TransactionGenerator({
+        generator = new TxGenerator({
             encoding: env.SIG_ENC,
             privateKey: env.PRIV_KEY,
             publicKey: env.PUB_KEY,

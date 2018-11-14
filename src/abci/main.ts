@@ -25,7 +25,7 @@ import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Logger } from "../util/Logger";
-import { TransactionGenerator } from "./util/TransactionGenerator";
+import { TxGenerator } from "./util/TxGenerator";
 import { Vote } from "./util/Vote";
 
 // ABCI handler functions
@@ -36,7 +36,7 @@ import { checkWitness, deliverWitness } from "./handlers/witness";
 // "Globals"
 let version: string;    // store current application version
 let handlers: object;   // ABCI handler functions
-let generator: TransactionGenerator;    // Used to verify Tx's
+let generator: TxGenerator;    // Used to verify Tx's
 
 // Asynchronous modules
 let tracker: OrderTracker;          // Wsed to broadcast valid orders
