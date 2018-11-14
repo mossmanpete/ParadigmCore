@@ -1,8 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const events_1 = require("events");
 class OrderTracker {
     constructor(emitter) {
         this.activated = false;
+        if (typeof (emitter) === undefined || !(emitter instanceof events_1.EventEmitter)) {
+            throw new Error("Must provide EventEmitter to constructor.");
+        }
         this.ee = emitter;
         this.txs = [];
     }

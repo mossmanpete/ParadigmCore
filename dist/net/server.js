@@ -3,12 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require("express");
-const Transaction_1 = require("../abci/util/Transaction");
+const helmet = require("helmet");
 const ExpressMessage_1 = require("../net/ExpressMessage");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");
 let client;
+let generator;
 const app = express();
+app.use(helmet());
 app.use(cors());
 app.use(bodyParser.json());
 app.use((err, req, res, next) => {
@@ -22,7 +24,10 @@ app.use((err, req, res, next) => {
 app.post("/*", async (req, res) => {
     let tx;
     try {
-        tx = new Transaction_1.Transaction("order", req.body);
+        tx = generator.create({
+            data: req.body,
+            type: "order",
+        });
     }
     catch (err) {
         Logger_1.Logger.apiErr("Failed to construct local transaction object.");
@@ -38,9 +43,10 @@ app.post("/*", async (req, res) => {
         ExpressMessage_1.Message.staticSendError(res, "Internal error, try again.", 500);
     }
 });
-async function startAPIserver(apiPort, broadcaster) {
+async function startAPIserver(apiPort, broadcaster, txGenerator) {
     try {
         client = broadcaster;
+        generator = txGenerator;
         await app.listen(apiPort);
         Logger_1.Logger.apiEvt(messages_1.messages.api.messages.servStart);
         return;

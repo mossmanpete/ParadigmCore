@@ -20,7 +20,7 @@ class Logger {
         Logger.logEvent(`${`Starting block #${height}:`.blue} Validator ${proposer.bold} is proposer.`);
     }
     static mempool(message) {
-        Logger.logEvent(`${'Mempool:'.magenta.bold} ${message}`);
+        Logger.logEvent(`${'Mempool:'.magenta} ${message}`);
     }
     static mempoolErr(message) {
         Logger.logError(`${'Mempool'.magenta} ${'Error:'.red} ${message}`);

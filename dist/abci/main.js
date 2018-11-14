@@ -8,13 +8,13 @@ const StakeRebalancer_1 = require("../async/StakeRebalancer");
 const Hasher_1 = require("../crypto/Hasher");
 const PayloadCipher_1 = require("../crypto/PayloadCipher");
 const Logger_1 = require("../util/Logger");
-const Transaction_1 = require("./util/Transaction");
 const Vote_1 = require("./util/Vote");
 const order_1 = require("./handlers/order");
 const rebalance_1 = require("./handlers/rebalance");
 const witness_1 = require("./handlers/witness");
 let version;
 let handlers;
+let generator;
 let tracker;
 let rebalancer;
 let deliverState;
@@ -32,6 +32,7 @@ async function startMain(options) {
             info,
         };
         tracker = new OrderTracker_1.OrderTracker(options.emitter);
+        generator = options.txGenerator;
         rebalancer = await StakeRebalancer_1.StakeRebalancer.create({
             broadcaster: options.broadcaster,
             finalityThreshold: options.finalityThreshold,
@@ -40,6 +41,7 @@ async function startMain(options) {
             provider: options.provider,
             stakeABI: options.stakeABI,
             stakeAddress: options.stakeAddress,
+            txGenerator: options.txGenerator,
         });
         await abci(handlers).listen(options.abciServPort);
         Logger_1.Logger.consensus(messages_1.messages.abci.messages.servStart);
@@ -114,7 +116,7 @@ function checkTx(request) {
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
     try {
-        sigOk = Transaction_1.Transaction.verify(tx);
+        sigOk = generator.verify(tx);
         if (!sigOk) {
             Logger_1.Logger.mempoolWarn(messages_1.messages.abci.messages.badSig);
             return Vote_1.Vote.invalid(messages_1.messages.abci.messages.badSig);
@@ -154,7 +156,7 @@ function deliverTx(request) {
         return Vote_1.Vote.invalid(messages_1.messages.abci.errors.decompress);
     }
     try {
-        sigOk = Transaction_1.Transaction.verify(tx);
+        sigOk = generator.verify(tx);
         if (!sigOk) {
             Logger_1.Logger.mempoolWarn(messages_1.messages.abci.messages.badSig);
             return Vote_1.Vote.invalid(messages_1.messages.abci.messages.badSig);

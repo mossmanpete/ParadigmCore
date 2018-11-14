@@ -24,6 +24,7 @@ import Contract from "web3/eth/contract";
 import { HttpProvider, WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
+import { TransactionGenerator } from "src/abci/util/TransactionGenerator";
 import { Transaction } from "../abci/util/Transaction";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { default as err } from "../util/Codes";
@@ -45,6 +46,7 @@ export class StakeRebalancer {
      *  - options.stakeABI          {array}     JSON staking contract ABI
      *  - options.stakeAddress      {string}    deployed staking contract address
      *  - options.broadcaster       {TxBroadcaster}    broadcaster instance
+     *  - options.txGenerator       {TxGenerator}      tx generator/signer
      */
     public static async create(options: any): Promise<StakeRebalancer> {
         let instance;   // Stores new StakeRebalancer instance
@@ -115,7 +117,7 @@ export class StakeRebalancer {
      * @param amount    {number}    amount staked in event
      * @param block     {number}    Ethereum block the event was recorded in.
      */
-    public static genEvtObject(staker, rType, amount, block): any {
+    public static genEvtObject(staker, rType, amount, block): StakeEvent {
         let type: string; // Parsed event type
 
         // Detect event type
@@ -166,8 +168,9 @@ export class StakeRebalancer {
     private stakeABI: object[];         // Staking contract ABI
     private stakeAddress: string;       // Staking contract address
 
-    // Tendermint ABCI connection
+    // Tendermint ABCI utility classes
     private broadcaster: TxBroadcaster;   // ABCI Tx broadcaster and queue
+    private txGenerator: TransactionGenerator;  // Builds and signs transactions
 
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold
@@ -192,8 +195,9 @@ export class StakeRebalancer {
         this.periodLength = opts.periodLength;
         this.periodNumber = 0;
 
-        // Local ABCI transaction broadcaster
+        // Local ABCI transaction broadcaster and generator
         this.broadcaster = opts.broadcaster;
+        this.txGenerator = opts.txGenerator;
 
         // Finality threshold
         this.finalityThreshold = opts.finalityThreshold;
@@ -400,16 +404,16 @@ export class StakeRebalancer {
         }
 
         // Pull event parameters
-        const staker = res.returnValues.staker.toLowerCase();  // Address
-        const rType = res.event.toLowerCase();                 // Raw event type
-        // const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
-        const amount = BigInt.fromString((res.returnValues.amount));  // Amount staked
-        const block = res.blockNumber;                         // Event block
+        const staker = res.returnValues.staker.toLowerCase();
+        const rType = res.event.toLowerCase();
+        const amount = BigInt.fromString((res.returnValues.amount));
+        const block = res.blockNumber;
 
         // Generate event object
         const event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
 
         // See if this is a historical event that has already matured
+        // @TODO: should be this.currentHeight?
         if ((this.initHeight - block) > this.finalityThreshold) {
             this.updateBalance(event);
             this.execEventTx(event);
@@ -501,9 +505,9 @@ export class StakeRebalancer {
      * implements the same logic as the state machine to ensure balances in
      * state are up-to-date with the instance balances.
      *
-     * @param evt   {object}    event object
+     * @param evt   {StakeEvent}    event object
      */
-    private updateBalance(evt: any): void {
+    private updateBalance(evt: any | StakeEvent): void {
         // If no stake is present, set balance to stake amount
         if (!this.balances.hasOwnProperty(evt.staker)) {
             this.balances[evt.staker] = evt.amount;
@@ -534,26 +538,6 @@ export class StakeRebalancer {
     }
 
     /**
-     * Construct a new event ABCI transaction object.
-     *
-     * @param _staker   {string}    Ethereum address string
-     * @param _type     {string}    stake event type ('add' or 'remove')
-     * @param _block    {number}    block height event was mined in
-     * @param _amt      {number}    amount staked or unstaked
-     */
-    private genEventTx(staker, type, block, amount): object {
-        // Construct and sign transaction object
-        const tx = new Transaction("witness", {
-            amount,
-            block,
-            staker,
-            type,
-        });
-
-        return tx;
-    }
-
-    /**
      * Generates a rebalance transaction object by computing proportional
      * allocation of transaction throughput based on stake size.
      *
@@ -572,7 +556,7 @@ export class StakeRebalancer {
             map = StakeRebalancer.genLimits(this.balances, this.periodLimit);
         }
 
-        // Create and sign transaction object
+        /* Create and sign transaction object
         const tx = new Transaction("rebalance", {
             limits: map,
             round: {
@@ -581,6 +565,19 @@ export class StakeRebalancer {
                 number: round + 1,
                 startsAt: start - 1,    // TODO: find a test case for this
             },
+        });*/
+
+        const tx = this.txGenerator.create({
+            data: {
+                limits: map,
+                round: {
+                    endsAt: start + length,
+                    limit: this.periodLimit,
+                    number: round + 1,
+                    startsAt: start - 1,
+                },
+            },
+            type: "rebalance",
         });
 
         // Return constructed transaction object
@@ -592,11 +589,26 @@ export class StakeRebalancer {
      *
      * @param event     {object}    event object
      */
-    private execEventTx(event: any): void {
-        const tx = this.genEventTx(
-            event.staker, event.type, event.block, event.amount,
-        );
+    private execEventTx(event: StakeEvent): void {
+        /* Create transaction object
+        const tx = new Transaction("witness", {
+            amount: event.amount,
+            block: event.block,
+            staker: event.staker,
+            type: event.type,
+        });*/
 
+        const tx = this.txGenerator.create({
+            data: {
+                amount: event.amount,
+                block: event.block,
+                staker: event.staker,
+                type: event.type,
+            },
+            type: "witness",
+        });
+
+        // Execute local ABCI transaction
         const code = this.execAbciTx(tx);
         if (code !== 0) {
             Log.rebalancerErr("Event Tx failed.");

@@ -1,14 +1,122 @@
-// tslint:disable
+/**
+ * ===========================
+ * ParadigmCore: Blind Star
+ * @name TransactionGenerator.ts
+ * @module src/abci
+ * ===========================
+ *
+ * @author Henry Harder
+ * @date (initial)  08-November-2018
+ * @date (modified) 13-November-2018
+ *
+ * A class that allows for the generation of signed ABCI transaction, and
+ * provides methods for verifying transaction signatures.
+ */
 
+// Ed25519 signature implementation and crypto
 import { createHash as hash } from "crypto";
 import { Sign, Verify } from "ed25519";
 
 export class TransactionGenerator {
+
+    /**
+     * Returns true if an ABCI transaction is structurally valid.
+     *
+     * @param rawTx  {object}    raw transaction object
+     */
+    public static isValidInput(rawTx: RawTransaction): boolean {
+        // All Tx types should have the same outer level structure
+        if (
+            typeof(rawTx) !== "object" ||
+            Object.keys(rawTx).length !== 2 ||
+            typeof(rawTx.type) !== "string" ||
+            typeof(rawTx.data) !== "object"
+        ) {
+            return false;
+        }
+
+        // Validation rules vary based on tx type
+        switch (rawTx.type) {
+            // OrderBroadcast type
+            case "order": {
+                if (
+                    typeof(rawTx.data.posterSignature) !== "object" ||
+                    typeof(rawTx.data.subContract) !== "string"
+                ) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            // StreamBroadcast type
+            // @TODO: complete stream spec and implement validation rules
+            case "stream": { return true; }
+
+            // Ethereum event attestation
+            case "witness": {
+                if (
+                    Object.keys(rawTx.data).length !== 4 ||
+                    typeof(rawTx.data.block) !== "number" ||
+                    typeof(rawTx.data.staker) !== "string"
+                ) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            // Rate limit update Tx
+            case "rebalance": {
+                if (
+                    Object.keys(rawTx.data).length !== 2 ||
+                    typeof(rawTx.data.limits) !== "object" ||
+                    typeof(rawTx.data.round) !== "object" ||
+                    Object.keys(rawTx.data.round).length !== 4 ||
+                    typeof(rawTx.data.round.endsAt) !== "number" ||
+                    typeof(rawTx.data.round.startsAt) !== "number" ||
+                    typeof(rawTx.data.round.number) !== "number" ||
+                    typeof(rawTx.data.round.limit) !== "number"
+                ) {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+
+            // All other types (or undefined, etc)
+            default: {
+                return false;
+            }
+        }
+    }
+
+    // Tendermint key "pair"
     private pubKey: Buffer;     // base64 encoded ed25519 public key
     private privKey: Buffer;    // base64 encoded ed25519 private key
     private address: Buffer;    // SHA256 (hexidecimal) digest of public key
 
+    // Configuration options
+    private encoding: string;
+
+    /**
+     * Create a new TransactionGenerator instance.
+     *
+     * @param options   {object}    options object with properties:
+     *  - options.privateKey    {string}    base64 encoded ed25519 private key
+     *  - options.publicKey     {string}    base64 encoded ed25519 public key
+     */
     constructor(options) {
+        // Set signature encoding
+        switch (options.encoding) {
+            case "base64": { this.encoding = "base64"; break; }
+            case "hex": { this.encoding = "hex"; break; }
+            case undefined: { this.encoding = "hex"; break; }
+            default: {
+                throw new Error("Invalid encoding.");
+            }
+        }
+
         // Load keys from base64 encoded strings
         try {
             this.pubKey = Buffer.from(options.publicKey, "base64");
@@ -22,7 +130,7 @@ export class TransactionGenerator {
             throw new Error("Supplied keypair of invalid length.");
         }
 
-        let tempAddr: string;   // Temporarily store computed address string
+        let tempAddr: string;   // Computed address string
 
         // Generate address from public key
         try {
@@ -36,5 +144,70 @@ export class TransactionGenerator {
         } catch (error) {
             throw new Error("Unable to generate address from public key.");
         }
+    }
+
+    /**
+     * Create and sign an ABCI transaction. Returns a signed transaction object.
+     *
+     * @param rawTx {object} raw and unsigned transaction object
+     */
+    public create(rawTx: any): SignedTransaction {
+        if (!TransactionGenerator.isValidInput(rawTx)) {
+            throw new Error("Invalid transaction data.");
+        }
+
+        let message: Buffer;    // buffered/encoded raw message
+        let signature: Buffer;  // computed message signature
+
+        try {
+            // Buffer message and generate signature
+            message = Buffer.from(JSON.stringify(rawTx.data), "utf8");
+            signature = Sign(message, this.privKey);
+        } catch (error) {
+            throw new Error("Failed to generate signature.");
+        }
+
+        return {
+            ...rawTx,
+            proof: {
+                from: this.pubKey.toString(this.encoding),
+                fromAddr: this.address.toString(this.encoding),
+                signature: signature.toString(this.encoding),
+            },
+        };
+    }
+
+    /**
+     * Returns true if a Tx's signature object is valid (i.e. message matches
+     * signature, and "from" address matches recovered signature.).
+     *
+     * @param tx    {object}    raw (unencoded) transaction object.
+     */
+    public verify(tx: any): boolean {
+        let isValid: boolean; // Result of verification
+
+        try {
+            // Buffer and encode message, signature, and public key
+            const msg = Buffer.from(JSON.stringify(tx.data), "utf8");
+            const sig = Buffer.from(tx.proof.signature, this.encoding);
+            const pub = Buffer.from(tx.proof.from, this.encoding);
+
+            // Verify signature
+            isValid = Verify(msg, sig, pub);
+
+            // Check that "fromAddr" matches public key hash
+            const a = hash("sha256").update(pub).digest("hex").slice(0, 40);
+            if (Buffer.from(a, "hex").toString(this.encoding) !== tx.proof.fromAddr) {
+                isValid = false;
+            }
+        } catch (err) {
+            return false;
+        }
+
+        // Confirm Verify() function returns boolean
+        if (typeof(isValid) !== "boolean") { return false; }
+
+        // Otherwise, return result
+        return isValid;
     }
 }

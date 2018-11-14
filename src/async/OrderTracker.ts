@@ -22,6 +22,10 @@ export class OrderTracker {
     private activated: boolean = false; // Events broadcast if true
 
     constructor(emitter: EventEmitter) {
+        if (typeof(emitter) === undefined || !(emitter instanceof EventEmitter)) {
+            throw new Error("Must provide EventEmitter to constructor.");
+        }
+
         this.ee = emitter;
         this.txs = [];
     }

@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const url_1 = require("url");
 const Web3 = require("web3");
-const Transaction_1 = require("../abci/util/Transaction");
 const Codes_1 = require("../util/Codes");
 const Logger_1 = require("../util/Logger");
 const messages_1 = require("../util/static/messages");
@@ -73,6 +72,7 @@ class StakeRebalancer {
         this.periodLength = opts.periodLength;
         this.periodNumber = 0;
         this.broadcaster = opts.broadcaster;
+        this.txGenerator = opts.txGenerator;
         this.finalityThreshold = opts.finalityThreshold;
         this.stakeABI = opts.stakeABI;
         this.stakeAddress = opts.stakeAddress;
@@ -267,15 +267,6 @@ class StakeRebalancer {
         }
         return;
     }
-    genEventTx(staker, type, block, amount) {
-        const tx = new Transaction_1.Transaction("witness", {
-            amount,
-            block,
-            staker,
-            type,
-        });
-        return tx;
-    }
     genRebalanceTx(round, start, length) {
         let map;
         if (round === 0) {
@@ -284,19 +275,30 @@ class StakeRebalancer {
         else {
             map = StakeRebalancer.genLimits(this.balances, this.periodLimit);
         }
-        const tx = new Transaction_1.Transaction("rebalance", {
-            limits: map,
-            round: {
-                endsAt: start + length,
-                limit: this.periodLimit,
-                number: round + 1,
-                startsAt: start - 1,
+        const tx = this.txGenerator.create({
+            data: {
+                limits: map,
+                round: {
+                    endsAt: start + length,
+                    limit: this.periodLimit,
+                    number: round + 1,
+                    startsAt: start - 1,
+                },
             },
+            type: "rebalance",
         });
         return tx;
     }
     execEventTx(event) {
-        const tx = this.genEventTx(event.staker, event.type, event.block, event.amount);
+        const tx = this.txGenerator.create({
+            data: {
+                amount: event.amount,
+                block: event.block,
+                staker: event.staker,
+                type: event.type,
+            },
+            type: "witness",
+        });
         const code = this.execAbciTx(tx);
         if (code !== 0) {
             Logger_1.Logger.rebalancerErr("Event Tx failed.");

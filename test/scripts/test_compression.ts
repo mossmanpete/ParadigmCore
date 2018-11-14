@@ -1,5 +1,6 @@
-// Potential way to encode/compress orders for transport inside a URL 
+// Potential way to encode/compress orders for transport inside a URL
 // @date 20 Sept 2018
+// tslint:disable
 
 let zlib = require('zlib');
 

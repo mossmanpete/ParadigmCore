@@ -86,14 +86,12 @@ export class TxBroadcaster {
      *
      * @param tx    {object}    raw transaction object to enqueue
      */
-    public async send(tx: Transaction): Promise<any> {
+    public async send(tx: SignedTransaction): Promise<any> {
         // Create new EventEmitter for this tx
         const ee = new EventEmitter();
 
         // Resolve or reject promise based on EE events
         const res = new Promise((resolve, reject) => {
-
-            // Attach handlers
             ee.on("sent", resolve);     // Successful request, resolve to resp.
             ee.on("failed", reject);    // Failed request, resolve to error.
             ee.on("error", reject);     // Error in EE, resolve to null.

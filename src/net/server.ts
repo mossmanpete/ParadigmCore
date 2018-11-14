@@ -18,21 +18,24 @@
 import * as bodyParser from "body-parser";
 import cors = require("cors");
 import * as express from "express";
+import * as helmet from "helmet";
 
 // ParadigmCore classes and imports
-import { Transaction } from "../abci/util/Transaction";
+import { TransactionGenerator } from "src/abci/util/TransactionGenerator";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
 
 // "Globals"
-let client: TxBroadcaster; // Tendermint client for RPC
+let client: TxBroadcaster;              // Tendermint client for RPC
+let generator: TransactionGenerator;    // Generates and signs ABCI tx's
 const app = express();
 
 // Setup express server
-app.use(cors());
-app.use(bodyParser.json());
+app.use(helmet());          // More secure headers
+app.use(cors());            // Cross-origin resource sharing (helps browsers)
+app.use(bodyParser.json()); // JSON request and response
 
 app.use((err, req, res, next) => {
     try {
@@ -44,10 +47,13 @@ app.use((err, req, res, next) => {
 
 app.post("/*", async (req, res) => {
     // Create transaction object
-    let tx: Transaction;
+    let tx: SignedTransaction;
 
     try {
-        tx = new Transaction("order", req.body);
+        tx = generator.create({
+            data: req.body,
+            type: "order",
+        });
     } catch (err) {
         Logger.apiErr("Failed to construct local transaction object.");
         Message.staticSendError(res, "Internal transaction error, try again.", 500);
@@ -73,10 +79,11 @@ app.post("/*", async (req, res) => {
  * @param apiPort       {number}        port to bind API server to
  * @param broadcaster   {TxBroadcaster} local transaction broadcaster
  */
-export async function startAPIserver(apiPort, broadcaster) {
+export async function startAPIserver(apiPort, broadcaster, txGenerator) {
     try {
-        // Create HTTP poster instance
+        // Store TxBroadcaster and TxGenerator
         client = broadcaster;
+        generator = txGenerator;
 
         // Start API server
         await app.listen(apiPort);

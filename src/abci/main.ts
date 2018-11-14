@@ -26,7 +26,7 @@ import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Logger } from "../util/Logger";
-import { Transaction } from "./util/Transaction";
+import { TransactionGenerator } from "./util/TransactionGenerator";
 import { Vote } from "./util/Vote";
 
 // ABCI handler functions
@@ -37,6 +37,7 @@ import { checkWitness, deliverWitness } from "./handlers/witness";
 // "Globals"
 let version: string;    // store current application version
 let handlers: object;   // ABCI handler functions
+let generator: TransactionGenerator;    // Used to verify Tx's
 
 // Asynchronous modules
 let tracker: OrderTracker;          // Wsed to broadcast valid orders
@@ -77,6 +78,9 @@ export async function startMain(options: any): Promise<null> {
         // Queue for valid broadcast transactions (order/stream)
         tracker = new OrderTracker(options.emitter);
 
+        // Transaction generator/verifyer
+        generator = options.txGenerator;
+
         // Configure StakeRebalancer module
         rebalancer = await StakeRebalancer.create({
             broadcaster: options.broadcaster,
@@ -86,6 +90,7 @@ export async function startMain(options: any): Promise<null> {
             provider: options.provider,
             stakeABI: options.stakeABI,
             stakeAddress: options.stakeAddress,
+            txGenerator: options.txGenerator,
         });
 
         // Start ABCI server (connection to Tendermint core)
@@ -212,7 +217,7 @@ function checkTx(request): Vote {
       that the validator's address is in the current validator set.
     */
     try {
-        sigOk = Transaction.verify(tx);
+        sigOk = generator.verify(tx);
         if (!sigOk) {
             // Invalid validator signature
             Logger.mempoolWarn(msg.abci.messages.badSig);
@@ -283,7 +288,7 @@ function deliverTx(request): Vote {
       that the validator's address is in the current validator set.
     */
     try {
-       sigOk = Transaction.verify(tx);
+       sigOk = generator.verify(tx);
        if (!sigOk) {
            // Invalid validator signature
            Logger.mempoolWarn(msg.abci.messages.badSig);

@@ -1,4 +1,5 @@
 // Avoids compiler warnings when using ESnext BigInt
+// tslint:disable
 
 interface BigInt extends Number {
     // Normal BigInt interface
