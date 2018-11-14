@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 13-November-2018
  *
  * This class is responsible for executing local ABCI transactions. It
  * implements a queue, and allows multiple "concurrant" usage of a given
@@ -20,7 +20,6 @@ import { EventEmitter } from "events";
 // ParadigmCore classes
 import { PayloadCipher } from "../../crypto/PayloadCipher";
 import { Logger } from "../../util/Logger";
-import { Transaction } from "./Transaction";
 
 export class TxBroadcaster {
     private client: any;            // Tendermint RPC client

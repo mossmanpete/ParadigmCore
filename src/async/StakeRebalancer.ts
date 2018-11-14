@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 13-November-2018
  *
  * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -25,7 +25,6 @@ import { HttpProvider, WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
 import { TransactionGenerator } from "src/abci/util/TransactionGenerator";
-import { Transaction } from "../abci/util/Transaction";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { default as err } from "../util/Codes";
 import { Logger as Log } from "../util/Logger";
@@ -556,17 +555,7 @@ export class StakeRebalancer {
             map = StakeRebalancer.genLimits(this.balances, this.periodLimit);
         }
 
-        /* Create and sign transaction object
-        const tx = new Transaction("rebalance", {
-            limits: map,
-            round: {
-                endsAt: start + length,
-                limit: this.periodLimit,
-                number: round + 1,
-                startsAt: start - 1,    // TODO: find a test case for this
-            },
-        });*/
-
+        // Create and sign transaction object
         const tx = this.txGenerator.create({
             data: {
                 limits: map,
@@ -590,14 +579,7 @@ export class StakeRebalancer {
      * @param event     {object}    event object
      */
     private execEventTx(event: StakeEvent): void {
-        /* Create transaction object
-        const tx = new Transaction("witness", {
-            amount: event.amount,
-            block: event.block,
-            staker: event.staker,
-            type: event.type,
-        });*/
-
+        // Create and sign transaction object
         const tx = this.txGenerator.create({
             data: {
                 amount: event.amount,

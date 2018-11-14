@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 13-November-2018
  *
  * The OrderTracker class stores valid txs submitted within a consensus
  * round, and triggers public broadcast at the end of each round.

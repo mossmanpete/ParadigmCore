@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 13-November-2018
  *
  * Main ParadigmCore state machine implementation and state transition logic.
  */
