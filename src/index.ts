@@ -12,12 +12,10 @@
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
 
-// tslint:disable
-
 // Load configuration from environment
 require("dotenv").config();
 
-// Monkey-patch special BigInt methods
+// Monkey-patch special BigInt methods (semi-temporary)
 import "./util/static/monkeyPatch";
 
 // Standard lib and 3rd party NPM modules
@@ -26,11 +24,11 @@ import * as _ws from "ws";
 import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
+import { TransactionGenerator } from "./abci/util/TransactionGenerator";
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { WebSocketMessage } from "./net/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";
-import { TransactionGenerator } from "./abci/util/TransactionGenerator";
 
 // State object templates
 import { commitState as cState } from "./state/commitState";
@@ -73,7 +71,7 @@ let node: any;                          // Tendermint node instance
             rpc: {
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
-        });        
+        });
     } catch (error) {
         Logger.consensusErr("failed initializing Tendermint.");
         Logger.logError(msg.general.errors.fatal);
@@ -137,7 +135,7 @@ let node: any;                          // Tendermint node instance
             provider: env.WEB3_PROVIDER,
             stakeABI: STAKE_CONTRACT_ABI,
             stakeAddress: env.STAKE_CONTRACT_ADDR,
-            txGenerator: generator
+            txGenerator: generator,
         };
 
         // Wait for main ABCI application to start
