@@ -7,13 +7,17 @@
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
  * Hashing class to allow creation of state hashes. Also used to generate
  * ID's (orderID) for valid orders.
  */
 
+// Object hashing library (3rd party)
 import * as hash from "object-hash";
+
+// ParadigmCore utility
+import { bigIntReplacer } from "../util/static/bigIntUtils";
 
 export class Hasher {
 
@@ -22,8 +26,7 @@ export class Hasher {
    *
    * @param order {paradigm.Order} A Paradigm order object to be hashed
    */
-  public static hashOrder(order: any): string {
-    // TODO: change to @type: paradigm.Order
+  public static hashOrder(order: OrderData): string {
     const hashPrep: object = {
       makerValues: order.makerValues,
       posterSignature: order.posterSignature,
@@ -44,16 +47,17 @@ export class Hasher {
    *
    * @param state {State} the current state object
    */
-  public static hashState(state: any): string {
+  public static hashState(state: State): string {
     const hashPrep: object = {
-      balances: JSON.stringify(state.balances),
+      balances: JSON.stringify(state.balances, bigIntReplacer),
       endHeight: state.round.endsAt,
-      events: JSON.stringify(state.events),
+      events: JSON.stringify(state.events, bigIntReplacer),
       lastHeight: state.lastBlockHeight,
       limits: JSON.stringify(state.limits),
       ordernum: state.orderCounter,
       roundNumber: state.round.number,
       startHeight: state.round.startsAt,
+      lastHash: state.lastBlockAppHash
     };
 
     try {

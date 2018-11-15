@@ -4,7 +4,7 @@ const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 exports.messages = {
     general: {
         messages: {
-            start: "Initialization complete, begining new block production."
+            start: "Initialization complete, beginning new block production."
         },
         errors: {
             fatal: "Fatal error detected. Exiting."
@@ -41,7 +41,7 @@ exports.messages = {
             noStake: "New order rejected: invalid poster or no poster stake.",
             verified: "New order verified and added to OrderStream queue (deliverTx).",
             servStart: `ABCI server started on port ${ABCI_PORT}.`,
-            roundDiff: "This round deliverTx state is more than 1 period ahead of commited state.",
+            roundDiff: "This round deliverTx state is more than 1 period ahead of committed state.",
             badSig: "Rejected ABCI transaction with invalid validator signature."
         }
     },

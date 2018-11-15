@@ -7,9 +7,9 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
- * Handler functions for verifying ABCI evet Witness transactions,
+ * Handler functions for verifying ABCI event Witness transactions,
  * originating from validator nodes. Implements state transition logic as
  * specified in the spec for this TX type.
  */
@@ -30,7 +30,7 @@ const { CONF_THRESHOLD, NODE_ENV } = process.env;
 export function checkWitness(tx: SignedWitnessTx, state: State): Vote {
     if (isValidStakeEvent(tx.data, state)) {
         Logger.mempool("Stake witness transaction accepted.");
-        return Vote.valid("Stake witnesss transaction accepted.");
+        return Vote.valid("Stake witness transaction accepted.");
     } else {
         Logger.mempoolWarn("Invalid witness event rejected.");
         return Vote.invalid("Invalid witness event rejected.");
@@ -53,11 +53,13 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
         return Vote.invalid();
     }
 
-    // Unpack event data into local variables
+    // Unpack/parse event data
     const staker: string = tx.data.staker;
     const type: string = tx.data.type;
     const block: number = tx.data.block;
-    const amount: BigInt = BigInt.fromString(tx.data.amount);
+
+    // We must remove the trailing "n" from BigInt strings
+    const amount: bigint = BigInt(tx.data.amount.slice(0, -1));
 
     switch (state.events.hasOwnProperty(block)) {
         // Block is already in state
@@ -148,7 +150,8 @@ function isValidStakeEvent(data: any, state: State): boolean {
         typeof(data.staker) !== "string" ||
         typeof(data.type) !== "string" ||
         typeof(data.block) !== "number" ||
-        typeof(data.amount) !== "string"
+        typeof(data.amount) !== "string" ||
+        data.amount.slice(-1) !== "n"
     ) {
         return false;
     } else if (!(data.type === "add" || data.type === "remove")) {
@@ -173,7 +176,7 @@ function updateMappings(
     state: State,
     staker: string,
     block: number,
-    amount: BigInt,
+    amount: bigint,
     type: string
 ) {
     if (
@@ -214,7 +217,7 @@ function updateMappings(
             }
 
             // Remove balance entry if now empty
-            if (state.balances[staker] === 0) {
+            if (state.balances[staker] === BigInt(0)) {
                 delete state.balances[staker];
             }
 
@@ -248,7 +251,7 @@ function updateMappings(
 function applyEvent(
     state: State,
     staker: string,
-    amount: any,
+    amount: bigint,
     type: string
 ): void {
     switch (type) {

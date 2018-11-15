@@ -1,5 +1,5 @@
 # OrderStream WebSocket API
-The most fundemental piece of the OrderStream network is the event-based orderbook. The primary way to subscribe to this event stream is via a node's WebSocket endpoint:
+The most fundamental piece of the OrderStream network is the event-based order book. The primary way to subscribe to this event stream is via a node's WebSocket endpoint:
 ```
 ws://localhost:4242/
 ```
@@ -41,7 +41,7 @@ ws.on("message", (msg) => { // msg is the string of above
     let eventObject = JSON.parse(msg);
     
     // ... do external stuff with the order data ...
-    // You can also contstruct Paradigm Order objects:
+    // You can also construct Paradigm Order objects:
     
     let orderObject = eventObject.data;
     let order = new paradigm.Order(orderObject)
@@ -49,7 +49,7 @@ ws.on("message", (msg) => { // msg is the string of above
     console.log(JSON.stringify(order)); // view the order
 
     // ... and then participate in trades via the OrderGateway:
-    // (assuming the propper logic is implemented)
+    // (assuming the proper logic is implemented)
 
     order.take(taker, takerArguments);
 });

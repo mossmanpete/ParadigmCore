@@ -80,15 +80,17 @@ function genLimits(bals, limit) {
     let total = BigInt(0);
     const output = {};
     Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && _.isEqual(typeof (bals[k]), "bigint")) {
+        if (bals.hasOwnProperty(k) && typeof (bals[k]) === "bigint") {
             total += bals[k];
         }
     });
     Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && _.isEqual(typeof (bals[k]), "bigint")) {
-            const pLimit = (bals[k].toNumber() / total.toNumber());
+        if (bals.hasOwnProperty(k) && typeof (bals[k]) === "bigint") {
+            const bal = parseInt(bals[k].toString(), 10);
+            const tot = parseInt(total.toString(), 10);
+            const lim = (bal / tot) * limit;
             output[k] = {
-                orderLimit: Math.floor(pLimit * limit),
+                orderLimit: Math.floor(lim),
                 streamLimit: 1,
             };
         }

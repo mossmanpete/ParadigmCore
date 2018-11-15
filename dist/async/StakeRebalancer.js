@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const _ = require("lodash");
 const url_1 = require("url");
 const Web3 = require("web3");
 const Codes_1 = require("../util/Codes");
@@ -15,7 +14,7 @@ class StakeRebalancer {
             }
             const staker = res.returnValues.staker.toLowerCase();
             const rType = res.event.toLowerCase();
-            const amount = BigInt.fromString((res.returnValues.amount));
+            const amount = BigInt(res.returnValues.amount);
             const block = res.blockNumber;
             const event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
             if ((this.initHeight - block) > this.finalityThreshold) {
@@ -99,15 +98,17 @@ class StakeRebalancer {
         let total = BigInt(0);
         const output = {};
         Object.keys(bals).forEach((k, v) => {
-            if (bals.hasOwnProperty(k) && _.isEqual(typeof (bals[k]), "bigint")) {
+            if (bals.hasOwnProperty(k) && typeof (bals[k]) === "bigint") {
                 total += bals[k];
             }
         });
         Object.keys(bals).forEach((k, v) => {
-            if (bals.hasOwnProperty(k) && _.isEqual(typeof (bals[k]), "bigint")) {
-                const pLimit = (bals[k].toNumber() / total.toNumber());
+            if (bals.hasOwnProperty(k) && typeof (bals[k]) === "bigint") {
+                const bal = parseInt(bals[k].toString(), 10);
+                const tot = parseInt(total.toString(), 10);
+                const lim = (bal / tot) * limit;
                 output[k] = {
-                    orderLimit: Math.floor(pLimit * limit),
+                    orderLimit: Math.floor(lim),
                     streamLimit: 1,
                 };
             }
@@ -262,7 +263,7 @@ class StakeRebalancer {
                 return;
             }
         }
-        if (this.balances[evt.staker] === 0) {
+        if (this.balances[evt.staker] === BigInt(0)) {
             delete this.balances[evt.staker];
         }
         return;

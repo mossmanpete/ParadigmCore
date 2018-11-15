@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 15-November-2018
  *
  * Handler functions for verifying ABCI Rebalance transactions, originating
  * from validator nodes. Implements state transition logic as specified in the
@@ -115,7 +115,7 @@ export function deliverRebalance(
                     // If proposed mapping matches mapping constructed from
                     // in state balances.
 
-                    // Begin state modificiation
+                    // Begin state modification
                     state.round.number += 1;
                     state.round.startsAt = proposal.round.startsAt;
                     state.round.endsAt = proposal.round.endsAt;
@@ -152,26 +152,29 @@ export function deliverRebalance(
  * @param bals  {object} current in-state staked balances
  * @param limit     {number} the total number of orders accepted in the period
  */
-function genLimits(bals: Balances, limit: number): any {
-    let total: any = BigInt(0); // Total amount currenty staked
-    const output: object = {};  // Computed output mapping
+function genLimits(bals: Balances, limit: number): Limits {
+    let total: bigint = BigInt(0);      // Total amount currently staked
+    const output: Limits = {};          // Generated output mapping
 
     // Calculate total balance currently staked
     Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
             total += bals[k];
         }
     });
 
     // Compute the rate-limits for each staker based on stake size
     Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
-            const pLimit: number = (bals[k].toNumber() /  total.toNumber());
+        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
+            // Compute proportional order limit
+            const bal = parseInt(bals[k].toString(), 10);
+            const tot = parseInt(total.toString(), 10);
+            const lim = (bal / tot) * limit;
 
             // Create limit object for each address
             output[k] = {
                 // orderLimit is proportional to stake size
-                orderLimit: Math.floor(pLimit * limit),
+                orderLimit: Math.floor(lim),
 
                 // streamLimit is always 1, regardless of stake size
                 streamLimit: 1,
@@ -179,6 +182,6 @@ function genLimits(bals: Balances, limit: number): any {
         }
     });
 
-    // Return computed output mapping
+    // Return constructed output mapping.
     return output;
 }

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 13-November-2018
+ * @date (modified) 15-November-2018
  *
  * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -78,25 +78,28 @@ export class StakeRebalancer {
      * @param limit     {number} total number of orders accepted per period
      */
     public static genLimits(bals: Balances, limit: number): Limits {
-        let total: any = BigInt(0);  // Total amount currently staked
-        const output: Limits = {};      // Generated output mapping
+        let total: bigint = BigInt(0);      // Total amount currently staked
+        const output: Limits = {};          // Generated output mapping
 
         // Calculate total balance currently staked
         Object.keys(bals).forEach((k, v) => {
-            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+            if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
                 total += bals[k];
             }
         });
 
         // Compute the rate-limits for each staker based on stake size
         Object.keys(bals).forEach((k, v) => {
-            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
-                const pLimit: number = (bals[k].toNumber() /  total.toNumber());
+            if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
+                // Compute proportional order limit
+                const bal = parseInt(bals[k].toString(), 10);
+                const tot = parseInt(total.toString(), 10);
+                const lim = (bal / tot) * limit;
 
                 // Create limit object for each address
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor(pLimit * limit),
+                    orderLimit: Math.floor(lim),
 
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
@@ -113,13 +116,13 @@ export class StakeRebalancer {
      *
      * @param staker    {string}    address of staking party
      * @param rType     {string}    stake type (`stakemade` or `stakeremoved`)
-     * @param amount    {BigInt}    amount staked in event
+     * @param amount    {bigint}    amount staked in event
      * @param block     {number}    Ethereum block the event was recorded in.
      */
     public static genEvtObject(
         staker: string,
         rType: string,
-        amount: BigInt,
+        amount: bigint,
         block: number
     ): RawStakeEvent {
         let type: string; // Parsed event type
@@ -410,7 +413,7 @@ export class StakeRebalancer {
         // Pull event parameters
         const staker = res.returnValues.staker.toLowerCase();
         const rType = res.event.toLowerCase();
-        const amount = BigInt.fromString((res.returnValues.amount));
+        const amount = BigInt(res.returnValues.amount);
         const block = res.blockNumber;
 
         // Generate event object
@@ -511,7 +514,7 @@ export class StakeRebalancer {
      *
      * @param evt   {StakeEvent}    event object
      */
-    private updateBalance(evt: any): void {
+    private updateBalance(evt: RawStakeEvent): void {
         // If no stake is present, set balance to stake amount
         if (!this.balances.hasOwnProperty(evt.staker)) {
             this.balances[evt.staker] = evt.amount;
@@ -535,7 +538,7 @@ export class StakeRebalancer {
         }
 
         // Remove balance entry if it is now 0
-        if (this.balances[evt.staker] === 0) {
+        if (this.balances[evt.staker] === BigInt(0)) {
             delete this.balances[evt.staker];
         }
         return;

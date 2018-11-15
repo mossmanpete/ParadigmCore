@@ -12,6 +12,7 @@ const Vote_1 = require("./util/Vote");
 const order_1 = require("./handlers/order");
 const rebalance_1 = require("./handlers/rebalance");
 const witness_1 = require("./handlers/witness");
+const bigIntUtils_1 = require("../util/static/bigIntUtils");
 let version;
 let handlers;
 let generator;
@@ -210,8 +211,9 @@ function commit(request) {
         Logger_1.Logger.consensus(`Commit and broadcast complete. Current state hash: ${stateHash}`);
     }
     catch (err) {
+        console.log(err);
         Logger_1.Logger.consensusErr(messages_1.messages.abci.errors.broadcast);
     }
-    console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
+    console.log(`\n... Current state: ${JSON.stringify(commitState, bigIntUtils_1.bigIntReplacer)}\n`);
     return stateHash;
 }

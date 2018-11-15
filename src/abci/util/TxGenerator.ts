@@ -1,13 +1,13 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name TransactionGenerator.ts
+ * @name TxGenerator.ts
  * @module src/abci
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  08-November-2018
- * @date (modified) 13-November-2018
+ * @date (modified) 15-November-2018
  *
  * A class that allows for the generation of signed ABCI transaction, and
  * provides methods for verifying transaction signatures.
@@ -16,11 +16,13 @@
 // Ed25519 signature implementation and crypto
 import { createHash as hash } from "crypto";
 import { Sign, Verify } from "ed25519";
+import { bigIntReplacer } from "../../util/static/bigIntUtils";
 
 export class TxGenerator {
 
     /**
-     * Returns true if an ABCI transaction is structurally valid.
+     * Returns true if an ABCI transaction is structurally valid (stateless
+     * validity).
      *
      * @param rawTx  {object}    raw transaction object
      */
@@ -97,7 +99,7 @@ export class TxGenerator {
     // Tendermint key "pair"
     private pubKey: Buffer;     // base64 encoded ed25519 public key
     private privKey: Buffer;    // base64 encoded ed25519 private key
-    private address: Buffer;    // SHA256 (hexidecimal) digest of public key
+    private address: Buffer;    // SHA256 (hexadecimal) digest of public key
 
     // Configuration options
     private encoding: string;
@@ -142,7 +144,7 @@ export class TxGenerator {
             tempAddr = hash("sha256").update(this.pubKey).digest("hex");
             tempAddr = tempAddr.slice(0, 40);
 
-            // Get raw buffer and store as addres
+            // Get raw buffer and store as address
             this.address = Buffer.from(tempAddr, "hex");
         } catch (error) {
             throw new Error("Unable to generate address from public key.");
@@ -163,10 +165,15 @@ export class TxGenerator {
         let signature: Buffer;  // computed message signature
 
         try {
-            // Buffer message and generate signature
-            message = Buffer.from(JSON.stringify(rawTx.data), "utf8");
+            // Buffer message (using custom stringifier)
+            message = Buffer.from(
+                JSON.stringify(rawTx.data, bigIntReplacer), "utf8"
+            );
+
+            // Generate signature
             signature = Sign(message, this.privKey);
         } catch (error) {
+            console.log(error);
             throw new Error("Failed to generate signature.");
         }
 

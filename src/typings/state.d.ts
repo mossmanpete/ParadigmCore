@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  14-November-2018
- * @date (modified) 14-November-2018
+ * @date (modified) 15-November-2018
  *
  * Type definitions for ParadigmCore's state.
  */
@@ -66,7 +66,7 @@ interface BlockEventObject {
 interface RawStakeEvent {
     type:   string;
     staker: string;
-    amount: BigInt;
+    amount: bigint;
     block:  number;
 }
 
@@ -76,7 +76,7 @@ interface RawStakeEvent {
  * by the Ethereum `PosterStaking` contract.
  */
 interface StakeEvent {
-    amount: BigInt;
+    amount: bigint;
     conf:   number;
     type:   string;
 }
@@ -87,7 +87,7 @@ interface StakeEvent {
  * event recieves sufficient witness confirmations.
  */
 interface Balances {
-    [key: string]:  BigInt | any;
+    [key: string]:  bigint;
 }
 
 /**

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 13-November-2018
+ * @date (modified) 15-November-2018
  *
  * The OrderTracker class stores valid txs submitted within a consensus
  * round, and triggers public broadcast at the end of each round.
@@ -42,9 +42,9 @@ export class OrderTracker {
     }
 
     /**
-     * Add a broadcast transaction ("order" or "stream") to the queue.)
+     * Add a broadcast transaction ("order" or "stream") to the queue.
      */
-    public add(tx: object) {
+    public add(tx: SignedTransaction) {
         this.txs.push(tx);
     }
 

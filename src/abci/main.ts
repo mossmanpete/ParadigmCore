@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 13-November-2018
+ * @date (modified) 15-November-2018
  *
  * Main ParadigmCore state machine implementation and state transition logic.
  */
@@ -33,13 +33,16 @@ import { checkOrder, deliverOrder } from "./handlers/order";
 import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
 import { checkWitness, deliverWitness } from "./handlers/witness";
 
+// BigInt utilities
+import { bigIntReplacer } from "../util/static/bigIntUtils";
+
 // "Globals"
 let version: string;    // store current application version
 let handlers: object;   // ABCI handler functions
 let generator: TxGenerator;    // Used to verify Tx's
 
 // Asynchronous modules
-let tracker: OrderTracker;          // Wsed to broadcast valid orders
+let tracker: OrderTracker;          // Used to broadcast valid orders
 let rebalancer: StakeRebalancer;    // Witness component
 
 // State objects
@@ -77,7 +80,7 @@ export async function startMain(options: any): Promise<null> {
         // Queue for valid broadcast transactions (order/stream)
         tracker = new OrderTracker(options.emitter);
 
-        // Transaction generator/verifyer
+        // Transaction generator/verifier
         generator = options.txGenerator;
 
         // Configure StakeRebalancer module
@@ -139,7 +142,7 @@ function info(): object {
 }
 
 /**
- * Called at the begining of each new block. Updates proposer and block height.
+ * Called at the beginning of each new block. Updates proposer and block height.
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
@@ -229,7 +232,7 @@ function checkTx(request): Vote {
     }
 
     /**
-     * This main switch block selects the propper handler logic
+     * This main switch block selects the proper handler verification logic
      * based on the transaction type.
      */
     switch (txType) {
@@ -300,7 +303,7 @@ function deliverTx(request): Vote {
     }
 
     /**
-     * This main switch block selects the propper handler logic
+     * This main switch block selects the proper handler logic
      * based on the transaction type.
      */
     switch (txType) {
@@ -380,12 +383,13 @@ function commit(request): string {
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
+        console.log(err);
         Logger.consensusErr(msg.abci.errors.broadcast);
     }
 
     // Temporary
     // tslint:disable-next-line:no-console
-    console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
+    console.log(`\n... Current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
 
     // Return state's hash to be included in next block header
     return stateHash;

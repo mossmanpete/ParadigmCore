@@ -7,11 +7,11 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 13-November-2018
+ * @date (modified) 15-November-2018
  *
  * This class is responsible for executing local ABCI transactions. It
- * implements a queue, and allows multiple "concurrant" usage of a given
- * instance for local ABCI tx's, so only one instance should be used per node.
+ * implements a queue, and allows multiple "concurrent" usage of a given
+ * instance for local ABCI txs, so only one instance should be used per node.
  */
 
 // 3rd party and STDLIB imports
@@ -27,7 +27,7 @@ export class TxBroadcaster {
     private tracker: EventEmitter;  // Enables async order broadcast
 
     private started: boolean;       // Transactions will be sent only if true
-    private broadcasting: boolean;  // True while sending tx's
+    private broadcasting: boolean;  // True while sending txs
 
     /**
      * Create a new TxBroadcaster instance.
@@ -67,7 +67,7 @@ export class TxBroadcaster {
     }
 
     /**
-     * Call once Tendermint is synchronized. No transactions will be braodcast
+     * Call once Tendermint is synchronized. No transactions will be broadcast
      * until TxBroadcaster.prototype.start() is called.
      */
     public start(): boolean {
@@ -79,9 +79,9 @@ export class TxBroadcaster {
      * The external API for broadcasting local ABCI transactions. Provide the
      * raw transaction object, and it will be encoded, compressed, and added to
      * the broadcast queue. The promise that is returned by `this.send()`
-     * resolves upon succesful ABCI broadcast, with the JSON repsonse. It will
+     * resolves upon successful ABCI broadcast, with the JSON response. It will
      * reject or throw an error if the transaction fails to submit, but will
-     * resolve even on a succesful but rejected ABCI transaction.
+     * resolve even on a successful but rejected ABCI transaction.
      *
      * @param tx    {object}    raw transaction object to enqueue
      */
@@ -107,7 +107,7 @@ export class TxBroadcaster {
      * Internal broadcast function. Executes ABCI transactions via a queue.
      */
     private async broadcast(): Promise<void> {
-        // Return immediatley if this.start() hasn't been called
+        // Return immediately if this.start() hasn't been called
         if (!(this.started)) { return; }
 
         // Temporary?
@@ -127,7 +127,7 @@ export class TxBroadcaster {
         const txEmitter: EventEmitter = txArr[1];
 
         // Compress and encode Tx
-        const payload = PayloadCipher.encodeFromObject(txObject);
+        const payload = PayloadCipher.txEncodeFromObject(txObject);
 
         try {
             // Await ABCI response, and resolve promise

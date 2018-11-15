@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 15-November-2018
  *
  * Handler functions for verifying ABCI Order transactions, originating from
  * external API calls. Implements state transition logic as specified in the
@@ -92,9 +92,6 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
         state.limits[poster].orderLimit -= 1;
         state.orderCounter += 1;
         // End state modification
-
-        // Access remaining quota
-        // let remaining = state.limits[poster].orderLimit;
 
         // Add order to broadcast queue
         q.add(orderCopy);

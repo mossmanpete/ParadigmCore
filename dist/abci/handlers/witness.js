@@ -6,7 +6,7 @@ const { CONF_THRESHOLD, NODE_ENV } = process.env;
 function checkWitness(tx, state) {
     if (isValidStakeEvent(tx.data, state)) {
         Logger_1.Logger.mempool("Stake witness transaction accepted.");
-        return Vote_1.Vote.valid("Stake witnesss transaction accepted.");
+        return Vote_1.Vote.valid("Stake witness transaction accepted.");
     }
     else {
         Logger_1.Logger.mempoolWarn("Invalid witness event rejected.");
@@ -22,7 +22,7 @@ function deliverWitness(tx, state) {
     const staker = tx.data.staker;
     const type = tx.data.type;
     const block = tx.data.block;
-    const amount = BigInt.fromString(tx.data.amount);
+    const amount = BigInt(tx.data.amount.slice(0, -1));
     switch (state.events.hasOwnProperty(block)) {
         case true: {
             if (state.events[block].hasOwnProperty(staker) &&
@@ -80,7 +80,8 @@ function isValidStakeEvent(data, state) {
     else if (typeof (data.staker) !== "string" ||
         typeof (data.type) !== "string" ||
         typeof (data.block) !== "number" ||
-        typeof (data.amount) !== "string") {
+        typeof (data.amount) !== "string" ||
+        data.amount.slice(-1) !== "n") {
         return false;
     }
     else if (!(data.type === "add" || data.type === "remove")) {
@@ -118,7 +119,7 @@ function updateMappings(state, staker, block, amount, type) {
             if (Object.keys(state.events[block]).length === 0) {
                 delete state.events[block];
             }
-            if (state.balances[staker] === 0) {
+            if (state.balances[staker] === BigInt(0)) {
                 delete state.balances[staker];
             }
             if (state.lastEvent[type] < block) {

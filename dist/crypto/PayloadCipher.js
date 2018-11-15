@@ -3,6 +3,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const zlib = require("zlib");
 const { IN_ENC, OUT_ENC } = process.env;
 class PayloadCipher {
+    static txEncodeFromObject(payload) {
+        let rawStr;
+        let inBuff;
+        let cpBuff;
+        let outStr;
+        try {
+            rawStr = JSON.stringify(payload, (_, v) => {
+                if (typeof (v) === "bigint") {
+                    return `${v.toString()}n`;
+                }
+                else {
+                    return v;
+                }
+            });
+            inBuff = Buffer.from(rawStr, PayloadCipher.inEncoding);
+            cpBuff = zlib.deflateSync(inBuff);
+            outStr = cpBuff.toString(PayloadCipher.outEncoding);
+        }
+        catch (error) {
+            throw new Error("Error encoding payload.");
+        }
+        return outStr;
+    }
     static encodeFromObject(payload) {
         let rawStr;
         let inBuff;

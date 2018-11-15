@@ -7,16 +7,13 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 13-November-2018
+ * @date (modified) 15-November-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
 
 // Load configuration from environment
 require("dotenv").config();
-
-// Patch special BigInt methods (semi-temporary)
-import "./util/static/intPatch";
 
 // Standard lib and 3rd party NPM modules
 import { EventEmitter } from "events";
