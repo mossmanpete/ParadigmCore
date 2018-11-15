@@ -98,7 +98,7 @@ function updateMappings(state, staker, block, amount, type) {
         state.events[block].hasOwnProperty(staker) &&
         state.events[block][staker].type === type &&
         state.events[block][staker].amount === amount) {
-        if (state.events[block][staker].conf >= CONF_THRESHOLD) {
+        if (state.events[block][staker].conf >= parseInt(CONF_THRESHOLD, 10)) {
             Logger_1.Logger.consensus("Witness event confirmed. Updating balances.");
             switch (state.balances.hasOwnProperty(staker)) {
                 case true: {

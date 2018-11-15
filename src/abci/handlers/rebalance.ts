@@ -29,8 +29,8 @@ import { Vote } from "../util/Vote";
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkRebalance(tx: any, state: any) {
-    const proposal = tx.data;
+export function checkRebalance(tx: SignedRebalanceTx, state: State) {
+    const proposal: RebalanceData = tx.data;
 
     switch (state.round.number) {
         case 0: {
@@ -67,8 +67,12 @@ export function checkRebalance(tx: any, state: any) {
  * @param state {object} current round state
  * @param rb {StakeRebalancer} the current rebalancer instance
  */
-export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
-    const proposal = tx.data;
+export function deliverRebalance(
+    tx: SignedRebalanceTx,
+    state: State,
+    rb: StakeRebalancer
+) {
+    const proposal: RebalanceData = tx.data;
 
     // Main verification switch block
     switch (state.round.number) {
@@ -148,7 +152,7 @@ export function deliverRebalance(tx: any, state: any, rb: StakeRebalancer) {
  * @param bals  {object} current in-state staked balances
  * @param limit     {number} the total number of orders accepted in the period
  */
-function genLimits(bals: any, limit: number): any {
+function genLimits(bals: Balances, limit: number): any {
     let total: any = BigInt(0); // Total amount currenty staked
     const output: object = {};  // Computed output mapping
 

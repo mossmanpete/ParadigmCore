@@ -14,7 +14,7 @@
 
 /* tslint:disable */
 
-export let commitState = {
+export let commitState: State = {
   round: {
     number: 0,
     startsAt: 0,
@@ -28,8 +28,8 @@ export let commitState = {
     add: 0,
     remove: 0
   },
-  orderCounter: 0,
   validators: {},
+  orderCounter: 0,
   lastBlockHeight: 0,
   lastBlockAppHash: null
 };

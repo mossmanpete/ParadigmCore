@@ -34,7 +34,7 @@ const Order = new Paradigm().Order;
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkOrder(tx: any, state: any) {
+export function checkOrder(tx: SignedOrderTx, state: State) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 
@@ -67,7 +67,7 @@ export function checkOrder(tx: any, state: any) {
  * @param state {object} current round state
  * @param q     {OrderTracker} valid order queue
  */
-export function deliverOrder(tx: any, state: any, q: OrderTracker) {
+export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 

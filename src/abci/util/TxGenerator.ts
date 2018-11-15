@@ -39,9 +39,10 @@ export class TxGenerator {
         switch (rawTx.type) {
             // OrderBroadcast type
             case "order": {
+                const txData = rawTx.data as OrderData;
                 if (
-                    typeof(rawTx.data.posterSignature) !== "object" ||
-                    typeof(rawTx.data.subContract) !== "string"
+                    typeof(txData.posterSignature) !== "object" ||
+                    typeof(txData.subContract) !== "string"
                 ) {
                     return false;
                 } else {
@@ -55,10 +56,11 @@ export class TxGenerator {
 
             // Ethereum event attestation
             case "witness": {
+                const txData = rawTx.data as WitnessData;
                 if (
-                    Object.keys(rawTx.data).length !== 4 ||
-                    typeof(rawTx.data.block) !== "number" ||
-                    typeof(rawTx.data.staker) !== "string"
+                    Object.keys(txData).length !== 4 ||
+                    typeof(txData.block) !== "number" ||
+                    typeof(txData.staker) !== "string"
                 ) {
                     return false;
                 } else {
@@ -68,15 +70,16 @@ export class TxGenerator {
 
             // Rate limit update Tx
             case "rebalance": {
+                const txData = rawTx.data as RebalanceData;
                 if (
-                    Object.keys(rawTx.data).length !== 2 ||
-                    typeof(rawTx.data.limits) !== "object" ||
-                    typeof(rawTx.data.round) !== "object" ||
-                    Object.keys(rawTx.data.round).length !== 4 ||
-                    typeof(rawTx.data.round.endsAt) !== "number" ||
-                    typeof(rawTx.data.round.startsAt) !== "number" ||
-                    typeof(rawTx.data.round.number) !== "number" ||
-                    typeof(rawTx.data.round.limit) !== "number"
+                    Object.keys(txData).length !== 2 ||
+                    typeof(txData.limits) !== "object" ||
+                    typeof(txData.round) !== "object" ||
+                    Object.keys(txData.round).length !== 4 ||
+                    typeof(txData.round.endsAt) !== "number" ||
+                    typeof(txData.round.startsAt) !== "number" ||
+                    typeof(txData.round.number) !== "number" ||
+                    typeof(txData.round.limit) !== "number"
                 ) {
                     return false;
                 } else {

@@ -14,8 +14,8 @@ exports.commitState = {
         add: 0,
         remove: 0
     },
-    orderCounter: 0,
     validators: {},
+    orderCounter: 0,
     lastBlockHeight: 0,
     lastBlockAppHash: null
 };

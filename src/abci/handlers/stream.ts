@@ -32,25 +32,8 @@ const Order = new Paradigm().Order;
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkStream(tx: object, state: any) {
-    let order;  // Paradigm order object
-    let poster; // Recovered poster address from signature
-
-    try {
-        order = new Order(tx);
-        poster = order.recoverPoster().toLowerCase();
-    } catch (err) {
-        Logger.mempoolWarn(msg.abci.errors.format);
-        return Vote.invalid(msg.abci.errors.format);
-    }
-
-    if (state.mappings.limits.hasOwnProperty(poster)) {
-        Logger.mempool(msg.abci.messages.mempool);
-        return Vote.valid(msg.abci.messages.mempool);
-    } else {
-        Logger.mempoolWarn(msg.abci.messages.noStake);
-        return Vote.invalid(msg.abci.messages.noStake);
-    }
+export function checkStream(tx: SignedStreamTx, state: State) {
+    return 0;
 }
 
 /**
@@ -60,6 +43,10 @@ export function checkStream(tx: object, state: any) {
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function deliverStream(tx: object, state: object, tracker: OrderTracker) {
+export function deliverStream(
+    tx: SignedStreamTx,
+    state: State,
+    tracker: OrderTracker
+) {
     return 0;
 }

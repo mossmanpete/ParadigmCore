@@ -14,7 +14,7 @@
 
 /* tslint:disable */
 
-export let deliverState = {
+export let deliverState: State = {
   round: {
     number: 0,
     startsAt: 0,
@@ -28,8 +28,8 @@ export let deliverState = {
     add: 0,
     remove: 0
   },
-  orderCounter: 0,
   validators: {},
+  orderCounter: 0,
   lastBlockHeight: 0,
   lastBlockAppHash: null
 };

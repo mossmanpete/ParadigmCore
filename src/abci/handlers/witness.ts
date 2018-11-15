@@ -27,7 +27,7 @@ const { CONF_THRESHOLD, NODE_ENV } = process.env;
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkWitness(tx: any, state: any): Vote {
+export function checkWitness(tx: SignedWitnessTx, state: State): Vote {
     if (isValidStakeEvent(tx.data, state)) {
         Logger.mempool("Stake witness transaction accepted.");
         return Vote.valid("Stake witnesss transaction accepted.");
@@ -46,7 +46,7 @@ export function checkWitness(tx: any, state: any): Vote {
  *
  * @todo: options for confirmation threshold
  */
-export function deliverWitness(tx: any, state: any): Vote {
+export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
     // Check structural validity
     if (!(isValidStakeEvent(tx.data, state))) {
         Logger.consensusWarn("Invalid witness event rejected.");
@@ -134,7 +134,7 @@ export function deliverWitness(tx: any, state: any): Vote {
  *
  * @param data  {object}    the stake event to validate
  */
-function isValidStakeEvent(data, state): boolean {
+function isValidStakeEvent(data: any, state: State): boolean {
     // TODO: add info about proposer to validation condition
     if (
         !(data.hasOwnProperty("staker") &&
@@ -169,7 +169,13 @@ function isValidStakeEvent(data, state): boolean {
  * @param amount    {number}    amount staked (or unstaked)
  * @param type      {string}    event type (stake made or removed)
  */
-function updateMappings(state, staker, block, amount, type) {
+function updateMappings(
+    state: State,
+    staker: string,
+    block: number,
+    amount: BigInt,
+    type: string
+) {
     if (
         state.events.hasOwnProperty(block) &&
         state.events[block].hasOwnProperty(staker) &&
@@ -177,7 +183,7 @@ function updateMappings(state, staker, block, amount, type) {
         state.events[block][staker].amount === amount
     ) {
         // Is this event now confirmed?
-        if (state.events[block][staker].conf >= CONF_THRESHOLD) {
+        if (state.events[block][staker].conf >= parseInt(CONF_THRESHOLD, 10)) {
             Logger.consensus("Witness event confirmed. Updating balances.");
 
             // See if staker already has a balance
@@ -239,7 +245,12 @@ function updateMappings(state, staker, block, amount, type) {
  * @param amount    {number}    amount staked (or unstaked)
  * @param type      {string}    event type (add or remove)
  */
-function applyEvent(state, staker, amount, type): void {
+function applyEvent(
+    state: State,
+    staker: string,
+    amount: any,
+    type: string
+): void {
     switch (type) {
         // Staker is adding stake
         case "add": {
