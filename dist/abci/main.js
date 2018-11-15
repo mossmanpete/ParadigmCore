@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const abci = require("abci");
 const _ = require("lodash");
-const messages_1 = require("../util/static/messages");
 const OrderTracker_1 = require("../async/OrderTracker");
 const StakeRebalancer_1 = require("../async/StakeRebalancer");
 const Hasher_1 = require("../crypto/Hasher");
@@ -13,6 +12,7 @@ const order_1 = require("./handlers/order");
 const rebalance_1 = require("./handlers/rebalance");
 const witness_1 = require("./handlers/witness");
 const bigIntUtils_1 = require("../util/static/bigIntUtils");
+const messages_1 = require("../util/static/messages");
 let version;
 let handlers;
 let generator;
