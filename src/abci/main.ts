@@ -9,15 +9,13 @@
  * @date (initial)  15-October-2018
  * @date (modified) 15-November-2018
  *
- * Main ParadigmCore state machine implementation and state transition logic.
+ * ParadigmCore primary state machine, and implementation of Tendermint handler
+ * functions and state transition logic.
  */
 
 // 3rd party and STDLIB imports
 const abci: any = require("abci");
 import * as _ from "lodash";
-
-// Log message templates
-import { messages as msg } from "../util/static/messages";
 
 // ParadigmCore classes
 import { OrderTracker } from "../async/OrderTracker";
@@ -33,21 +31,22 @@ import { checkOrder, deliverOrder } from "./handlers/order";
 import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
 import { checkWitness, deliverWitness } from "./handlers/witness";
 
-// BigInt utilities
+// General utilities
 import { bigIntReplacer } from "../util/static/bigIntUtils";
+import { messages as msg } from "../util/static/messages";
 
-// "Globals"
-let version: string;    // store current application version
-let handlers: object;   // ABCI handler functions
-let generator: TxGenerator;    // Used to verify Tx's
+// "Globals" (used across modules)
+let version: string;        // Stores current application version
+let handlers: object;       // ABCI handler functions
+let generator: TxGenerator; // Used to verify transaction signatures
 
 // Asynchronous modules
 let tracker: OrderTracker;          // Used to broadcast valid orders
 let rebalancer: StakeRebalancer;    // Witness component
 
 // State objects
-let deliverState: any;  // deliverTx state
-let commitState: any;   // commit state
+let deliverState: any;  // deliverTx state (modified during block execution)
+let commitState: any;   // commit state (synchronized at the end of each block)
 
 /**
  * Initialize and start the ABCI application.
@@ -58,6 +57,14 @@ let commitState: any;   // commit state
  *  - options.deliverState  {object}        deliverTx state object
  *  - options.commitState   {object}        commit state object
  *  - options.abciServPort  {number}        local ABCI server port
+ *  - options.txGenerator   {TxGenerator}   transaction signer and verification
+ *  - options.broadcaster   {TxBroadcaster} deliver transactions to tendermint
+ *  - options.finalityThreshold {number}    Ethereum block finality threshold
+ *  - options.periodLength  {number}        length of rebalance period
+ *  - options.periodLimit   {number}        transactions accepted per period
+ *  - options.provider      {string}        web3 provider URI (use websocket)
+ *  - options.stakeABI      {array/JSON}    Ethereum staking contract ABI
+ *  - options.stakeAddress  {string}        Ethereum staking contract address
  */
 export async function startMain(options: any): Promise<null> {
     try {
@@ -111,7 +118,7 @@ export async function startMain(options: any): Promise<null> {
 export async function startRebalancer(): Promise<null> {
     try {
         // Start rebalancer after sync
-        const code = rebalancer.start(); // start listening to Ethereum event
+        const code = rebalancer.start(); // Start listening to Ethereum events
         if (code !== 0) {
             Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
             throw new Error(code.toString());
@@ -175,7 +182,7 @@ function beginBlock(request): object {
             deliverState.validators[valHex].totalVotes += 1;
             deliverState.validators[valHex].lastVoted = (currHeight - 1);
 
-            // Record if they are proposer
+            // Record if they are proposer this round
             if (valHex === currProposer) {
                 deliverState.validators[valHex].lastProposed = currHeight;
             }
