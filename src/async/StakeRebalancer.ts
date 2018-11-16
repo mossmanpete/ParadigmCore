@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
  * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -24,7 +24,7 @@ import Contract from "web3/eth/contract";
 import { HttpProvider, WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
-import { Transaction } from "../abci/util/Transaction";
+import { TxGenerator } from "src/abci/util/TxGenerator";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
 import { default as err } from "../util/Codes";
 import { Logger as Log } from "../util/Logger";
@@ -45,6 +45,7 @@ export class StakeRebalancer {
      *  - options.stakeABI          {array}     JSON staking contract ABI
      *  - options.stakeAddress      {string}    deployed staking contract address
      *  - options.broadcaster       {TxBroadcaster}    broadcaster instance
+     *  - options.txGenerator       {TxGenerator}      tx generator/signer
      */
     public static async create(options: any): Promise<StakeRebalancer> {
         let instance;   // Stores new StakeRebalancer instance
@@ -76,26 +77,29 @@ export class StakeRebalancer {
      * @param bals      {object} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
-    public static genLimits(bals: any, limit: number): any {
-        let total: any = BigInt(0);  // Total amount currently staked
-        const output: object = {};      // Generated output mapping
+    public static genLimits(bals: Balances, limit: number): Limits {
+        let total: bigint = BigInt(0);      // Total amount currently staked
+        const output: Limits = {};          // Generated output mapping
 
         // Calculate total balance currently staked
         Object.keys(bals).forEach((k, v) => {
-            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
+            if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
                 total += bals[k];
             }
         });
 
         // Compute the rate-limits for each staker based on stake size
         Object.keys(bals).forEach((k, v) => {
-            if (bals.hasOwnProperty(k) && _.isEqual(typeof(bals[k]), "bigint")) {
-                const pLimit: number = (bals[k].toNumber() /  total.toNumber());
+            if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
+                // Compute proportional order limit
+                const bal = parseInt(bals[k].toString(), 10);
+                const tot = parseInt(total.toString(), 10);
+                const lim = (bal / tot) * limit;
 
                 // Create limit object for each address
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor(pLimit * limit),
+                    orderLimit: Math.floor(lim),
 
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
@@ -112,10 +116,15 @@ export class StakeRebalancer {
      *
      * @param staker    {string}    address of staking party
      * @param rType     {string}    stake type (`stakemade` or `stakeremoved`)
-     * @param amount    {number}    amount staked in event
+     * @param amount    {bigint}    amount staked in event
      * @param block     {number}    Ethereum block the event was recorded in.
      */
-    public static genEvtObject(staker, rType, amount, block): any {
+    public static genEvtObject(
+        staker: string,
+        rType: string,
+        amount: bigint,
+        block: number
+    ): RawStakeEvent {
         let type: string; // Parsed event type
 
         // Detect event type
@@ -166,12 +175,13 @@ export class StakeRebalancer {
     private stakeABI: object[];         // Staking contract ABI
     private stakeAddress: string;       // Staking contract address
 
-    // Tendermint ABCI connection
+    // Tendermint ABCI utility classes
     private broadcaster: TxBroadcaster;   // ABCI Tx broadcaster and queue
+    private txGenerator: TxGenerator;  // Builds and signs transactions
 
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold
-    private balances: any;      // The address:stake_amount mapping
+    private balances: Balances;      // The address:stake_amount mapping
 
     /**
      * PRIVATE constructor. Do not use. Create new rebalancers with
@@ -192,8 +202,9 @@ export class StakeRebalancer {
         this.periodLength = opts.periodLength;
         this.periodNumber = 0;
 
-        // Local ABCI transaction broadcaster
+        // Local ABCI transaction broadcaster and generator
         this.broadcaster = opts.broadcaster;
+        this.txGenerator = opts.txGenerator;
 
         // Finality threshold
         this.finalityThreshold = opts.finalityThreshold;
@@ -400,16 +411,16 @@ export class StakeRebalancer {
         }
 
         // Pull event parameters
-        const staker = res.returnValues.staker.toLowerCase();  // Address
-        const rType = res.event.toLowerCase();                 // Raw event type
-        // const amount = parseInt(res.returnValues.amount, 10);  // Amount staked
-        const amount = BigInt.fromString((res.returnValues.amount));  // Amount staked
-        const block = res.blockNumber;                         // Event block
+        const staker = res.returnValues.staker.toLowerCase();
+        const rType = res.event.toLowerCase();
+        const amount = BigInt(res.returnValues.amount);
+        const block = res.blockNumber;
 
         // Generate event object
         const event = StakeRebalancer.genEvtObject(staker, rType, amount, block);
 
         // See if this is a historical event that has already matured
+        // @TODO: should be this.currentHeight?
         if ((this.initHeight - block) > this.finalityThreshold) {
             this.updateBalance(event);
             this.execEventTx(event);
@@ -501,9 +512,9 @@ export class StakeRebalancer {
      * implements the same logic as the state machine to ensure balances in
      * state are up-to-date with the instance balances.
      *
-     * @param evt   {object}    event object
+     * @param evt   {StakeEvent}    event object
      */
-    private updateBalance(evt: any): void {
+    private updateBalance(evt: RawStakeEvent): void {
         // If no stake is present, set balance to stake amount
         if (!this.balances.hasOwnProperty(evt.staker)) {
             this.balances[evt.staker] = evt.amount;
@@ -527,30 +538,10 @@ export class StakeRebalancer {
         }
 
         // Remove balance entry if it is now 0
-        if (this.balances[evt.staker] === 0) {
+        if (this.balances[evt.staker] === BigInt(0)) {
             delete this.balances[evt.staker];
         }
         return;
-    }
-
-    /**
-     * Construct a new event ABCI transaction object.
-     *
-     * @param _staker   {string}    Ethereum address string
-     * @param _type     {string}    stake event type ('add' or 'remove')
-     * @param _block    {number}    block height event was mined in
-     * @param _amt      {number}    amount staked or unstaked
-     */
-    private genEventTx(staker, type, block, amount): object {
-        // Construct and sign transaction object
-        const tx = new Transaction("witness", {
-            amount,
-            block,
-            staker,
-            type,
-        });
-
-        return tx;
     }
 
     /**
@@ -561,7 +552,7 @@ export class StakeRebalancer {
      * @param _start    {number}    period starting ETG block number
      * @param _length   {number}    the length of each period in ETH blocks
      */
-    private genRebalanceTx(round, start, length): object {
+    private genRebalanceTx(round, start, length): SignedTransaction {
         let map: any;
 
         if (round === 0) {
@@ -573,14 +564,17 @@ export class StakeRebalancer {
         }
 
         // Create and sign transaction object
-        const tx = new Transaction("rebalance", {
-            limits: map,
-            round: {
-                endsAt: start + length,
-                limit: this.periodLimit,
-                number: round + 1,
-                startsAt: start - 1,    // TODO: find a test case for this
+        const tx: SignedTransaction = this.txGenerator.create({
+            data: {
+                limits: map,
+                round: {
+                    endsAt: start + length,
+                    limit: this.periodLimit,
+                    number: round + 1,
+                    startsAt: start - 1,
+                },
             },
+            type: "rebalance",
         });
 
         // Return constructed transaction object
@@ -592,11 +586,19 @@ export class StakeRebalancer {
      *
      * @param event     {object}    event object
      */
-    private execEventTx(event: any): void {
-        const tx = this.genEventTx(
-            event.staker, event.type, event.block, event.amount,
-        );
+    private execEventTx(event: RawStakeEvent): void {
+        // Create and sign transaction object
+        const tx = this.txGenerator.create({
+            data: {
+                amount: event.amount,
+                block: event.block,
+                staker: event.staker,
+                type: event.type,
+            },
+            type: "witness",
+        });
 
+        // Execute local ABCI transaction
         const code = this.execAbciTx(tx);
         if (code !== 0) {
             Log.rebalancerErr("Event Tx failed.");
@@ -610,7 +612,7 @@ export class StakeRebalancer {
      *
      * @param _tx   {object}    raw transaction object
      */
-    private execAbciTx(tx: any): number {
+    private execAbciTx(tx: SignedTransaction): number {
         try {
             this.broadcaster.send(tx).then((response) => {
                 Log.rebalancer("Executed local ABCI Tx.", this.periodNumber);

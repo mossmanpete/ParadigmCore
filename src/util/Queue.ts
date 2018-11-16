@@ -12,51 +12,43 @@
  * Generalized queue implementation. Currently used in Broadcaster class.
  */
 
-export class Queue {
-    private items: any[];  // Queue items
+export class Queue extends Array {
 
-    constructor() {
-        this.items = [];
-        return;
-    }
+    // Inherit properties of Array
+    constructor() { super(); }
 
     /**
      * Add an item to the queue.
      *
      * @param item  {any}   the item to add to the queue.
      */
-    public add(item: any): void {
-        this.items.push(item);
-        return;
-    }
+    public add(item: any): void { this.push(item); return; }
 
     /**
      * Removes and returns the first item from the queue.
+     *
+     * returns <T>
      */
-    public remove(): any {
-        if (this.isEmpty()) { return null; }
-        return this.items.shift();
-    }
+    public remove() { if (this.isEmpty()) { return; } return this.shift(); }
 
     /**
      * Returns the first item in the queue.
+     *
+     * @returns <T>
      */
-    public front(): any {
-        if (this.isEmpty()) { return null; }
-        return this.items[0];
-    }
+    public front() { if (this.isEmpty()) { return null; } return this[0]; }
 
     /**
      * Returns a string of all items.
+     *
+     * @returns string
      */
-    public allItems(): string {
-        return JSON.stringify(this.items);
-    }
+    public allItems() { return JSON.stringify(this); }
 
     /**
      * Returns true if queue is empty.
+     *
+     * @returns boolean
      */
-    public isEmpty(): boolean {
-        return this.items.length === 0;
-    }
+    public isEmpty() { return this.length === 0; }
 }

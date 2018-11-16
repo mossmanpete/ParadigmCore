@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  21-September-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
  * Compression and encoding (and decompression and decoding) for local ABCI
  * transactions.
@@ -16,7 +16,42 @@
 import * as zlib from "zlib";
 const { IN_ENC, OUT_ENC } = process.env;    // @TODO: hardcode?
 
+/**
+ * Provides static methods for encoding/compressing and decoding/decompressing
+ * transaction objects.
+ */
 export class PayloadCipher {
+
+    /**
+     * Construct encoded and compressed output string from raw input object.
+     * This method implements a replacer to allow serialization of objects
+     * containing `bigint` types.
+     *
+     * @param payload {object} raw input object
+     */
+    public static txEncodeFromObject(payload: object): string {
+        let rawStr: string; // raw input string
+        let inBuff: Buffer; // raw input buffer
+        let cpBuff: Buffer; // compressed buffer
+        let outStr: string; // encoded output string
+
+        try {
+            rawStr = JSON.stringify(payload, (_, v) => {
+                // Replace BigInt with custom strings
+                if (typeof(v) === "bigint") {
+                    return `${v.toString()}n`;
+                } else {
+                    return v;
+                }
+            });
+            inBuff = Buffer.from(rawStr, PayloadCipher.inEncoding);
+            cpBuff = zlib.deflateSync(inBuff);
+            outStr = cpBuff.toString(PayloadCipher.outEncoding);
+        } catch (error) {
+            throw new Error("Error encoding payload.");
+        }
+        return outStr;
+    }
 
     /**
      * encodeFromObject (public static method): Construct encoded and compressed
@@ -42,8 +77,7 @@ export class PayloadCipher {
     }
 
     /**
-     * encodeFromString (public static method): Construct encoded and compressed
-     * output string from raw input string.
+     * Construct encoded and compressed output string from raw input string.
      *
      * @param payload {string} raw input string (uncompressed)
      */
@@ -64,8 +98,8 @@ export class PayloadCipher {
     }
 
     /**
-     * decodeToString (public static method): Construct decoded and decompressed
-     * output string from encoded and compressed input.
+     * Construct decoded and decompressed output string from encoded and
+     * compressed input.
      *
      * @param input {string} encoded input string
      */
@@ -85,8 +119,7 @@ export class PayloadCipher {
     }
 
     /**
-     * decodeToObject (public static method): Construct transaction object
-     * from encoded and compressed string.
+     * Construct transaction object from encoded and compressed string.
      *
      * @param input {string} encoded input string
      */

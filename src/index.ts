@@ -7,18 +7,13 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
 
-// tslint:disable
-
 // Load configuration from environment
 require("dotenv").config();
-
-// Monkey-patch special BigInt methods
-import "./util/static/monkeyPatch";
 
 // Standard lib and 3rd party NPM modules
 import { EventEmitter } from "events";
@@ -27,6 +22,7 @@ import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
+import { TxGenerator } from "./abci/util/TxGenerator";
 import { WebSocketMessage } from "./net/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";
@@ -46,6 +42,7 @@ import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 let wss: _ws.Server;            // OrderStream WS server
 let emitter: EventEmitter;      // Emitter to track events
 let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
+let generator: TxGenerator;     // Signs and builds ABCI tx's
 let node: any;                  // Tendermint node instance
 
 /**
@@ -74,7 +71,7 @@ let node: any;                  // Tendermint node instance
         });
     } catch (error) {
         Logger.consensusErr("failed initializing Tendermint.");
-        Logger.logError(msg.abci.errors.tmFatal);
+        Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -85,7 +82,20 @@ let node: any;                  // Tendermint node instance
         });
     } catch (error) {
         Logger.txErr("failed initializing ABCI connection.");
-        Logger.logError(msg.abci.errors.tmFatal);
+        Logger.logError(msg.general.errors.fatal);
+        process.exit(1);
+    }
+
+    // Construct transaction generator instance
+    try {
+        generator = new TxGenerator({
+            encoding: env.SIG_ENC,
+            privateKey: env.PRIV_KEY,
+            publicKey: env.PUB_KEY,
+        });
+    } catch (error) {
+        Logger.logError("failed to construct TransactionGenerator.");
+        Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -98,7 +108,7 @@ let node: any;                  // Tendermint node instance
         emitter = new EventEmitter(); // parent event emitter
     } catch (error) {
         Logger.websocketErr("failed initializing WebSocket server.");
-        Logger.logError(msg.websocket.errors.fatal);
+        Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -122,6 +132,7 @@ let node: any;                  // Tendermint node instance
             provider: env.WEB3_PROVIDER,
             stakeABI: STAKE_CONTRACT_ABI,
             stakeAddress: env.STAKE_CONTRACT_ADDR,
+            txGenerator: generator,
         };
 
         // Wait for main ABCI application to start
@@ -140,17 +151,17 @@ let node: any;                  // Tendermint node instance
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
         Logger.consensus("failed initializing ABCI application.");
-        Logger.logError(msg.abci.errors.fatal);
+        Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
 
     // Start HTTP API server
     try {
         Logger.apiEvt("Starting HTTP API server...");
-        await startAPIserver(env.API_PORT, broadcaster);
+        await startAPIserver(env.API_PORT, broadcaster, generator);
     } catch (error) {
         Logger.apiErr("failed initializing API server.");
-        Logger.logError(msg.api.errors.fatal);
+        Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
 

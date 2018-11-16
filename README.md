@@ -1,6 +1,6 @@
 # ParadigmCore (alpha)
 
-![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.2.1-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-alpha-orange.svg) ![Version](https://img.shields.io/badge/version-0.3.0-brightgreen.svg)
 [![AUR](https://img.shields.io/aur/license/yaourt.svg)](./LICENSE) [![Chat Server](https://img.shields.io/badge/chat%20server-join!-red.svg)](https://chat.paradigm.market/)
 
 ## Introduction
@@ -46,7 +46,7 @@ npm run build OR tsc
 You can just run `tsc` if the default `tsconfig.json` is used.
 
 ### Configure
-ParadigmCore is configured via it's runtime environment (your machine). You can provide configuration options via environment variables (recommended) or in a `.env` file which will be loaded into the Node.js runtime environment upon process startup (accesed internally using the global `process.env`).
+ParadigmCore is configured via it's runtime environment (your machine). You can provide configuration options via environment variables (recommended) or in a `.env` file which will be loaded into the Node.js runtime environment upon process startup (accessed internally using the global `process.env`).
 
 There are several options that must be set before startup, including you validator private and public key (found in `{TENDERMINT_DIRECTORY}/config/priv_validator.json`, web3 provider, among other consensus parameters.
 
@@ -71,10 +71,10 @@ This part will be expanded on soon. The primary interface endpoint (currently is
 ```
 HTTP POST: localhost:4243
 ```
-Where `request.body` is a JSON Paradigm order. This should be the primary point of contact with `ParadigmCore` for your application to post orders. The response from the server will tell you if the order was valid and accepted, and if so, the order hash (`OrderID`) that can be used to refrence it.
+Where `request.body` is a JSON Paradigm order. This should be the primary point of contact with `ParadigmCore` for your application to post orders. The response from the server will tell you if the order was valid and accepted, and if so, the order hash (`OrderID`) that can be used to reference it.
 
 ## Contributing
 
-ParadigmCore is being developed as open-source software under a [GPL 3.0 License](./LICENSE). If you would like to get involved in the project, please feel free to do so by checking out the issues tab, creating issues, or forking the repository and making pull requests. We will be publishing formal contribution guidlines soon.
+ParadigmCore is being developed as open-source software under a [GPL 3.0 License](./LICENSE). If you would like to get involved in the project, please feel free to do so by checking out the issues tab, creating issues, or forking the repository and making pull requests. We will be publishing formal contribution guidelines soon.
 
-If you have any questions, please feel free to reach out to [Henry Harder](mailto:henry@paradigm.market) (GitHub @hrharder) the maintaner of this repository and project lead.
+If you have any questions, please feel free to reach out to [Henry Harder](mailto:henry@paradigm.market) (GitHub @hrharder) the maintainer of this repository and project lead.

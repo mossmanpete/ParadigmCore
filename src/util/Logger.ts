@@ -44,7 +44,7 @@ export class Logger {
     }
 
     public static mempool(message: string){
-        Logger.logEvent(`${'Mempool:'.magenta.bold} ${message}`);
+        Logger.logEvent(`${'Mempool:'.magenta} ${message}`);
     }
 
     public static mempoolErr(message: string){

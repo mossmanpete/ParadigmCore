@@ -7,18 +7,15 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
- * Main ParadigmCore state machine implementation and state transition logic.
+ * ParadigmCore primary state machine, and implementation of Tendermint handler
+ * functions and state transition logic.
  */
 
 // 3rd party and STDLIB imports
-// tslint:disable-next-line:no-var-requires
 const abci: any = require("abci");
 import * as _ from "lodash";
-
-// Log message templates
-import { messages as msg } from "../util/static/messages";
 
 // ParadigmCore classes
 import { OrderTracker } from "../async/OrderTracker";
@@ -26,7 +23,7 @@ import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
 import { Logger } from "../util/Logger";
-import { Transaction } from "./util/Transaction";
+import { TxGenerator } from "./util/TxGenerator";
 import { Vote } from "./util/Vote";
 
 // ABCI handler functions
@@ -34,17 +31,22 @@ import { checkOrder, deliverOrder } from "./handlers/order";
 import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
 import { checkWitness, deliverWitness } from "./handlers/witness";
 
-// "Globals"
-let version: string;    // store current application version
-let handlers: object;   // ABCI handler functions
+// General utilities
+import { bigIntReplacer } from "../util/static/bigIntUtils";
+import { messages as msg } from "../util/static/messages";
+
+// "Globals" (used across modules)
+let version: string;        // Stores current application version
+let handlers: object;       // ABCI handler functions
+let generator: TxGenerator; // Used to verify transaction signatures
 
 // Asynchronous modules
-let tracker: OrderTracker;          // Wsed to broadcast valid orders
+let tracker: OrderTracker;          // Used to broadcast valid orders
 let rebalancer: StakeRebalancer;    // Witness component
 
 // State objects
-let deliverState: any;  // deliverTx state
-let commitState: any;   // commit state
+let deliverState: any;  // deliverTx state (modified during block execution)
+let commitState: any;   // commit state (synchronized at the end of each block)
 
 /**
  * Initialize and start the ABCI application.
@@ -55,6 +57,14 @@ let commitState: any;   // commit state
  *  - options.deliverState  {object}        deliverTx state object
  *  - options.commitState   {object}        commit state object
  *  - options.abciServPort  {number}        local ABCI server port
+ *  - options.txGenerator   {TxGenerator}   transaction signer and verification
+ *  - options.broadcaster   {TxBroadcaster} deliver transactions to tendermint
+ *  - options.finalityThreshold {number}    Ethereum block finality threshold
+ *  - options.periodLength  {number}        length of rebalance period
+ *  - options.periodLimit   {number}        transactions accepted per period
+ *  - options.provider      {string}        web3 provider URI (use websocket)
+ *  - options.stakeABI      {array/JSON}    Ethereum staking contract ABI
+ *  - options.stakeAddress  {string}        Ethereum staking contract address
  */
 export async function startMain(options: any): Promise<null> {
     try {
@@ -77,6 +87,9 @@ export async function startMain(options: any): Promise<null> {
         // Queue for valid broadcast transactions (order/stream)
         tracker = new OrderTracker(options.emitter);
 
+        // Transaction generator/verifier
+        generator = options.txGenerator;
+
         // Configure StakeRebalancer module
         rebalancer = await StakeRebalancer.create({
             broadcaster: options.broadcaster,
@@ -86,6 +99,7 @@ export async function startMain(options: any): Promise<null> {
             provider: options.provider,
             stakeABI: options.stakeABI,
             stakeAddress: options.stakeAddress,
+            txGenerator: options.txGenerator,
         });
 
         // Start ABCI server (connection to Tendermint core)
@@ -104,7 +118,7 @@ export async function startMain(options: any): Promise<null> {
 export async function startRebalancer(): Promise<null> {
     try {
         // Start rebalancer after sync
-        const code = rebalancer.start(); // start listening to Ethereum event
+        const code = rebalancer.start(); // Start listening to Ethereum events
         if (code !== 0) {
             Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
             throw new Error(code.toString());
@@ -135,15 +149,48 @@ function info(): object {
 }
 
 /**
- * Called at the begining of each new block. Updates proposer and block height.
+ * Called at the beginning of each new block. Updates proposer and block height.
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function beginBlock(request): object {
-    const currHeight = request.header.height;
-    const currProposer = request.header.proposerAddress.toString("hex");
+    // Parse height and proposer from header
+    const currHeight: number = request.header.height.low; // @TODO: consider
+    const currProposer: string = request.header.proposerAddress.toString("hex");
 
-    // @TODO: update validator set here
+    // Store array of last votes
+    const lastVotes: object[] | undefined = request.lastCommitInfo.votes;
+
+    // Parse validators that voted on the last block
+    if (lastVotes !== undefined && lastVotes.length > 0) {
+        // Iterate over votes array (supplied by Tendermint)
+        lastVotes.forEach((vote: any) => {
+            const valHex = vote.validator.address.toString("hex");
+            const valPower = vote.validator.power.low;  // @TODO re-examine
+
+            // Create entry if validator has not voted yet
+            if (!(deliverState.validators.hasOwnProperty(valHex))) {
+                deliverState.validators[valHex] = {
+                    lastProposed: null,
+                    lastVoted: null,
+                    totalVotes: 0,
+                    votePower: null,
+                };
+            }
+
+            // Update vote and height trackers
+            deliverState.validators[valHex].totalVotes += 1;
+            deliverState.validators[valHex].lastVoted = (currHeight - 1);
+
+            // Record if they are proposer this round
+            if (valHex === currProposer) {
+                deliverState.validators[valHex].lastProposed = currHeight;
+            }
+
+            // Update (or re-record) validator vote power
+            deliverState.validators[valHex].votePower = valPower;
+        });
+    }
 
     Logger.newRound(currHeight, currProposer);
     return {};
@@ -179,7 +226,7 @@ function checkTx(request): Vote {
       that the validator's address is in the current validator set.
     */
     try {
-        sigOk = Transaction.verify(tx);
+        sigOk = generator.verify(tx);
         if (!sigOk) {
             // Invalid validator signature
             Logger.mempoolWarn(msg.abci.messages.badSig);
@@ -192,7 +239,7 @@ function checkTx(request): Vote {
     }
 
     /**
-     * This main switch block selects the propper handler logic
+     * This main switch block selects the proper handler verification logic
      * based on the transaction type.
      */
     switch (txType) {
@@ -250,7 +297,7 @@ function deliverTx(request): Vote {
       that the validator's address is in the current validator set.
     */
     try {
-       sigOk = Transaction.verify(tx);
+       sigOk = generator.verify(tx);
        if (!sigOk) {
            // Invalid validator signature
            Logger.mempoolWarn(msg.abci.messages.badSig);
@@ -263,7 +310,7 @@ function deliverTx(request): Vote {
     }
 
     /**
-     * This main switch block selects the propper handler logic
+     * This main switch block selects the proper handler logic
      * based on the transaction type.
      */
     switch (txType) {
@@ -343,12 +390,13 @@ function commit(request): string {
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
+        console.log(err);
         Logger.consensusErr(msg.abci.errors.broadcast);
     }
 
     // Temporary
     // tslint:disable-next-line:no-console
-    console.log(`\n... Current state: ${JSON.stringify(commitState)}\n`);
+    console.log(`\n... Current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
 
     // Return state's hash to be included in next block header
     return stateHash;

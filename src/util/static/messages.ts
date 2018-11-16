@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  01-October-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 15-November-2018
  *
  * Log message templates and statuses for various modules.
  */
@@ -19,7 +19,7 @@ const { WS_PORT, ABCI_PORT, API_PORT } = process.env;
 export let messages  = {
     general: {
         messages: {
-            start:  "Initialization complete, begining new block production."
+            start:  "Initialization complete, beginning new block production."
         }, 
         errors: {
             fatal:  "Fatal error detected. Exiting."
@@ -56,7 +56,7 @@ export let messages  = {
             noStake:    "New order rejected: invalid poster or no poster stake.",
             verified:   "New order verified and added to OrderStream queue (deliverTx).",
             servStart:  `ABCI server started on port ${ABCI_PORT}.`,
-            roundDiff:  "This round deliverTx state is more than 1 period ahead of commited state.",
+            roundDiff:  "This round deliverTx state is more than 1 period ahead of committed state.",
             badSig:     "Rejected ABCI transaction with invalid validator signature."
         }
     },

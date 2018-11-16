@@ -7,14 +7,12 @@
  *
  * @author Henry Harder
  * @date (initial)  22-October-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 14-November-2018
  *
  * Object representing the post-commit state of the network.
  */
 
-/* tslint:disable */
-
-export let commitState = {
+export let commitState: State = {
   round: {
     number: 0,
     startsAt: 0,
@@ -28,6 +26,7 @@ export let commitState = {
     add: 0,
     remove: 0
   },
+  validators: {},
   orderCounter: 0,
   lastBlockHeight: 0,
   lastBlockAppHash: null

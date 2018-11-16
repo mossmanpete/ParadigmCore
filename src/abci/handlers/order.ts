@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 01-November-2018
+ * @date (modified) 15-November-2018
  *
  * Handler functions for verifying ABCI Order transactions, originating from
  * external API calls. Implements state transition logic as specified in the
@@ -34,7 +34,7 @@ const Order = new Paradigm().Order;
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
-export function checkOrder(tx: any, state: any) {
+export function checkOrder(tx: SignedOrderTx, state: State) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 
@@ -67,7 +67,7 @@ export function checkOrder(tx: any, state: any) {
  * @param state {object} current round state
  * @param q     {OrderTracker} valid order queue
  */
-export function deliverOrder(tx: any, state: any, q: OrderTracker) {
+export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 
@@ -92,9 +92,6 @@ export function deliverOrder(tx: any, state: any, q: OrderTracker) {
         state.limits[poster].orderLimit -= 1;
         state.orderCounter += 1;
         // End state modification
-
-        // Access remaining quota
-        // let remaining = state.limits[poster].orderLimit;
 
         // Add order to broadcast queue
         q.add(orderCopy);
