@@ -390,7 +390,6 @@ function commit(request): string {
         Logger.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
-        console.log(err);
         Logger.consensusErr(msg.abci.errors.broadcast);
     }
 
