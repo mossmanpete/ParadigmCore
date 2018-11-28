@@ -173,7 +173,6 @@ export class TxGenerator {
             // Generate signature
             signature = Sign(message, this.privKey);
         } catch (error) {
-            console.log(error);
             throw new Error("Failed to generate signature.");
         }
 
