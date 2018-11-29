@@ -116,6 +116,8 @@ export class TxGenerator {
         switch (options.encoding) {
             case "base64": { this.encoding = "base64"; break; }
             case "hex": { this.encoding = "hex"; break; }
+
+            // TODO: consider changing to default case
             case undefined: { this.encoding = "hex"; break; }
             default: {
                 throw new Error("Invalid encoding.");
