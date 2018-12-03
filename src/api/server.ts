@@ -23,9 +23,9 @@ import * as helmet from "helmet";
 // ParadigmCore classes and imports
 import { TxGenerator } from "src/abci/util/TxGenerator";
 import { TxBroadcaster } from "../abci/util/TxBroadcaster";
-import { Message } from "../net/ExpressMessage";
 import { Logger } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
+import { Message } from "./ExpressMessage";
 
 // "Globals"
 let client: TxBroadcaster;              // Tendermint client for RPC
@@ -79,7 +79,7 @@ app.post("/*", async (req, res) => {
  * @param apiPort       {number}        port to bind API server to
  * @param broadcaster   {TxBroadcaster} local transaction broadcaster
  */
-export async function startAPIserver(apiPort, broadcaster, txGenerator) {
+export async function start(apiPort, broadcaster, txGenerator) {
     try {
         // Store TxBroadcaster and TxGenerator
         client = broadcaster;

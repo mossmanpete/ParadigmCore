@@ -52,7 +52,6 @@ let commitState: any;   // commit state (synchronized at the end of each block)
  * Initialize and start the ABCI application.
  *
  * @param options {object} Options object with parameters:
- *  - options.version       {string}        application version
  *  - options.emitter       {EventEmitter}  main event emitter object
  *  - options.deliverState  {object}        deliverTx state object
  *  - options.commitState   {object}        commit state object
@@ -139,12 +138,12 @@ Below are implementations of Tendermint ABCI handler functions.
 /**
  * Return information about the state and software.
  */
-function info(): object {
+function info(request): object {
     return {
         data: "ParadigmCore ABCI Application",
         lastBlockAppHash: commitState.lastBlockAppHash,
         lastBlockHeight: commitState.lastBlockHeight,
-        version,
+        version
     };
 }
 
