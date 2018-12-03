@@ -18,10 +18,11 @@ import { EventEmitter } from "events";
 import * as _ws from "ws";
 
 // ParadigmCore imports
-import { Logger } from "../util/Logger";
-import { messages as msg } from "../util/static/messages";
+import { Logger } from "../../util/Logger";
+import { messages as msg } from "../../util/static/messages";
 import { WebSocketMessage } from "./WebSocketMessage";
 
+// "Globals"
 let wss: _ws.Server;        // OrderStream event server (WebSocket)
 let stream: EventEmitter;   // Global order/stream tracker
 

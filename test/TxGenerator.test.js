@@ -176,7 +176,7 @@ describe("Create and verify signed transactions:", () => {
         });
     });
 
-    test("generator sucessfully creates tx's with valid input", () => {
+    test("generator successfully creates tx's with valid input", () => {
         expect(() => {
             // Iterate over valid raw Tx's, and create signed Tx's
             vTxs.forEach(validTx => {
@@ -196,14 +196,14 @@ describe("Create and verify signed transactions:", () => {
             expect(signedTx).toHaveProperty("proof");
         });
 
-         // Test hexidecimal transactions
+         // Test hexadecimal transactions
          tx64Arr.forEach(signedTx => {
             expect(signedTx).toHaveProperty("proof");
         });
     });
 
     test("generator.verify(tx) returns 'true' for valid signed tx's", () => {
-        // Verify hexidecimal tx's
+        // Verify hexadecimal tx's
         txHexArr.forEach(signedTx => {
             expect(hexGenerator.verify(signedTx)).toBe(true);
             expect(base64Generator.verify(signedTx)).toBe(false);

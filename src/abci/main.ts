@@ -34,6 +34,7 @@ import { checkWitness, deliverWitness } from "./handlers/witness";
 // General utilities
 import { bigIntReplacer } from "../util/static/bigIntUtils";
 import { messages as msg } from "../util/static/messages";
+import { pubToAddr } from "../util/static/valFunctions";
 
 // "Globals" (used across modules)
 let version: string;        // Stores current application version
@@ -81,6 +82,7 @@ export async function startMain(options: any): Promise<null> {
             commit,
             deliverTx,
             info,
+            initChain,
         };
 
         // Queue for valid broadcast transactions (order/stream)
@@ -137,6 +139,8 @@ Below are implementations of Tendermint ABCI handler functions.
 
 /**
  * Return information about the state and software.
+ *
+ * @param request {RequestInfo}    info request
  */
 function info(request): object {
     return {
@@ -145,6 +149,33 @@ function info(request): object {
         lastBlockHeight: commitState.lastBlockHeight,
         version
     };
+}
+
+/**
+ * Called once upon chain initialization. Sets initial validators.
+ *
+ * @param request {RequestInitChain}    genesis information
+ */
+function initChain(request) {
+    // Add genesis validators to in-state validator list
+    request.validators.forEach((validator) => {
+        // Generate hexadecimal address from public key
+        let pubKey: Buffer = validator.pubKey.data;
+        let addrHex: string = pubToAddr(pubKey).toString("hex");
+
+        // Create entry if validator has not voted yet
+        if (!(deliverState.validators.hasOwnProperty(addrHex))) {
+            deliverState.validators[addrHex] = {
+                lastProposed: null,
+                lastVoted: null,
+                totalVotes: 0,
+                votePower: null,
+            };
+        }
+    });
+
+    // Do not change any parameters here
+    return {};
 }
 
 /**
@@ -191,6 +222,7 @@ function beginBlock(request): object {
         });
     }
 
+    // Indicate new round, return no indexing tags
     Logger.newRound(currHeight, currProposer);
     return {};
 }
@@ -205,9 +237,10 @@ function checkTx(request): Vote {
     // Raw transaction buffer (encoded and compressed)
     const rawTx: Buffer = request.tx;
 
-    let tx: any;        // Stores decoded transaction object
-    let txType: string; // Stores transaction type
-    let sigOk: boolean; // True if signature is valid
+    let tx: SignedTransaction;  // Stores decoded transaction object
+    let txType: string;         // Stores transaction type
+    let sigOk: boolean;         // True if signature is valid
+    let valAddr: string;        // Address of originating validator
 
     // Decode the buffered and compressed transaction
     try {
@@ -219,14 +252,17 @@ function checkTx(request): Vote {
     }
 
     /*
-      Verify validator signature. Currently, then validation condition depends
+      Verify validator signature. The validation condition depends
       on weather or not the signature matches the reported origin of the
-      ABCI transaction. In the future, the condition will check the above AND
-      that the validator's address is in the current validator set.
+      ABCI transaction.
     */
     try {
+        // Verify validator signature and address
         sigOk = generator.verify(tx);
-        if (!sigOk) {
+        valAddr = tx.proof.fromAddr;
+
+        // Check that signature is valid, and validator is in-state
+        if (!(sigOk && deliverState.validators.hasOwnProperty(valAddr))) {
             // Invalid validator signature
             Logger.mempoolWarn(msg.abci.messages.badSig);
             return Vote.invalid(msg.abci.messages.badSig);
@@ -243,7 +279,7 @@ function checkTx(request): Vote {
      */
     switch (txType) {
         case "order": {
-            return checkOrder(tx, commitState);
+            return checkOrder(tx as SignedOrderTx, commitState);
         }
         /*
         case "stream": {
@@ -251,11 +287,11 @@ function checkTx(request): Vote {
         }*/
 
         case "witness": {
-            return checkWitness(tx, commitState);
+            return checkWitness(tx as SignedWitnessTx, commitState);
         }
 
         case "rebalance": {
-            return checkRebalance(tx, commitState);
+            return checkRebalance(tx as SignedRebalanceTx, commitState);
         }
 
         default: {
@@ -276,9 +312,10 @@ function deliverTx(request): Vote {
     // Raw transaction buffer (encoded and compressed)
     const rawTx: Buffer = request.tx;
 
-    let tx: any;        // Stores decoded transaction object
-    let txType: string; // Stores transaction type
-    let sigOk: boolean; // True if signature is valid
+    let tx: SignedTransaction;  // Stores decoded transaction object
+    let txType: string;         // Stores transaction type
+    let sigOk: boolean;         // True if signature is valid
+    let valAddr: string;        // Address of originating validator
 
     // Decode the buffered and compressed transaction
     try {
@@ -290,18 +327,21 @@ function deliverTx(request): Vote {
     }
 
     /*
-      Verify validator signature. Currently, then validation condition depends
+      Verify validator signature. The validation condition depends
       on weather or not the signature matches the reported origin of the
-      ABCI transaction. In the future, the condition will check the above AND
-      that the validator's address is in the current validator set.
+      ABCI transaction.
     */
     try {
-       sigOk = generator.verify(tx);
-       if (!sigOk) {
-           // Invalid validator signature
-           Logger.mempoolWarn(msg.abci.messages.badSig);
-           return Vote.invalid(msg.abci.messages.badSig);
-       }
+        // Verify validator signature and address
+        sigOk = generator.verify(tx);
+        valAddr = tx.proof.fromAddr;
+
+        // Check that signature is valid, and validator is in-state
+        if (!(sigOk && deliverState.validators.hasOwnProperty(valAddr))) {
+            // Invalid validator signature
+            Logger.mempoolWarn(msg.abci.messages.badSig);
+            return Vote.invalid(msg.abci.messages.badSig);
+        }
     } catch (err) {
         // Error recovering signature
         Logger.mempoolWarn(msg.abci.errors.signature);
@@ -314,7 +354,7 @@ function deliverTx(request): Vote {
      */
     switch (txType) {
         case "order": {
-            return deliverOrder(tx, deliverState, tracker);
+            return deliverOrder(tx as SignedOrderTx, deliverState, tracker);
         }
         /*
         case "stream": {
@@ -322,11 +362,12 @@ function deliverTx(request): Vote {
         }*/
 
         case "witness": {
-            return deliverWitness(tx, deliverState);
+            return deliverWitness(tx as SignedWitnessTx, deliverState);
         }
 
         case "rebalance": {
-            return deliverRebalance(tx, deliverState, rebalancer);
+            return deliverRebalance(
+                tx as SignedRebalanceTx, deliverState, rebalancer);
         }
 
         default: {

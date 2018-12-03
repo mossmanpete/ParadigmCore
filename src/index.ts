@@ -23,7 +23,7 @@ import * as tendermint from "../lib/tendermint";
 // ParadigmCore classes
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { TxGenerator } from "./abci/util/TxGenerator";
-import { WebSocketMessage } from "./stream/WebSocketMessage";
+import { WebSocketMessage } from "./net/stream/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";
 
@@ -33,8 +33,8 @@ import { deliverState as dState } from "./state/deliverState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
-import { start as startAPIserver } from "./api/server";
-import { start as startStreamServer } from "./stream/server";
+import { start as startAPIserver } from "./net/api/server";
+import { start as startStreamServer } from "./net/stream/server";
 
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";

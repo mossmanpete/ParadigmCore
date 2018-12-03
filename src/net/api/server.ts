@@ -21,10 +21,10 @@ import * as express from "express";
 import * as helmet from "helmet";
 
 // ParadigmCore classes and imports
-import { TxGenerator } from "src/abci/util/TxGenerator";
-import { TxBroadcaster } from "../abci/util/TxBroadcaster";
-import { Logger } from "../util/Logger";
-import { messages as msg } from "../util/static/messages";
+import { TxBroadcaster } from "../../abci/util/TxBroadcaster";
+import { TxGenerator } from "../../abci/util/TxGenerator";
+import { Logger } from "../../util/Logger";
+import { messages as msg } from "../../util/static/messages";
 import { Message } from "./ExpressMessage";
 
 // "Globals"
