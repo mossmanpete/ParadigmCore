@@ -21,8 +21,11 @@ import * as Paradigm from "paradigm-connect";
 import { OrderTracker } from "../../async/OrderTracker";
 import { Hasher } from "../../crypto/Hasher";
 import { Logger } from "../../util/Logger";
-import { messages as msg } from "../../util/static/messages";
 import { Vote } from "../util/Vote";
+
+// ParadigmCore utilities
+import { messages as msg } from "../../util/static/messages";
+import { verifyOrder } from "../util/utils";
 
 // Order constructor using ParadigmConnect Order object
 const Order = new Paradigm().Order;
@@ -38,9 +41,19 @@ export function checkOrder(tx: SignedOrderTx, state: State) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 
-    // Construct order object, and recover poster signature
+    // Construct and verify order object, and recover poster signature
     try {
+        // Construct order object
         order = new Order(tx.data);
+
+        // Verify order size
+        // @TODO: get max size from state
+        if (!verifyOrder(order)) {
+            Logger.mempoolWarn("Rejected order over maximum size.");
+            return Vote.invalid("Order exceeds maximum size.");
+        }
+
+        // Recover poster address
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
         // Unknown staker

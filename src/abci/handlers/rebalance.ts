@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 03-December-2018
  *
  * Handler functions for verifying ABCI Rebalance transactions, originating
  * from validator nodes. Implements state transition logic as specified in the
@@ -17,12 +17,14 @@
 // 3rd party and STDLIB imports
 import { isEqual } from "lodash";
 
-// ParadigmCore imports
+// ParadigmCore classes
 import { StakeRebalancer } from "../../async/StakeRebalancer";
 import { Logger } from "../../util/Logger";
+import { Vote } from "../util/Vote";
+
+// ParadigmCore utilities
 import { messages as msg } from "../../util/static/messages";
 import { genLimits } from "../util/utils";
-import { Vote } from "../util/Vote";
 
 /**
  * Verify a Rebalance proposal before accepting it into the local mempool.

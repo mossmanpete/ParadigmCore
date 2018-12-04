@@ -37,6 +37,9 @@ app.use(helmet());          // More secure headers
 app.use(cors());            // Cross-origin resource sharing (helps browsers)
 app.use(bodyParser.json()); // JSON request and response
 
+// Begin handler implementation
+
+// 404 handler
 app.use((err, req, res, next) => {
     try {
         Message.staticSendError(res, msg.api.errors.badJSON, 400);
@@ -45,6 +48,7 @@ app.use((err, req, res, next) => {
     }
 });
 
+// OrderBroadcast POST handler
 app.post("/*", async (req, res) => {
     // Create transaction object
     let tx: SignedTransaction;
@@ -72,6 +76,8 @@ app.post("/*", async (req, res) => {
         Message.staticSendError(res, "Internal error, try again.", 500);
     }
 });
+
+// End handler implementations
 
 /**
  * Start and bind API server.

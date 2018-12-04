@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 04-December-2018
  *
  * Hashing class to allow creation of state hashes. Also used to generate
  * ID's (orderID) for valid orders.
