@@ -1,7 +1,7 @@
 // Import TxGenerator class
 const TxGen = require("../dist/abci/util/TxGenerator").TxGenerator;
 
-// Dummy Tendermint Keys
+// Dummy Tendermint Keys (encoded in hex)
 const privStr = '489ad37b451f4bd2baa077e39451fd16cab9d048ea9a19334de5bf552f8460b7da38c90ac19b29f107b0b344245c3795500ba24abe643456fc33dfe1d5e91b05';
 const pubStr = 'da38c90ac19b29f107b0b344245c3795500ba24abe643456fc33dfe1d5e91b05';
 

@@ -1,18 +1,21 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name WebSocketMessage.ts
- * @module src/net
+ * @name WsMessage.ts
+ * @module src/api/stream
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  27-August-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 03-December-2018
  *
  * Simple wrapper class for JSON WebSocket messages.
  */
 
-export class WebSocketMessage {
+/**
+ * Represents a WebSocket response message for OrderStream events.
+ */
+export class WsMessage {
     public static sendMessage(ws, message: string): void {
         const msg = {
             "event": "message",

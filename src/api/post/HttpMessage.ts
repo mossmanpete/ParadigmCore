@@ -1,20 +1,24 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name ExpressMessage.ts
- * @module src/net
+ * @name HttpMessage.ts
+ * @module src/api/post
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 03-December-2018
  *
  * Simple class for creating and sending JSON messages using ExpressJS.
  */
 
+// Express.js webserver
 import * as exp from "express";
 
-export class Message {
+/**
+ * Represents response message for HTTP (post) API requests.
+ */
+export class HttpMessage {
 
     public static staticSendError(res: exp.Response, message: string, error: number): void {
         const json = {

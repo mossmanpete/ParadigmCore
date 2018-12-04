@@ -7,14 +7,14 @@
  *
  * @author Henry Harder
  * @date (initial)  21-September-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 03-December-2018
  *
  * Compression and encoding (and decompression and decoding) for local ABCI
  * transactions.
  */
 
+// Stdlib compression library
 import * as zlib from "zlib";
-const { IN_ENC, OUT_ENC } = process.env;    // @TODO: hardcode?
 
 /**
  * Provides static methods for encoding/compressing and decoding/decompressing
@@ -160,8 +160,8 @@ export class PayloadCipher {
     }
 
     // encoding for in/output of orders, default utf8
-    private static inEncoding: string = IN_ENC;
+    private static inEncoding: string = "utf8";
 
     // encoding used for URL transport, default base64
-    private static outEncoding: string = OUT_ENC;
+    private static outEncoding: string = "base64";
 }

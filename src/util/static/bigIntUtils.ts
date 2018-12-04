@@ -9,7 +9,7 @@
  * @date (initial)  05-November-2018
  * @date (modified) 15-November-2018
  *
- * A `JSON.stringify()` replacer function to support unique serialization of 
+ * A `JSON.stringify()` replacer function to support unique serialization of
  * BigInts.
  *
  * (subtle nod to TC39)
