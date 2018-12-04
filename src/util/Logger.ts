@@ -16,7 +16,7 @@
 
 /* tslint:disable */
 
-const { VERSION } = process.env;
+const VERSION = process.env.npm_package_version;
 
 import { Timestamp } from "./Timestamp";
 import "colors";

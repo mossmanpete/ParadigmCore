@@ -123,11 +123,11 @@ export class PayloadCipher {
      *
      * @param input {string} encoded input string
      */
-    public static decodeToObject(input: string): object {
+    public static decodeToObject(input: string): SignedTransaction {
         let inBuff: Buffer; // input buffer
         let dcBuff: Buffer; // decompressed buffer
         let outStr: string; // decoded string
-        let outObj: object; // output object
+        let outObj: SignedTransaction; // output object
 
         try {
             inBuff = Buffer.from(input, PayloadCipher.outEncoding);
@@ -152,7 +152,7 @@ export class PayloadCipher {
      *
      * @param inBuff {Buffer}
      */
-    public static ABCIdecode(inBuff: Buffer): object {
+    public static ABCIdecode(inBuff: Buffer): SignedTransaction {
         // TODO: consider depreciating and wrapping into other function
 
        const inStr: string = inBuff.toString(PayloadCipher.inEncoding);

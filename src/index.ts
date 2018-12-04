@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 03-December-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
@@ -23,7 +23,7 @@ import * as tendermint from "../lib/tendermint";
 // ParadigmCore classes
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { TxGenerator } from "./abci/util/TxGenerator";
-import { WebSocketMessage } from "./net/WebSocketMessage";
+import { WebSocketMessage } from "./net/stream/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";
 
@@ -33,7 +33,8 @@ import { deliverState as dState } from "./state/deliverState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
-import { startAPIserver } from "./net/server";
+import { start as startAPIserver } from "./net/api/server";
+import { start as startStreamServer } from "./net/stream/server";
 
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
@@ -49,12 +50,20 @@ let node: any;                  // Tendermint node instance
  * This function executes immediately upon this file being loaded. It is
  * responsible for starting all dependant modules.
  *
- * Provide configuration options via environment (.env file)
+ * Provide configuration options via environment (or use .env file)
  *
  * @param env   {object}    environment variables (expected as process.env)
  */
 (async (env) => {
     Logger.logStart();
+
+    // Check environment
+    Logger.logEvent("Checking environment...");
+    if (!env.npm_package_version) {
+        Logger.logWarning("Start ParadigmCore using NPM. Exiting.");
+        Logger.logError(msg.general.errors.fatal);
+        process.exit(1);
+    }
 
     // Configure and start Tendermint core
     Logger.consensus("Starting Tendermint Core...");
@@ -102,10 +111,11 @@ let node: any;                  // Tendermint node instance
     // Start WebSocket server
     Logger.websocketEvt("Starting WebSocket server...");
     try {
-        wss = new _ws.Server({ port: parseInt(env.WS_PORT, 10) }, () => {
-            Logger.websocketEvt(msg.websocket.messages.servStart);
-        });
-        emitter = new EventEmitter(); // parent event emitter
+        // Create a "parent" EventEmitter
+        emitter = new EventEmitter();
+
+        // Start OrderStream WebSocket server
+        startStreamServer(parseInt(env.WS_PORT, 10), emitter);
     } catch (error) {
         Logger.websocketErr("failed initializing WebSocket server.");
         Logger.logError(msg.general.errors.fatal);
@@ -123,7 +133,7 @@ let node: any;                  // Tendermint node instance
             abciServPort: env.ABCI_PORT,
             commitState: cState,
             deliverState: dState,
-            version: env.VERSION,
+            version: env.npm_package_version,
 
             // Rebalancer options
             finalityThreshold: parseInt(env.FINALITY_THRESHOLD, 10),
@@ -165,39 +175,6 @@ let node: any;                  // Tendermint node instance
         process.exit(1);
     }
 
-    /**
-     * Begin WebSocket handler implementation (below)
-     *
-     * TODO: move this to another file
-     */
-
-    wss.on("connection", (ws) => {
-        try {
-            WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
-        } catch (err) {
-            Logger.websocketErr(msg.websocket.errors.connect);
-        }
-
-        emitter.on("tx", (tx) => {
-            try {
-                wss.clients.forEach((client) => {
-                    if ((client.readyState === 1) && (client === ws)) {
-                        WebSocketMessage.sendOrder(client, tx);
-                    }
-                });
-            } catch (err) {
-                Logger.websocketErr(msg.websocket.errors.broadcast);
-            }
-        });
-
-        ws.on("message", (message) => {
-            if (message === "close") {
-                return ws.close();
-            } else {
-                WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
-            }
-        });
-    });
-
+    // Indicate block production begins
     Logger.logEvent(msg.general.messages.start);
 })(process.env);
