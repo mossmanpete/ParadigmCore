@@ -17,13 +17,11 @@ require("dotenv").config();
 
 // Standard lib and 3rd party NPM modules
 import { EventEmitter } from "events";
-import * as _ws from "ws";
 import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { TxGenerator } from "./abci/util/TxGenerator";
-import { WebSocketMessage } from "./net/stream/WebSocketMessage";
 import { Logger } from "./util/Logger";
 import { messages as msg } from "./util/static/messages";
 
@@ -33,14 +31,13 @@ import { deliverState as dState } from "./state/deliverState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
-import { start as startAPIserver } from "./net/api/server";
-import { start as startStreamServer } from "./net/stream/server";
+import { start as startAPIserver } from "./net/post/HttpServer";
+import { start as startStreamServer } from "./net/stream/WsServer";
 
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
 // "Globals"
-let wss: _ws.Server;            // OrderStream WS server
 let emitter: EventEmitter;      // Emitter to track events
 let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
 let generator: TxGenerator;     // Signs and builds ABCI tx's

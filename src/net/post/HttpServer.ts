@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name server.ts
- * @module src/net
+ * @module src/net/post
  * ===========================
  *
  * @author Henry Harder
@@ -25,7 +25,7 @@ import { TxBroadcaster } from "../../abci/util/TxBroadcaster";
 import { TxGenerator } from "../../abci/util/TxGenerator";
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
-import { Message } from "./ExpressMessage";
+import { HttpMessage as Message } from "./HttpMessage";
 
 // "Globals"
 let client: TxBroadcaster;              // Tendermint client for RPC

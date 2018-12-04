@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name server.ts
- * @module src/stream
+ * @module src/net/stream
  * ===========================
  *
  * @author Henry Harder
@@ -20,7 +20,7 @@ import * as _ws from "ws";
 // ParadigmCore imports
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
-import { WebSocketMessage } from "./WebSocketMessage";
+import { WsMessage as Message } from "./WsMessage";
 
 // "Globals"
 let wss: _ws.Server;        // OrderStream event server (WebSocket)
@@ -32,7 +32,7 @@ let stream: EventEmitter;   // Global order/stream tracker
 function bind() {
     wss.on("connection", (ws) => {
         try {
-            WebSocketMessage.sendMessage(ws, msg.websocket.messages.connected);
+            Message.sendMessage(ws, msg.websocket.messages.connected);
         } catch (err) {
             Logger.websocketErr(msg.websocket.errors.connect);
         }
@@ -41,7 +41,7 @@ function bind() {
             try {
                 wss.clients.forEach((client) => {
                     if ((client.readyState === 1) && (client === ws)) {
-                        WebSocketMessage.sendOrder(client, tx);
+                        Message.sendOrder(client, tx);
                     }
                 });
             } catch (err) {
@@ -53,7 +53,7 @@ function bind() {
             if (message === "close") {
                 return ws.close();
             } else {
-                WebSocketMessage.sendMessage(ws, `Unknown command '${message}.'`);
+                Message.sendMessage(ws, `Unknown command '${message}.'`);
             }
         });
     });
