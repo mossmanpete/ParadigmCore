@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name WsServer.ts
- * @module src/net/stream
+ * @module src/api/stream
  * ===========================
  *
  * @author Henry Harder

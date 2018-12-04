@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name WsMessage.ts
- * @module src/net/stream
+ * @module src/api/stream
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  27-August-2018
- * @date (modified) 05-November-2018
+ * @date (modified) 03-December-2018
  *
  * Simple wrapper class for JSON WebSocket messages.
  */

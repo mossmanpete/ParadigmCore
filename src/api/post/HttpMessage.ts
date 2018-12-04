@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name HttpMessage.ts
- * @module src/net/post
+ * @module src/api/post
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 02-November-2018
+ * @date (modified) 03-December-2018
  *
  * Simple class for creating and sending JSON messages using ExpressJS.
  */

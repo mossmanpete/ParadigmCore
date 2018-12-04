@@ -31,8 +31,8 @@ import { deliverState as dState } from "./state/deliverState";
 
 // Initialization functions
 import { startMain, startRebalancer } from "./abci/main";
-import { start as startAPIserver } from "./net/post/HttpServer";
-import { start as startStreamServer } from "./net/stream/WsServer";
+import { start as startAPIserver } from "./api/post/HttpServer";
+import { start as startStreamServer } from "./api/stream/WsServer";
 
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
