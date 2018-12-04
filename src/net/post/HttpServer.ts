@@ -1,7 +1,7 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name server.ts
+ * @name HttpServer.ts
  * @module src/net/post
  * ===========================
  *

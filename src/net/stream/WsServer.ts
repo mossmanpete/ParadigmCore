@@ -1,7 +1,7 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name server.ts
+ * @name WsServer.ts
  * @module src/net/stream
  * ===========================
  *
@@ -30,17 +30,19 @@ let stream: EventEmitter;   // Global order/stream tracker
  * Bind OrderStream handlers to WebSocket server.
  */
 function bind() {
-    wss.on("connection", (ws) => {
+    wss.on("connection", (connection) => {
+        // Send connection message
         try {
-            Message.sendMessage(ws, msg.websocket.messages.connected);
+            Message.sendMessage(connection, msg.websocket.messages.connected);
         } catch (err) {
             Logger.websocketErr(msg.websocket.errors.connect);
         }
 
+        // New order/stream transaction
         stream.on("tx", (tx) => {
             try {
                 wss.clients.forEach((client) => {
-                    if ((client.readyState === 1) && (client === ws)) {
+                    if ((client.readyState === 1) && (client === connection)) {
                         Message.sendOrder(client, tx);
                     }
                 });
@@ -49,11 +51,12 @@ function bind() {
             }
         });
 
-        ws.on("message", (message) => {
+        // If the connection sends data
+        connection.on("message", (message) => {
             if (message === "close") {
-                return ws.close();
+                return connection.close();
             } else {
-                Message.sendMessage(ws, `Unknown command '${message}.'`);
+                Message.sendMessage(connection, `Not implemented.`);
             }
         });
     });
