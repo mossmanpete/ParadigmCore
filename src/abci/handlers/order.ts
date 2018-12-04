@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 04-December-2018
  *
  * Handler functions for verifying ABCI Order transactions, originating from
  * external API calls. Implements state transition logic as specified in the
@@ -24,29 +24,31 @@ import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
 import { Vote } from "../util/Vote";
 
-// Order constructor from paradigm-connect
+// Order constructor using ParadigmConnect Order object
 const Order = new Paradigm().Order;
 
 /**
  * Performs light verification of OrderBroadcast transactions before accepting
  * to local mempool.
  *
- * @param tx    {object} decoded transaction body
- * @param state {object} current round state
+ * @param tx    {SignedOrderTx} decoded transaction body
+ * @param state {State}         current round state
  */
 export function checkOrder(tx: SignedOrderTx, state: State) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 
+    // Construct order object, and recover poster signature
     try {
-        // Construct order object, and recover poster signature
         order = new Order(tx.data);
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
+        // Unknown staker
         Logger.mempoolWarn(msg.abci.errors.format);
         return Vote.invalid(msg.abci.errors.format);
     }
 
+    // Does poster have a staked balance?
     if (
         state.limits.hasOwnProperty(poster) &&
         state.limits[poster].orderLimit > 0
@@ -63,16 +65,16 @@ export function checkOrder(tx: SignedOrderTx, state: State) {
  * Execute an OrderBroadcast transaction in full, and perform state
  * modification.
  *
- * @param tx    {object} decoded transaction body
- * @param state {object} current round state
- * @param q     {OrderTracker} valid order queue
+ * @param tx    {SignedOrderTx} decoded transaction body
+ * @param state {State}         current round state
+ * @param q     {OrderTracker}  valid order queue
  */
 export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
     let order;  // Paradigm order object
     let poster; // Recovered poster address from signature
 
+    // Construct order object, and recover poster signature
     try {
-        // Construct order object, and recover poster signature
         order = new Order(tx.data);
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
@@ -80,6 +82,7 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
         return Vote.invalid(msg.abci.errors.format);
     }
 
+    // Verify poster balance and modify state
     if (
         state.limits.hasOwnProperty(poster) &&
         state.limits[poster].orderLimit > 0
@@ -93,13 +96,13 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
         state.orderCounter += 1;
         // End state modification
 
-        // Add order to broadcast queue
+        // Add order to block's broadcast queue
         q.add(orderCopy);
 
         Logger.consensus(msg.abci.messages.verified);
         return Vote.valid(`(confirmed) OrderID: ${orderCopy.id}`);
     } else {
-        // Executed if poster has no stake
+        // No stake or insufficient quota remaining
         Logger.consensusWarn(msg.abci.messages.noStake);
         return Vote.invalid(msg.abci.messages.noStake);
     }

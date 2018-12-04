@@ -77,6 +77,7 @@ let node: any;                  // Tendermint node instance
         });
     } catch (error) {
         Logger.consensusErr("failed initializing Tendermint.");
+        Logger.consensusWarn(error.message);
         Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
@@ -88,6 +89,7 @@ let node: any;                  // Tendermint node instance
         });
     } catch (error) {
         Logger.txErr("failed initializing ABCI connection.");
+        Logger.txErr(error.message);
         Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
@@ -101,6 +103,7 @@ let node: any;                  // Tendermint node instance
         });
     } catch (error) {
         Logger.logError("failed to construct TransactionGenerator.");
+        Logger.logError(error.message);
         Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
@@ -115,6 +118,7 @@ let node: any;                  // Tendermint node instance
         startStreamServer(parseInt(env.WS_PORT, 10), emitter);
     } catch (error) {
         Logger.websocketErr("failed initializing WebSocket server.");
+        Logger.websocketErr(error.message);
         Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
@@ -158,6 +162,7 @@ let node: any;                  // Tendermint node instance
         Logger.rebalancer(msg.rebalancer.messages.activated, 0);
     } catch (error) {
         Logger.consensus("failed initializing ABCI application.");
+        Logger.consensus(error.message);
         Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }
@@ -168,6 +173,7 @@ let node: any;                  // Tendermint node instance
         await startAPIserver(env.API_PORT, broadcaster, generator);
     } catch (error) {
         Logger.apiErr("failed initializing API server.");
+        Logger.apiErr(error.message);
         Logger.logError(msg.general.errors.fatal);
         process.exit(1);
     }

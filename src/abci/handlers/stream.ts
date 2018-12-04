@@ -19,6 +19,7 @@ import * as Paradigm from "paradigm-connect";
 
 // ParadigmCore classes
 import { OrderTracker } from "../../async/OrderTracker";
+import { Vote } from "../util/Vote";
 
 /**
  * Used to perform mempool verification of StreamBroadcast transactions.
@@ -27,7 +28,7 @@ import { OrderTracker } from "../../async/OrderTracker";
  * @param state {object} current round state
  */
 export function checkStream(tx: SignedStreamTx, state: State) {
-    return null;
+    return Vote.invalid();
 }
 
 /**
@@ -38,5 +39,5 @@ export function checkStream(tx: SignedStreamTx, state: State) {
  * @param state {object} current round state
  */
 export function deliverStream(tx: SignedStreamTx, state: State, tracker: OrderTracker) {
-    return null;
+    return Vote.invalid();
 }

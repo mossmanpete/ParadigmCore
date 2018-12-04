@@ -15,24 +15,28 @@
  */
 
 // 3rd party and STDLIB imports
-import * as _ from "lodash";
+import { isEqual } from "lodash";
 
 // ParadigmCore imports
 import { StakeRebalancer } from "../../async/StakeRebalancer";
 import { Logger } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
+import { genLimits } from "../util/utils";
 import { Vote } from "../util/Vote";
 
 /**
  * Verify a Rebalance proposal before accepting it into the local mempool.
  *
- * @param tx    {object} decoded transaction body
- * @param state {object} current round state
+ * @param tx    {SignedRebalanceTx} decoded transaction body
+ * @param state {State}             current round state
  */
 export function checkRebalance(tx: SignedRebalanceTx, state: State) {
+    // Load proposal from rebalance tx
     const proposal: RebalanceData = tx.data;
 
+    // Check if this is the initial rebalance period
     switch (state.round.number) {
+        // No previous periods
         case 0: {
             if (proposal.round.number === 1) {
                 // Accept valid initial rebalance proposal to mempool
@@ -45,6 +49,7 @@ export function checkRebalance(tx: SignedRebalanceTx, state: State) {
             }
         }
 
+        // Not the first period (period > 0)
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
                 // Accept valid rebalance proposal to mempool
@@ -60,12 +65,11 @@ export function checkRebalance(tx: SignedRebalanceTx, state: State) {
 }
 
 /**
- * @name deliverRebalance() {export function} execute a Rebalance transaction
- * and adopt the new mapping in state.
+ * Execute a Rebalance transaction and adopt the new mapping in state.
  *
- * @param tx {object} decoded transaction body
- * @param state {object} current round state
- * @param rb {StakeRebalancer} the current rebalancer instance
+ * @param tx    {SignedRebalanceTx} decoded transaction body
+ * @param state {State}             current round state
+ * @param rb    {StakeRebalancer}   the current rebalancer instance
  */
 export function deliverRebalance(
     tx: SignedRebalanceTx,
@@ -76,6 +80,7 @@ export function deliverRebalance(
 
     // Main verification switch block
     switch (state.round.number) {
+        // Initial rebalance period
         case 0: {
             if (proposal.round.number === 1) {
                 /**
@@ -102,6 +107,7 @@ export function deliverRebalance(
             }
         }
 
+        // All other periods (period > 0)
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
                 // Limits from proposal
@@ -111,9 +117,9 @@ export function deliverRebalance(
                 const localLimits = genLimits(state.balances, state.round.limit);
 
                 // TODO: add condition around period length
-                if (_.isEqual(propLimits, localLimits)) {
+                if (isEqual(propLimits, localLimits)) {
                     // If proposed mapping matches mapping constructed from
-                    // in state balances.
+                    // in state balances, we accept.
 
                     // Begin state modification
                     state.round.number += 1;
@@ -122,6 +128,7 @@ export function deliverRebalance(
                     state.limits = proposal.limits;
                     // End state modification
 
+                    // Vote to accept
                     Logger.consensus(msg.rebalancer.messages.accept);
                     return Vote.valid(msg.rebalancer.messages.accept);
                 } else {
@@ -130,58 +137,16 @@ export function deliverRebalance(
                     return Vote.invalid(msg.rebalancer.messages.noMatch);
                 }
 
+            // Proposal is for incorrect period
             } else if ((1 + state.round.number) < proposal.round.number) {
-                // Proposal is for incorrect period
                 Logger.consensusWarn(msg.rebalancer.messages.wrongRound);
                 return Vote.invalid(msg.rebalancer.messages.wrongRound);
 
+            // Reject invalid rebalance proposals
             } else {
-                // Reject invalid rebalance proposal from mempool
                 Logger.consensusWarn(msg.rebalancer.messages.reject);
                 return Vote.invalid(msg.rebalancer.messages.reject);
             }
         }
     }
-}
-
-/**
- * @name genLimits()
- * @description Generates a rate-limit mapping based on staked balances and
- * the total order limit per staking period.
- *
- * @param bals  {object} current in-state staked balances
- * @param limit     {number} the total number of orders accepted in the period
- */
-function genLimits(bals: Balances, limit: number): Limits {
-    let total: bigint = BigInt(0);      // Total amount currently staked
-    const output: Limits = {};          // Generated output mapping
-
-    // Calculate total balance currently staked
-    Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
-            total += bals[k];
-        }
-    });
-
-    // Compute the rate-limits for each staker based on stake size
-    Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
-            // Compute proportional order limit
-            const bal = parseInt(bals[k].toString(), 10);
-            const tot = parseInt(total.toString(), 10);
-            const lim = (bal / tot) * limit;
-
-            // Create limit object for each address
-            output[k] = {
-                // orderLimit is proportional to stake size
-                orderLimit: Math.floor(lim),
-
-                // streamLimit is always 1, regardless of stake size
-                streamLimit: 1,
-            };
-        }
-    });
-
-    // Return constructed output mapping.
-    return output;
 }

@@ -15,27 +15,29 @@
 
 // Standard lib imports
 import { EventEmitter } from "events";
-import * as _ws from "ws";
+import { Server } from "ws";
 
 // ParadigmCore imports
-import { Logger } from "../../util/Logger";
+import { Logger as log } from "../../util/Logger";
 import { messages as msg } from "../../util/static/messages";
 import { WsMessage as Message } from "./WsMessage";
 
 // "Globals"
-let wss: _ws.Server;        // OrderStream event server (WebSocket)
+let wss: Server;    // OrderStream event server (WebSocket)
 let stream: EventEmitter;   // Global order/stream tracker
 
 /**
- * Bind OrderStream handlers to WebSocket server.
+ * Bind OrderStream API handlers to WebSocket server connections.
+ *
+ * @param server {ws.Server}    websocket server
  */
-function bind() {
-    wss.on("connection", (connection) => {
+function bind(server: Server): Server {
+    return server.on("connection", (connection) => {
         // Send connection message
         try {
             Message.sendMessage(connection, msg.websocket.messages.connected);
         } catch (err) {
-            Logger.websocketErr(msg.websocket.errors.connect);
+            log.websocketErr(msg.websocket.errors.connect);
         }
 
         // New order/stream transaction
@@ -47,7 +49,7 @@ function bind() {
                     }
                 });
             } catch (err) {
-                Logger.websocketErr(msg.websocket.errors.broadcast);
+                log.websocketErr(msg.websocket.errors.broadcast);
             }
         });
 
@@ -71,15 +73,15 @@ function bind() {
 export function start(port: number, emitter: EventEmitter) {
     try {
         // Create WebSocket server
-        wss = new _ws.Server({ port }, () => {
-            Logger.websocketEvt(msg.websocket.messages.servStart);
+        let server = new Server({ port }, () => {
+            log.websocketEvt(msg.websocket.messages.servStart);
         });
 
         // Load global order emitter
         stream = emitter;
 
-        // Bind handlers to server
-        bind();
+        // Bind handlers to global server object
+        wss = bind(server);
     } catch (error) {
         throw new Error("Error starting WebSocket server.");
     }

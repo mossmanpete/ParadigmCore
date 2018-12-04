@@ -16,6 +16,8 @@
 // Ed25519 signature implementation and crypto
 import { createHash as hash } from "crypto";
 import { Sign, Verify } from "ed25519";
+
+// ParadigmCore utilities
 import { bigIntReplacer } from "../../util/static/bigIntUtils";
 
 export class TxGenerator {
@@ -193,7 +195,7 @@ export class TxGenerator {
      * Returns true if a Tx's signature object is valid (i.e. message matches
      * signature, and "from" address matches recovered signature.).
      *
-     * @param tx    {object}    raw (unencoded) transaction object.
+     * @param tx    {SignedTransaction} (unencoded) transaction object.
      */
     public verify(tx: SignedTransaction): boolean {
         let isValid: boolean; // Result of verification

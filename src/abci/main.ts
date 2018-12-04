@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 04-December-2018
  *
  * ParadigmCore primary state machine, and implementation of Tendermint handler
  * functions and state transition logic.
@@ -15,26 +15,28 @@
 
 // 3rd party and STDLIB imports
 const abci: any = require("abci");
-import * as _ from "lodash";
+import { cloneDeep } from "lodash";
 
 // ParadigmCore classes
 import { OrderTracker } from "../async/OrderTracker";
 import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
-import { Logger } from "../util/Logger";
+import { Logger as log } from "../util/Logger";
 import { TxGenerator } from "./util/TxGenerator";
 import { Vote } from "./util/Vote";
 
-// ABCI handler functions
+// Tendermint checkTx/deliverTx handler functions
 import { checkOrder, deliverOrder } from "./handlers/order";
 import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
+import { checkStream, deliverStream } from "./handlers/stream";
 import { checkWitness, deliverWitness } from "./handlers/witness";
 
 // General utilities
 import { bigIntReplacer } from "../util/static/bigIntUtils";
 import { messages as msg } from "../util/static/messages";
 import { pubToAddr } from "../util/static/valFunctions";
+import { decodeTx, preVerifyTx } from "./util/utils";
 
 // "Globals" (used across modules)
 let version: string;        // Stores current application version
@@ -105,7 +107,7 @@ export async function startMain(options: any): Promise<null> {
 
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
-        Logger.consensus(msg.abci.messages.servStart);
+        log.consensus(msg.abci.messages.servStart);
 
     } catch (err) {
         throw new Error("Error initializing ABCI application.");
@@ -114,14 +116,14 @@ export async function startMain(options: any): Promise<null> {
 }
 
 /**
- * Start rebalancer module and order tracker module.
+ * Starts rebalancer module and order tracker module.
  */
 export async function startRebalancer(): Promise<null> {
     try {
         // Start rebalancer after sync
         const code = rebalancer.start(); // Start listening to Ethereum events
         if (code !== 0) {
-            Logger.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
+            log.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
             throw new Error(code.toString());
         }
 
@@ -223,7 +225,7 @@ function beginBlock(request): object {
     }
 
     // Indicate new round, return no indexing tags
-    Logger.newRound(currHeight, currProposer);
+    log.newRound(currHeight, currProposer);
     return {};
 }
 
@@ -234,69 +236,50 @@ function beginBlock(request): object {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function checkTx(request): Vote {
-    // Raw transaction buffer (encoded and compressed)
-    const rawTx: Buffer = request.tx;
-
-    let tx: SignedTransaction;  // Stores decoded transaction object
-    let txType: string;         // Stores transaction type
-    let sigOk: boolean;         // True if signature is valid
-    let valAddr: string;        // Address of originating validator
+    // Load transaction from request
+    const rawTx: Buffer = request.tx;   // Encoded/compressed tx object
+    let tx: SignedTransaction;          // Decoded tx object
 
     // Decode the buffered and compressed transaction
     try {
-        tx = PayloadCipher.ABCIdecode(rawTx);
-        txType = tx.type.toLowerCase();
-    } catch (err) {
-        Logger.mempoolWarn(msg.abci.errors.decompress);
+        tx = decodeTx(rawTx);
+    } catch (error) {
+        log.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    /*
-      Verify validator signature. The validation condition depends
-      on weather or not the signature matches the reported origin of the
-      ABCI transaction.
-    */
-    try {
-        // Verify validator signature and address
-        sigOk = generator.verify(tx);
-        valAddr = tx.proof.fromAddr;
-
-        // Check that signature is valid, and validator is in-state
-        if (!(sigOk && deliverState.validators.hasOwnProperty(valAddr))) {
-            // Invalid validator signature
-            Logger.mempoolWarn(msg.abci.messages.badSig);
-            return Vote.invalid(msg.abci.messages.badSig);
-        }
-    } catch (err) {
-        // Error recovering signature
-        Logger.mempoolWarn(msg.abci.errors.signature);
-        return Vote.invalid(msg.abci.errors.signature);
+    // Verify the transaction came from a validator
+    if (!preVerifyTx(tx, deliverState, generator)) {
+        log.mempoolWarn(msg.abci.messages.badSig);
+        return Vote.invalid(msg.abci.messages.badSig);
     }
 
-    /**
-     * This main switch block selects the proper handler verification logic
-     * based on the transaction type.
-     */
-    switch (txType) {
+    // Selects the proper handler verification logic based on the tx type.
+    switch (tx.type) {
+        // OrderBroadcast type transaction
         case "order": {
             return checkOrder(tx as SignedOrderTx, commitState);
         }
-        /*
-        case "stream": {
-            return checkStream(tx, commitState);
-        }*/
 
+        // StreamBroadcast type external transaction
+        // @TODO implement
+        case "stream": {
+            return checkStream(tx as SignedStreamTx, commitState);
+        }
+
+        // Validator reporting witness to Ethereum event
         case "witness": {
             return checkWitness(tx as SignedWitnessTx, commitState);
         }
 
+        // Rebalance transaction updates limit mapping
         case "rebalance": {
             return checkRebalance(tx as SignedRebalanceTx, commitState);
         }
 
+        // Invalid transaction type
         default: {
-            // Invalid transaction type
-            Logger.mempoolWarn(msg.abci.errors.txType);
+            log.mempoolWarn(msg.abci.errors.txType);
             return Vote.invalid(msg.abci.errors.txType);
         }
     }
@@ -309,70 +292,51 @@ function checkTx(request): Vote {
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function deliverTx(request): Vote {
-    // Raw transaction buffer (encoded and compressed)
-    const rawTx: Buffer = request.tx;
-
-    let tx: SignedTransaction;  // Stores decoded transaction object
-    let txType: string;         // Stores transaction type
-    let sigOk: boolean;         // True if signature is valid
-    let valAddr: string;        // Address of originating validator
+    // Load transaction from request
+    const rawTx: Buffer = request.tx;   // Encoded/compressed tx object
+    let tx: SignedTransaction;          // Decoded tx object
 
     // Decode the buffered and compressed transaction
     try {
-        tx = PayloadCipher.ABCIdecode(rawTx);
-        txType = tx.type.toLowerCase();
-    } catch (err) {
-        Logger.mempoolWarn(msg.abci.errors.decompress);
+        tx = decodeTx(rawTx);
+    } catch (error) {
+        log.mempoolWarn(msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
     }
 
-    /*
-      Verify validator signature. The validation condition depends
-      on weather or not the signature matches the reported origin of the
-      ABCI transaction.
-    */
-    try {
-        // Verify validator signature and address
-        sigOk = generator.verify(tx);
-        valAddr = tx.proof.fromAddr;
-
-        // Check that signature is valid, and validator is in-state
-        if (!(sigOk && deliverState.validators.hasOwnProperty(valAddr))) {
-            // Invalid validator signature
-            Logger.mempoolWarn(msg.abci.messages.badSig);
-            return Vote.invalid(msg.abci.messages.badSig);
-        }
-    } catch (err) {
-        // Error recovering signature
-        Logger.mempoolWarn(msg.abci.errors.signature);
-        return Vote.invalid(msg.abci.errors.signature);
+    // Verify the transaction came from a validator
+    if (!preVerifyTx(tx, deliverState, generator)) {
+        log.mempoolWarn(msg.abci.messages.badSig);
+        return Vote.invalid(msg.abci.messages.badSig);
     }
 
-    /**
-     * This main switch block selects the proper handler logic
-     * based on the transaction type.
-     */
-    switch (txType) {
+    // Selects the proper handler verification logic based on the tx type.
+    switch (tx.type) {
+        // OrderBroadcast type transaction
         case "order": {
             return deliverOrder(tx as SignedOrderTx, deliverState, tracker);
         }
-        /*
+
+        // StreamBroadcast type external transaction
+        // @TODO implement
         case "stream": {
             return deliverStream(tx, deliverState, tracker);
-        }*/
+        }
 
+        // Validator reporting witness to Ethereum event
         case "witness": {
             return deliverWitness(tx as SignedWitnessTx, deliverState);
         }
 
+        // Rebalance transaction updates limit mapping
         case "rebalance": {
             return deliverRebalance(
                 tx as SignedRebalanceTx, deliverState, rebalancer);
         }
 
+        // Invalid transaction type
         default: {
-            // Invalid transaction type
-            Logger.consensusWarn(msg.abci.errors.txType);
+            log.consensusWarn(msg.abci.errors.txType);
             return Vote.invalid(msg.abci.errors.txType);
         }
     }
@@ -409,7 +373,7 @@ function commit(request): string {
 
             default: {
                 // Commit state is more than 1 round ahead of deliver state
-                Logger.consensusWarn(msg.abci.messages.roundDiff);
+                log.consensusWarn(msg.abci.messages.roundDiff);
                 break;
             }
         }
@@ -425,12 +389,12 @@ function commit(request): string {
         tracker.triggerBroadcast();
 
         // Synchronize commit state from delivertx state
-        commitState = _.cloneDeep(deliverState);
+        commitState = cloneDeep(deliverState);
 
-        Logger.consensus(
+        log.consensus(
             `Commit and broadcast complete. Current state hash: ${stateHash}`);
     } catch (err) {
-        Logger.consensusErr(msg.abci.errors.broadcast);
+        log.consensusErr(msg.abci.errors.broadcast);
     }
 
     // Temporary
