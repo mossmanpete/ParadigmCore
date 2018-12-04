@@ -26,7 +26,7 @@ export class Hasher {
    *
    * @param order {paradigm.Order} A Paradigm order object to be hashed
    */
-  public static hashOrder(order: OrderData): string {
+  public static hashOrder(order: Order): string {
     const hashPrep: object = {
       makerValues: order.makerValues,
       posterSignature: order.posterSignature,

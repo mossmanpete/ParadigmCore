@@ -38,8 +38,8 @@ const Order = new Paradigm().Order;
  * @param state {State}         current round state
  */
 export function checkOrder(tx: SignedOrderTx, state: State) {
-    let order;  // Paradigm order object
-    let poster; // Recovered poster address from signature
+    let order: Order;   // Paradigm order object
+    let poster: string; // Recovered poster address from signature
 
     // Construct and verify order object, and recover poster signature
     try {
@@ -83,8 +83,8 @@ export function checkOrder(tx: SignedOrderTx, state: State) {
  * @param q     {OrderTracker}  valid order queue
  */
 export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
-    let order;  // Paradigm order object
-    let poster; // Recovered poster address from signature
+    let order: Order;   // Paradigm order object
+    let poster: string; // Recovered poster address from signature
 
     // Construct order object, and recover poster signature
     try {
@@ -100,7 +100,7 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
         state.limits.hasOwnProperty(poster) &&
         state.limits[poster].orderLimit > 0
     ) {
-        // This block executed if poster has valid stake
+        // Hash order to generate orderID
         const orderCopy = order.toJSON();
         orderCopy.id = Hasher.hashOrder(order);
 

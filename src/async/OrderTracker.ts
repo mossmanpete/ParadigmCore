@@ -44,7 +44,7 @@ export class OrderTracker {
     /**
      * Add a broadcast transaction ("order" or "stream") to the queue.
      */
-    public add(tx: SignedTransaction) {
+    public add(tx: OrderData | StreamData) {
         this.txs.push(tx);
     }
 

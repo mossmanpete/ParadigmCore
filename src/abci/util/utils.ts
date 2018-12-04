@@ -59,8 +59,7 @@ export function decodeTx(raw: Buffer): SignedTransaction {
  */
 export function verifyOrder(order: any, max?: number): boolean {
     // Convert order => string => buffer and count bytes
-    let orderStr: string = JSON.stringify(order);
-    let orderBuf: Buffer = Buffer.from(orderStr, "utf8");
+    let orderBuf: Buffer = Buffer.from(JSON.stringify(order), "utf8");
     let maxSize: number = max || parseInt(process.env.MAX_ORDER_SIZE, 10);
 
     // Constrain to max size

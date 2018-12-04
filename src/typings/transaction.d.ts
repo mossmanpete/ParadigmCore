@@ -114,9 +114,9 @@ interface TransactionData {
  * Transaction data interface for `order` type tx.
  */
 interface OrderData extends TransactionData {
-    maker:              string;
+    maker?:             string;
     subContract:        string;
-    makerArguments:     Array<OrderArgument> | Array<null>;
+    makerArguments?:    Array<OrderArgument> | Array<null>;
     takerArguments?:    Array<OrderArgument>;
     makerValues:        OrderValues | object;
     takerValues?:       OrderValues;
