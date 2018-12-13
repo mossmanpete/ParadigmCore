@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node ./dist/index.js",
     "launch": "tsc && node ./dist/index.js",
-    "reset": "node_modules/tendermint-node/bin/tendermint unsafe_reset_all",
+    "reset": "./lib/tendermint-node/bin/tendermint unsafe_reset_all",
     "getTendermint": "node ./lib/tendermint/bin/download.js",
     "test": "jest"
   },
