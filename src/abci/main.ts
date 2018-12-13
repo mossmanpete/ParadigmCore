@@ -14,7 +14,8 @@
  */
 
 // 3rd party and STDLIB imports
-const abci: any = require("abci");
+// const abci: any = require("abci");
+const abci: any = require("../../lib/js-abci");
 import { cloneDeep } from "lodash";
 
 // ParadigmCore classes
@@ -51,6 +52,9 @@ let rebalancer: StakeRebalancer;    // Witness component
 let deliverState: any;  // deliverTx state (modified during block execution)
 let commitState: any;   // commit state (synchronized at the end of each block)
 
+// Paradigm instance
+let paradigm: any;
+
 /**
  * Initialize and start the ABCI application.
  *
@@ -67,11 +71,15 @@ let commitState: any;   // commit state (synchronized at the end of each block)
  *  - options.provider      {string}        web3 provider URI (use websocket)
  *  - options.stakeABI      {array/JSON}    Ethereum staking contract ABI
  *  - options.stakeAddress  {string}        Ethereum staking contract address
+ *  - options.paradigm      {Paradigm}      paradigm-connect instance
  */
 export async function startMain(options: any): Promise<null> {
     try {
         // Set application version
         version = options.version;
+
+        // Load paradigm object
+        paradigm = options.paradigm;
 
         // Load state objects
         deliverState = options.deliverState;
@@ -258,7 +266,7 @@ function checkTx(request): Vote {
     switch (tx.type) {
         // OrderBroadcast type transaction
         case "order": {
-            return checkOrder(tx as SignedOrderTx, commitState);
+            return checkOrder(tx as SignedOrderTx, commitState, paradigm.Order);
         }
 
         // StreamBroadcast type external transaction
@@ -314,7 +322,7 @@ function deliverTx(request): Vote {
     switch (tx.type) {
         // OrderBroadcast type transaction
         case "order": {
-            return deliverOrder(tx as SignedOrderTx, deliverState, tracker);
+            return deliverOrder(tx as SignedOrderTx, deliverState, tracker, paradigm.Order);
         }
 
         // StreamBroadcast type external transaction

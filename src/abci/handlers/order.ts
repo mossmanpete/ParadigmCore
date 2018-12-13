@@ -14,8 +14,8 @@
  * spec for this TX type.
  */
 
- // ParadigmConnect protocol driver and library
-import * as Paradigm from "paradigm-connect";
+// ParadigmConnect protocol driver and library
+// import * as Paradigm from "paradigm-connect";
 
 // ParadigmCore classes
 import { OrderTracker } from "../../async/OrderTracker";
@@ -28,7 +28,7 @@ import { messages as msg } from "../../util/static/messages";
 import { verifyOrder } from "../util/utils";
 
 // Order constructor using ParadigmConnect Order object
-const Order = new Paradigm().Order;
+// const Order = new Paradigm().Order;
 
 /**
  * Performs light verification of OrderBroadcast transactions before accepting
@@ -37,7 +37,7 @@ const Order = new Paradigm().Order;
  * @param tx    {SignedOrderTx} decoded transaction body
  * @param state {State}         current round state
  */
-export function checkOrder(tx: SignedOrderTx, state: State) {
+export function checkOrder(tx: SignedOrderTx, state: State, Order) {
     let order: Order;   // Paradigm order object
     let poster: string; // Recovered poster address from signature
 
@@ -82,7 +82,7 @@ export function checkOrder(tx: SignedOrderTx, state: State) {
  * @param state {State}         current round state
  * @param q     {OrderTracker}  valid order queue
  */
-export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker) {
+export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, Order) {
     let order: Order;   // Paradigm order object
     let poster: string; // Recovered poster address from signature
 
