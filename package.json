@@ -1,13 +1,13 @@
 {
   "name": "paradigmcore",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "TypeScript implementation of the OrderStream Network.",
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node ./dist/index.js",
     "launch": "tsc && node ./dist/index.js",
-    "reset": "./lib/tendermint-node/bin/tendermint unsafe_reset_all",
+    "reset": "./lib/tendermint/bin/tendermint unsafe_reset_all",
     "getTendermint": "node ./lib/tendermint/bin/download.js",
     "test": "jest"
   },

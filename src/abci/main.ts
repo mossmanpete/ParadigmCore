@@ -376,6 +376,9 @@ function commit(request): string {
 
                 // Synchronize staking period parameters
                 rebalancer.synchronize(newRound, newStart, newEnd);
+
+                // Temporary
+                console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
                 break;
             }
 
@@ -404,10 +407,6 @@ function commit(request): string {
     } catch (err) {
         log.consensusErr(msg.abci.errors.broadcast);
     }
-
-    // Temporary
-    // tslint:disable-next-line:no-console
-    console.log(`\n... Current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
 
     // Return state's hash to be included in next block header
     return stateHash;

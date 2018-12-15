@@ -23,83 +23,98 @@ import "colors";
 
 export class Logger {
 
+    private static time(): string | any {
+        let dateTime = new Date().toISOString().split("T");
+        return `${dateTime[0]} ${dateTime[1].split("Z")[0]}`.bold;
+    }
+
+    /**
+     * Format message and log to STDOUT.
+     * 
+     * @param event {string} event type (error, warning, etc)
+     * @param input {string} main log message
+     */
+    public static print(event: string, input: string): void {
+        console.log(`${Logger.time().black} ${event.bold} ${input}`);
+    }
+
     public static logStart(): void {
-        console.log(`${'S'.magenta} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] Starting ${'ParadigmCore (ALPHA)'.cyan.bold} version ${VERSION.red}`);
+        Logger.print("startup", `starting ${'paradigm-core'.cyan.bold} v${VERSION}...`);
     }
 
     public static logEvent(message: string): void {
-        console.log(`${'I'.green} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message}`)
+        Logger.print("event".cyan, message)
     }
 
     public static logError(message: string): void {
-        console.log(`${'E'.red} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message.red}`)
+        Logger.print("error".red, message);
     }
 
     public static logWarning(message: string): void {
-        console.log(`${'W'.yellow} [${"PC".cyan} v${VERSION.bold} @ ${new Timestamp().logFormat().yellow}] ${message}`)
+        Logger.print("warning".yellow, message)
     }
 
     public static newRound(height: number, proposer: string): void {
-        Logger.logEvent(`${`Starting block #${height}:`.blue} Validator ${proposer.bold} is proposer.`);
+        Logger.logEvent(`${`starting block #${height}:`.blue} proposed by validator ${proposer.bold}\n`);
     }
 
     public static mempool(message: string){
-        Logger.logEvent(`${'Mempool:'.magenta} ${message}`);
+        Logger.logEvent(`${'mempool:'.magenta} ${message}`);
     }
 
     public static mempoolErr(message: string){
-        Logger.logError(`${'Mempool'.magenta} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'mempool:'.magenta} ${message}`);
     }
 
     public static mempoolWarn(message: string){
-        Logger.logWarning(`${'Mempool'.magenta} ${"Warning:".yellow} ${message}`);
+        Logger.logWarning(`${'mempool:'.magenta} ${message}`);
     }
 
     public static consensus(message: string){
-        Logger.logEvent(`${'Consensus:'.cyan} ${message}`);
+        Logger.logEvent(`${'consensus:'.cyan} ${message}`);
     }
 
     public static consensusErr(message: string){
-        Logger.logError(`${'Consensus'.cyan} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'consensus:'.cyan} ${message}`);
     }
 
     public static consensusWarn(message: string){
-        Logger.logWarning(`${'Consensus'.cyan} ${'Warning:'.yellow} ${message}`);
+        Logger.logWarning(`${'consensus:'.cyan} ${message}`);
     }
 
     public static rebalancer(message: string, round?: number){
         if (round) {
-            Logger.logEvent(`${'Rebalancer'.green} ${`(round #${round}):`.green} ${message}`);
+            Logger.logEvent(`${'rebalancer'.green} ${`round #${round}:`.green} ${message}`);
         } else {
-            Logger.logEvent(`${'Rebalancer:'.green} ${message}`);
+            Logger.logEvent(`${'rebalancer:'.green} ${message}`);
         }
     }
 
     public static rebalancerErr(message: string){
-        Logger.logError(`${'Rebalancer'.green} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'rebalancer'.green} ${message}`);
     }
 
     public static websocketEvt(message: string){
-        Logger.logEvent(`${'WebSocket:'.red} ${message}`);
+        Logger.logEvent(`${'ws server:'.red} ${message}`);
     }
 
     public static websocketErr(message: string){
-        Logger.logError(`${'WebSocket'.red} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'ws server:'.red} ${message}`);
     }
 
     public static apiEvt(message: string){
-        Logger.logEvent(`${'API Server:'.yellow} ${message}`);
+        Logger.logEvent(`${'api server:'.yellow} ${message}`);
     }
 
     public static apiErr(message: string){
-        Logger.logError(`${'API Server'.yellow} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'api server:'.yellow} ${message}`);
     }
 
     public static txEvt(message: string){
-        Logger.logEvent(`${'Broadcaster:'.red} ${message}`);
+        Logger.logEvent(`${'broadcaster:'.red} ${message}`);
     }
 
     public static txErr(message: string){
-        Logger.logError(`${'Broadcaster'} ${'Error:'.red} ${message}`);
+        Logger.logError(`${'broadcaster:'} ${message}`);
     }
 }
