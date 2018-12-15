@@ -45,34 +45,38 @@ app.post("/*", async (req, res) => {
     // Create transaction object
     let tx: SignedTransaction;
 
+    /*
+    // Commenting out until v0.5
     const paradigmOrder = new paradigm.Order(req.body);
-    if(!await paradigmOrder.isValid()) {
-        Logger.apiEvt('Invalid Order rejected.');
-        Message.staticSendError(res, "Order is invalid.", 422)
+    if (!await paradigmOrder.isValid()) {
+        Logger.apiEvt("Invalid Order rejected.");
+        Message.staticSendError(res, "Order is invalid.", 422);
     } else {
-        try {
-            tx = generator.create({
-                data: req.body,
-                type: "order",
-            });
-        } catch (err) {
-            Logger.apiErr("Failed to construct local transaction object.");
-            Message.staticSendError(res, "Internal transaction error, try again.", 500);
-        }
+    */
 
-        // Execute local ABCI transaction
-        try {
-            // Await ABCI response
-            const response = await client.send(tx);
-
-            // Send response back to client
-            Logger.apiEvt("Successfully executed local ABCI transaction.");
-            Message.staticSend(res, response);
-        } catch (error) {
-            Logger.apiErr("Failed to execute local ABCI transaction.");
-            Message.staticSendError(res, "Internal error, try again.", 500);
-        }
+    try {
+        tx = generator.create({
+            data: req.body,
+            type: "order",
+        });
+    } catch (err) {
+        Logger.apiErr("Failed to construct local transaction object.");
+        Message.staticSendError(res, "Internal transaction error, try again.", 500);
     }
+
+    // Execute local ABCI transaction
+    try {
+        // Await ABCI response
+        const response = await client.send(tx);
+
+        // Send response back to client
+        Logger.apiEvt("Successfully executed local ABCI transaction.");
+        Message.staticSend(res, response);
+    } catch (error) {
+        Logger.apiErr("Failed to execute local ABCI transaction.");
+        Message.staticSendError(res, "Internal error, try again.", 500);
+    }
+    // }
 });
 
 // 404 handler
