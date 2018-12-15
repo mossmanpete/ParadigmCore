@@ -1,0 +1,3 @@
+[submodule "lib/js-abci"]
+	path = lib/js-abci
+	url = git@github.com:marypreethi12/js-abci.git

@@ -31,6 +31,7 @@ import { HttpMessage as Message } from "./HttpMessage";
 let client: TxBroadcaster;              // Tendermint client for RPC
 let generator: TxGenerator;    // Generates and signs ABCI tx's
 let app = express();
+let paradigm;
 
 // Setup express server
 app.use(helmet());          // More secure headers
@@ -39,19 +40,19 @@ app.use(bodyParser.json()); // JSON request and response
 
 // Begin handler implementation
 
-// 404 handler
-app.use((err, req, res, next) => {
-    try {
-        Message.staticSendError(res, msg.api.errors.badJSON, 400);
-    } catch (err) {
-        Logger.apiErr(msg.api.errors.response);
-    }
-});
-
 // OrderBroadcast POST handler
 app.post("/*", async (req, res) => {
     // Create transaction object
     let tx: SignedTransaction;
+
+    /*
+    // Commenting out until v0.5
+    const paradigmOrder = new paradigm.Order(req.body);
+    if (!await paradigmOrder.isValid()) {
+        Logger.apiEvt("Invalid Order rejected.");
+        Message.staticSendError(res, "Order is invalid.", 422);
+    } else {
+    */
 
     try {
         tx = generator.create({
@@ -75,6 +76,16 @@ app.post("/*", async (req, res) => {
         Logger.apiErr("Failed to execute local ABCI transaction.");
         Message.staticSendError(res, "Internal error, try again.", 500);
     }
+    // }
+});
+
+// 404 handler
+app.use((err, req, res, next) => {
+    try {
+        Message.staticSendError(res, msg.api.errors.badJSON, 400);
+    } catch (err) {
+        Logger.apiErr(msg.api.errors.response);
+    }
 });
 
 // End handler implementations
@@ -85,11 +96,14 @@ app.post("/*", async (req, res) => {
  * @param apiPort       {number}        port to bind API server to
  * @param broadcaster   {TxBroadcaster} local transaction broadcaster
  */
-export async function start(apiPort, broadcaster, txGenerator) {
+export async function start(apiPort, broadcaster, txGenerator, paradigmConnect) {
     try {
         // Store TxBroadcaster and TxGenerator
         client = broadcaster;
         generator = txGenerator;
+
+        // Paradigm-connect instance
+        paradigm = paradigmConnect;
 
         // Start API server
         await app.listen(apiPort);

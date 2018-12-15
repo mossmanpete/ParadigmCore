@@ -1,0 +1,76 @@
+{
+    "version": "ParadigmCore v0.4.2",
+    "level": 2,
+    "methods": [
+        {
+            "methodPrefix": "abci",
+            "logPrefix": "ABCI",
+            "preColor": "blue",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        },
+        {
+            "methodPrefix": "mempool",
+            "logPrefix": "ABCI",
+            "preColor": "blue",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        },
+        {
+            "methodPrefix": "consensus",
+            "logPrefix": "Consensus",
+            "preColor": "cyan",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        },
+        {
+            "methodPrefix": "rebalancer",
+            "logPrefix": "Rebalancer",
+            "preColor": "green",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        },
+        {
+            "methodPrefix": "post",
+            "logPrefix": "Post API",
+            "preColor": "yellow",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        },
+        {
+            "methodPrefix": "stream",
+            "logPrefix": "Stream API",
+            "preColor": "yellow",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        },
+        {
+            "methodPrefix": "tx",
+            "logPrefix": "Tx Pipeline",
+            "preColor": "red",
+            "methods": [
+                { "method": "Evt", "level": 2 },
+                { "method": "Warn", "level": 1, "suffix": "Warning", "color": "yellow" },
+                { "method": "Err", "level": 0, "suffix": "Error", "color": "red" }
+            ]
+        }
+    ]
+}

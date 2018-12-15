@@ -15,8 +15,12 @@
 // Load configuration from environment
 require("dotenv").config();
 
+// ParadigmConnect protocol driver and library
+import * as Paradigm from "paradigm-connect";
+
 // Standard lib and 3rd party NPM modules
 import { EventEmitter } from "events";
+import Web3 = require("web3");
 import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
@@ -42,6 +46,8 @@ let emitter: EventEmitter;      // Emitter to track events
 let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
 let generator: TxGenerator;     // Signs and builds ABCI tx's
 let node: any;                  // Tendermint node instance
+let web3;
+let paradigm;
 
 /**
  * This function executes immediately upon this file being loaded. It is
@@ -82,11 +88,20 @@ let node: any;                  // Tendermint node instance
         process.exit(1);
     }
 
+    // Construct local web3/Paradigm instance
+    try {
+        web3 = new Web3(env.WEB3_PROVIDER);
+        paradigm = new Paradigm({ provider: web3.currentProvider });
+    } catch (error) {
+        Logger.logError("failed initializing paradigm-connect.");
+        Logger.logError(error.message);
+        Logger.logError(msg.general.errors.fatal);
+        process.exit(1);
+    }
+
     // Construct local ABCI broadcaster instance
     try {
-        broadcaster = new TxBroadcaster({
-            client: node.rpc,
-        });
+        broadcaster = new TxBroadcaster({ client: node.rpc });
     } catch (error) {
         Logger.txErr("failed initializing ABCI connection.");
         Logger.txErr(error.message);
@@ -126,6 +141,9 @@ let node: any;                  // Tendermint node instance
     // Start ABCI application
     try {
         const options = {
+            // Paradigm instance
+            paradigm,
+
             // Transaction broadcaster and emitter instances
             broadcaster,
             emitter,
@@ -170,7 +188,7 @@ let node: any;                  // Tendermint node instance
     // Start HTTP API server
     try {
         Logger.apiEvt("Starting HTTP API server...");
-        await startAPIserver(env.API_PORT, broadcaster, generator);
+        await startAPIserver(env.API_PORT, broadcaster, generator, paradigm);
     } catch (error) {
         Logger.apiErr("failed initializing API server.");
         Logger.apiErr(error.message);
