@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 17-December-2018
  *
  * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -31,7 +31,7 @@ import { Logger as log } from "../util/Logger";
 import { messages as msg } from "../util/static/messages";
 
 /**
- * Implements a one way peg-zone between Ethereum and the OrderStream to enable
+ * Supports a one way peg-zone between Ethereum and the OrderStream to enable
  * tracking of the PosterStaking contract and witness events. See spec for more
  * details.
  */

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 17-December-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
@@ -187,8 +187,23 @@ let paradigm;
 
     // Start HTTP API server
     try {
+        const options = {
+            // Paradigm instance
+            paradigm,
+
+            // Tx generator/broadcaster
+            broadcaster, generator,
+
+            // Rate limiter config
+            rateWindow: parseInt(env.WINDOW_MS, 10),
+            rateMax: parseInt(env.WINDOW_MAX, 10),
+
+            // API bind port (HTTP)
+            port: parseInt(env.API_PORT, 10)
+        };
+
         Logger.apiEvt("Starting HTTP API server...");
-        await startAPIserver(env.API_PORT, broadcaster, generator, paradigm);
+        await startAPIserver(options);
     } catch (error) {
         Logger.apiErr("failed initializing API server.");
         Logger.apiErr(error.message);
@@ -196,6 +211,6 @@ let paradigm;
         process.exit(1);
     }
 
-    // Indicate block production begins
+    // Indicate beginning of new block production
     Logger.logEvent(msg.general.messages.start);
 })(process.env);

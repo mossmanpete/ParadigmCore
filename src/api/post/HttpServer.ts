@@ -18,6 +18,7 @@
 import * as bodyParser from "body-parser";
 import cors = require("cors");
 import * as express from "express";
+import * as rateLimit from "express-rate-limit";
 import * as helmet from "helmet";
 
 // ParadigmCore classes and imports
@@ -28,20 +29,20 @@ import { messages as msg } from "../../util/static/messages";
 import { HttpMessage as Message } from "./HttpMessage";
 
 // "Globals"
-let client: TxBroadcaster;              // Tendermint client for RPC
-let generator: TxGenerator;    // Generates and signs ABCI tx's
-let app = express();
-let paradigm;
+let client: TxBroadcaster;  // Tendermint client for RPC
+let generator: TxGenerator; // Generates and signs ABCI tx's
+let app = express();        // Express.js server
+let paradigm;               // ParadigmConnect driver
 
 // Setup express server
+app.enable("trust proxy");
 app.use(helmet());          // More secure headers
 app.use(cors());            // Cross-origin resource sharing (helps browsers)
 app.use(bodyParser.json()); // JSON request and response
 
 // Begin handler implementation
 
-// OrderBroadcast POST handler
-app.post("/*", async (req, res) => {
+const postHandler = async (req, res, next) => {
     // Create transaction object
     let tx: SignedTransaction;
 
@@ -77,39 +78,54 @@ app.post("/*", async (req, res) => {
         Message.staticSendError(res, "Internal error, try again.", 500);
     }
     // }
-});
+};
 
-// 404 handler
-app.use((err, req, res, next) => {
+const errorHandler = (err, req, res, next) => {
     try {
         Message.staticSendError(res, msg.api.errors.badJSON, 400);
     } catch (err) {
         Logger.apiErr(msg.api.errors.response);
     }
-});
+};
 
 // End handler implementations
 
 /**
  * Start and bind API server.
  *
- * @param apiPort       {number}        port to bind API server to
- * @param broadcaster   {TxBroadcaster} local transaction broadcaster
+ * @param options {object} options object with:
+ * - options.broadcaster    {TxBroadcaster} transaction broadcaster instance
+ * - options.generator      {TxGenerator}   validator tx generator instance
+ * - options.paradigm       {Paradigm}      paradigm-connect instance
+ * - options.port           {number}        port to bind HTTP server to
+ * - options.rateWindow     {number}        window (in ms) to rate-limit over
+ * - options.rateMax        {number}        no. of requests allowed per window
  */
-export async function start(apiPort, broadcaster, txGenerator, paradigmConnect) {
+export async function start(options) {
     try {
         // Store TxBroadcaster and TxGenerator
-        client = broadcaster;
-        generator = txGenerator;
+        client = options.broadcaster;
+        generator = options.generator;
 
         // Paradigm-connect instance
-        paradigm = paradigmConnect;
+        paradigm = options.paradigm;
+
+        // Setup rate limiting
+        const limiter = rateLimit({
+            windowMs: options.rateWindow,
+            max: options.rateMax
+        });
+        app.use(limiter);
+
+        // Attach handlers
+        app.post("/*", postHandler);
+        app.use(errorHandler);
 
         // Start API server
-        await app.listen(apiPort);
+        await app.listen(options.port);
         Logger.apiEvt(msg.api.messages.servStart);
         return;
     } catch (err) {
-        throw new Error("Error starting API server.");
+        throw new Error(err.message);
     }
 }
