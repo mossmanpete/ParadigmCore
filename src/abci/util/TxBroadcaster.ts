@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 18-December-2018
  *
  * This class is responsible for executing local ABCI transactions. It
  * implements a queue, and allows multiple "concurrent" usage of a given
@@ -19,7 +19,7 @@ import { EventEmitter } from "events";
 
 // ParadigmCore classes
 import { PayloadCipher } from "../../crypto/PayloadCipher";
-import { Logger } from "../../util/Logger";
+import { err, log, warn } from "../../util/log";
 
 export class TxBroadcaster {
     private client: any;            // Tendermint RPC client
@@ -45,13 +45,13 @@ export class TxBroadcaster {
         this.queue = [];
 
         // Attach error handlers to client
-        this.client.on("error", (err) => {
-            Logger.txErr(`Error in Tendermint connection: ${err}`);
-            throw new Error("Tendermint connection encountered error.");
+        this.client.on("error", (error) => {
+            err("tx", `in tendermint abci connection: ${error}`);
+            throw new Error("error encountered in tendermint connection");
         });
-        this.client.on("close", (err) => {
-            Logger.txErr(`Tendemint client closed: ${err}`);
-            throw new Error("Tendermint connection terminated.");
+        this.client.on("close", (error) => {
+            err("tx", `connection to abci server closed: ${error}`);
+            throw new Error("tendermint connection terminated unexpectedly");
         });
 
         // Attach handlers to tx tracker
@@ -110,9 +110,6 @@ export class TxBroadcaster {
         // Return immediately if this.start() hasn't been called
         if (!(this.started)) { return; }
 
-        // Temporary?
-        Logger.txEvt("Sending internal ABCI transaction.");
-
         // Store this reference, update status
         // tslint:disable-next-line:variable-name
         const _this = this;
@@ -137,24 +134,21 @@ export class TxBroadcaster {
 
             // Resolve promise to response object
             txEmitter.emit("sent", res);
-            Logger.txEvt("Transaction sent successfully.");
         } catch (error) {
             // Reject promise to error object
             txEmitter.emit("failed", error);
-            Logger.txErr("Transaction failed.");
-        } finally {
-            // @TODO: should this be outside 'finally'?
-            // If queue is now empty, stop broadcasting
-            if (_this.isEmpty()) {
-                this.broadcasting = false;
-
-                // tslint:disable-next-line:no-unsafe-finally
-                return;
-            }
-
-            // Otherwise, move onto the next Tx
-            this.broadcast();
+            err("tx", "failed to send abci transaction");
+        } // finally {
+        // @TODO: should this be inside 'finally'?
+        // If queue is now empty, stop broadcasting
+        if (_this.isEmpty()) {
+            this.broadcasting = false;
+            return;
         }
+
+        // Otherwise, move onto the next Tx
+        this.broadcast();
+        // }
         return;
     }
 

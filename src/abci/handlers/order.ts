@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 04-December-2018
+ * @date (modified) 18-December-2018
  *
  * Handler functions for verifying ABCI Order transactions, originating from
  * external API calls. Implements state transition logic as specified in the
@@ -20,7 +20,7 @@
 // ParadigmCore classes
 import { OrderTracker } from "../../async/OrderTracker";
 import { Hasher } from "../../crypto/Hasher";
-import { Logger } from "../../util/Logger";
+import { err, log, warn } from "../../util/log";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities
@@ -49,15 +49,15 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
         // Verify order size
         // @TODO: get max size from state
         if (!verifyOrder(order)) {
-            Logger.mempoolWarn("Rejected order over maximum size.");
-            return Vote.invalid("Order exceeds maximum size.");
+            warn("mem", "rejected order that exceeds maximum size");
+            return Vote.invalid("order exceeds maximum size");
         }
 
         // Recover poster address
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
         // Unknown staker
-        Logger.mempoolWarn(msg.abci.errors.format);
+        warn("mem", msg.abci.errors.format);
         return Vote.invalid(msg.abci.errors.format);
     }
 
@@ -66,10 +66,10 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
         state.limits.hasOwnProperty(poster) &&
         state.limits[poster].orderLimit > 0
     ) {
-        Logger.mempool(msg.abci.messages.mempool);
-        return Vote.valid(`(unconfirmed) OrderID: ${Hasher.hashOrder(order)}`);
+        log("mem", msg.abci.messages.mempool);
+        return Vote.valid(`(unconfirmed) orderID: ${Hasher.hashOrder(order)}`);
     } else {
-        Logger.mempoolWarn(msg.abci.messages.noStake);
+        warn("mem", msg.abci.messages.noStake);
         return Vote.invalid(msg.abci.messages.noStake);
     }
 }
@@ -91,7 +91,7 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, O
         order = new Order(tx.data);
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
-        Logger.consensusWarn(msg.abci.errors.format);
+        warn("state", msg.abci.errors.format);
         return Vote.invalid(msg.abci.errors.format);
     }
 
@@ -112,11 +112,11 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, O
         // Add order to block's broadcast queue
         q.add(orderCopy);
 
-        Logger.consensus(msg.abci.messages.verified);
-        return Vote.valid(`(confirmed) OrderID: ${orderCopy.id}`);
+        log("state", msg.abci.messages.verified);
+        return Vote.valid(`(confirmed) orderID: ${orderCopy.id}`);
     } else {
         // No stake or insufficient quota remaining
-        Logger.consensusWarn(msg.abci.messages.noStake);
+        warn("state", msg.abci.messages.noStake);
         return Vote.invalid(msg.abci.messages.noStake);
     }
 }

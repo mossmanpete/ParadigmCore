@@ -23,9 +23,12 @@ import { OrderTracker } from "../async/OrderTracker";
 import { StakeRebalancer } from "../async/StakeRebalancer";
 import { Hasher } from "../crypto/Hasher";
 import { PayloadCipher } from "../crypto/PayloadCipher";
-import { Logger as log } from "../util/Logger";
+// import { Logger as log } from "../util/Logger";
 import { TxGenerator } from "./util/TxGenerator";
 import { Vote } from "./util/Vote";
+
+// New logger
+import { err, log, logStart, warn } from "../util/log";
 
 // Tendermint checkTx/deliverTx handler functions
 import { checkOrder, deliverOrder } from "./handlers/order";
@@ -115,10 +118,9 @@ export async function startMain(options: any): Promise<null> {
 
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
-        log.consensus(msg.abci.messages.servStart);
-
-    } catch (err) {
-        throw new Error("Error initializing ABCI application.");
+        logStart(msg.abci.messages.servStart);
+    } catch (error) {
+        throw new Error(`initializing abci application: ${error.message}`);
     }
     return;
 }
@@ -131,14 +133,14 @@ export async function startRebalancer(): Promise<null> {
         // Start rebalancer after sync
         const code = rebalancer.start(); // Start listening to Ethereum events
         if (code !== 0) {
-            log.rebalancerErr(`Failed to start rebalancer. Code ${code}`);
+            log("peg", `failed to start with code ${code}`);
             throw new Error(code.toString());
         }
 
         // Activate OrderTracker (after Tendermint sync)
         tracker.activate();
-    } catch (err) {
-        throw new Error("Error activating stake rebalancer.");
+    } catch (error) {
+        throw new Error(`activating stake rebalancer: ${error.message}`);
     }
     return;
 }
@@ -233,7 +235,10 @@ function beginBlock(request): object {
     }
 
     // Indicate new round, return no indexing tags
-    log.newRound(currHeight, currProposer);
+    log(
+        "state",
+        `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
+    );
     return {};
 }
 
@@ -252,13 +257,13 @@ function checkTx(request): Vote {
     try {
         tx = decodeTx(rawTx);
     } catch (error) {
-        log.mempoolWarn(msg.abci.errors.decompress);
+        warn("mem", msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
     }
 
     // Verify the transaction came from a validator
     if (!preVerifyTx(tx, deliverState, generator)) {
-        log.mempoolWarn(msg.abci.messages.badSig);
+        warn("mem", msg.abci.messages.badSig);
         return Vote.invalid(msg.abci.messages.badSig);
     }
 
@@ -287,7 +292,7 @@ function checkTx(request): Vote {
 
         // Invalid transaction type
         default: {
-            log.mempoolWarn(msg.abci.errors.txType);
+            warn("mem", msg.abci.errors.txType);
             return Vote.invalid(msg.abci.errors.txType);
         }
     }
@@ -308,13 +313,13 @@ function deliverTx(request): Vote {
     try {
         tx = decodeTx(rawTx);
     } catch (error) {
-        log.mempoolWarn(msg.abci.errors.decompress);
+        warn("state", msg.abci.errors.decompress);
         return Vote.invalid(msg.abci.errors.decompress);
     }
 
     // Verify the transaction came from a validator
     if (!preVerifyTx(tx, deliverState, generator)) {
-        log.mempoolWarn(msg.abci.messages.badSig);
+        warn("state", msg.abci.messages.badSig);
         return Vote.invalid(msg.abci.messages.badSig);
     }
 
@@ -344,7 +349,7 @@ function deliverTx(request): Vote {
 
         // Invalid transaction type
         default: {
-            log.consensusWarn(msg.abci.errors.txType);
+            warn("state", msg.abci.errors.txType);
             return Vote.invalid(msg.abci.errors.txType);
         }
     }
@@ -384,7 +389,7 @@ function commit(request): string {
 
             default: {
                 // Commit state is more than 1 round ahead of deliver state
-                log.consensusWarn(msg.abci.messages.roundDiff);
+                warn("state", msg.abci.messages.roundDiff);
                 break;
             }
         }
@@ -402,10 +407,12 @@ function commit(request): string {
         // Synchronize commit state from delivertx state
         commitState = cloneDeep(deliverState);
 
-        log.consensus(
-            `Commit and broadcast complete. Current state hash: ${stateHash}`);
+        log(
+            "state",
+            `committing new state with hash: ...${stateHash.slice(-8)}`
+        );
     } catch (err) {
-        log.consensusErr(msg.abci.errors.broadcast);
+        err("state", msg.abci.errors.broadcast);
     }
 
     // Return state's hash to be included in next block header

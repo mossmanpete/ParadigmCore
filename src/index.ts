@@ -26,7 +26,7 @@ import * as tendermint from "../lib/tendermint";
 // ParadigmCore classes
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { TxGenerator } from "./abci/util/TxGenerator";
-import { Logger } from "./util/Logger";
+import { err, log, logStart, warn } from "./util/log";
 import { messages as msg } from "./util/static/messages";
 
 // State object templates
@@ -58,18 +58,18 @@ let paradigm;
  * @param env   {object}    environment variables (expected as process.env)
  */
 (async (env) => {
-    Logger.logStart();
-
-    // Check environment
-    Logger.logEvent("Checking environment...");
+    // check environment
+    logStart("checking environment...");
     if (!env.npm_package_version) {
-        Logger.logWarning("Start ParadigmCore using NPM. Exiting.");
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "paradigm-core must be started with npm or yarn");
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
+    logStart();
+
     // Configure and start Tendermint core
-    Logger.consensus("Starting Tendermint Core...");
+    logStart("starting tendermint core...");
     try {
         // Set Tendermint home directory
         const tmHome = `${env.HOME}/.tendermint`;
@@ -82,9 +82,9 @@ let paradigm;
             },
         });
     } catch (error) {
-        Logger.consensusErr("failed initializing Tendermint.");
-        Logger.consensusWarn(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed initializing tendermint");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -93,9 +93,9 @@ let paradigm;
         web3 = new Web3(env.WEB3_PROVIDER);
         paradigm = new Paradigm({ provider: web3.currentProvider });
     } catch (error) {
-        Logger.logError("failed initializing paradigm-connect.");
-        Logger.logError(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed initializing paradigm-connect");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -103,9 +103,9 @@ let paradigm;
     try {
         broadcaster = new TxBroadcaster({ client: node.rpc });
     } catch (error) {
-        Logger.txErr("failed initializing ABCI connection.");
-        Logger.txErr(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed initializing connection to state machine");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -117,14 +117,14 @@ let paradigm;
             publicKey: env.PUB_KEY,
         });
     } catch (error) {
-        Logger.logError("failed to construct TransactionGenerator.");
-        Logger.logError(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed to construct transaction generator");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
     // Start WebSocket server
-    Logger.websocketEvt("Starting WebSocket server...");
+    logStart("starting websocket server...");
     try {
         // Create a "parent" EventEmitter
         emitter = new EventEmitter();
@@ -132,9 +132,9 @@ let paradigm;
         // Start OrderStream WebSocket server
         startStreamServer(parseInt(env.WS_PORT, 10), emitter);
     } catch (error) {
-        Logger.websocketErr("failed initializing WebSocket server.");
-        Logger.websocketErr(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed initializing websocket server.");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -166,22 +166,22 @@ let paradigm;
 
         // Wait for main ABCI application to start
         await startMain(options);
-        Logger.consensus("Waiting for Tendermint to synchronize...");
+        logStart("waiting for tendermint to synchronize...");
 
         // Wait for Tendermint to load and synchronize
         await node.synced();
-        Logger.consensus("Tendermint initialized and synchronized.");
+        logStart("tendermint initialized and synchronized");
 
         // Activate transaction broadcaster
         broadcaster.start();
 
         // Start state rebalancer sub-process AFTER sync
         await startRebalancer();
-        Logger.rebalancer(msg.rebalancer.messages.activated, 0);
+        logStart(msg.rebalancer.messages.activated);
     } catch (error) {
-        Logger.consensus("failed initializing ABCI application.");
-        Logger.consensus(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed initializing abci application");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
@@ -202,15 +202,15 @@ let paradigm;
             port: parseInt(env.API_PORT, 10)
         };
 
-        Logger.apiEvt("Starting HTTP API server...");
+        logStart("starting http api server...");
         await startAPIserver(options);
     } catch (error) {
-        Logger.apiErr("failed initializing API server.");
-        Logger.apiErr(error.message);
-        Logger.logError(msg.general.errors.fatal);
+        err("start", "failed initializing api server.");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
         process.exit(1);
     }
 
     // Indicate beginning of new block production
-    Logger.logEvent(msg.general.messages.start);
+    logStart(msg.general.messages.start);
 })(process.env);

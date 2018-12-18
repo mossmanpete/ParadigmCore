@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 18-December-2018
  *
  * The OrderTracker class stores valid txs submitted within a consensus
  * round, and triggers public broadcast at the end of each round.
@@ -23,7 +23,7 @@ export class OrderTracker {
 
     constructor(emitter: EventEmitter) {
         if (typeof(emitter) === undefined || !(emitter instanceof EventEmitter)) {
-            throw new Error("Must provide EventEmitter to constructor.");
+            throw new Error("must provide EventEmitter instance to constructor");
         }
 
         this.ee = emitter;
@@ -64,7 +64,7 @@ export class OrderTracker {
 
                 this.flush(); // Reset tracker
             } catch (err) {
-                throw new Error("Error triggering event broadcast.");
+                throw new Error(`error triggering event broadcast: ${err.message}`);
             }
 
         } else {

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 04-December-2018
+ * @date (modified) 18-December-2018
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
@@ -15,7 +15,7 @@
 
 // ParadigmCore classes
 import { PayloadCipher } from "../../crypto/PayloadCipher";
-import { Logger as log } from "../../util/Logger";
+import { err, log, warn } from "../../util/log";
 import { TxGenerator } from "./TxGenerator";
 
 /**
@@ -168,7 +168,7 @@ export function updateMappings(
         if (state.events[block][staker].conf >=
             parseInt(process.env.CONF_THRESHOLD, 10)
         ) {
-            log.consensus("Witness event confirmed. Updating balances.");
+            log("state", "witness event confirmed, updating balances");
 
             // See if staker already has a balance
             switch (state.balances.hasOwnProperty(staker)) {
@@ -211,12 +211,12 @@ export function updateMappings(
             return;
         } else {
             // Witness account added, but event is not confirmed yet
-            log.consensus("Confirmation added for pending witness event.");
+            log("state", "confirmation added for pending witness event");
             return;
         }
     } else {
         // Event in state does not match event TX
-        log.consensusWarn("Disagreement about event data. Potential failure.");
+        warn("state", "disagreement about event data, potential failure");
         return;
     }
 }

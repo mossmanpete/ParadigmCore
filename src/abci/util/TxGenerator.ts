@@ -7,10 +7,12 @@
  *
  * @author Henry Harder
  * @date (initial)  08-November-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 18-December-2018
  *
  * A class that allows for the generation of signed ABCI transaction, and
  * provides methods for verifying transaction signatures.
+ *
+ * @todo refactor/separate out validation
  */
 
 // Ed25519 signature implementation and crypto
@@ -131,12 +133,12 @@ export class TxGenerator {
             this.pubKey = Buffer.from(options.publicKey, "base64");
             this.privKey = Buffer.from(options.privateKey, "base64");
         } catch (error) {
-            throw new Error("Invalid raw keypair.");
+            throw new Error("invalid raw keypair.");
         }
 
         // Perform some light verification
         if (this.pubKey.length !== 32 || this.privKey.length !== 64) {
-            throw new Error("Supplied keypair of invalid length.");
+            throw new Error("supplied keypair of invalid length.");
         }
 
         let tempAddr: string;   // Computed address string
@@ -151,7 +153,7 @@ export class TxGenerator {
             // Get raw buffer and store as address
             this.address = Buffer.from(tempAddr, "hex");
         } catch (error) {
-            throw new Error("Unable to generate address from public key.");
+            throw new Error("unable to generate address from public key.");
         }
     }
 
@@ -162,7 +164,7 @@ export class TxGenerator {
      */
     public create(rawTx: RawTransaction): SignedTransaction {
         if (!TxGenerator.isValidInput(rawTx)) {
-            throw new Error("Invalid transaction data.");
+            throw new Error("invalid transaction data.");
         }
 
         let message: Buffer;    // buffered/encoded raw message
@@ -177,7 +179,7 @@ export class TxGenerator {
             // Generate signature
             signature = Sign(message, this.privKey);
         } catch (error) {
-            throw new Error("Failed to generate signature.");
+            throw new Error("failed to generate signature.");
         }
 
         // Append proof object to raw transaction and return

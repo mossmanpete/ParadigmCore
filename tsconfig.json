@@ -5,7 +5,8 @@
         "target": "esnext",
         "module": "commonjs",
         "typeRoots": ["node_modules/@types", "src/typings/typings"],
-        "removeComments": true
+        "removeComments": true,
+        "resolveJsonModule": true
     },
     "include":[
         "./src"

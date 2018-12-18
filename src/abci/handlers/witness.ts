@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 18-December-2018
  *
  * Handler functions for verifying ABCI event Witness transactions,
  * originating from validator nodes. Implements state transition logic as
@@ -15,7 +15,7 @@
  */
 
  // ParadigmCore classes
-import { Logger } from "../../util/Logger";
+import { err, log, warn } from "../../util/log";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities
@@ -29,11 +29,11 @@ import { isValidStakeEvent, updateMappings } from "../util/utils";
  */
 export function checkWitness(tx: SignedWitnessTx, state: State): Vote {
     if (isValidStakeEvent(tx.data, state)) {
-        Logger.mempool("Stake witness transaction accepted.");
-        return Vote.valid("Stake witness transaction accepted.");
+        log("mem", "stake witness transaction accepted");
+        return Vote.valid("stake witness transaction accepted");
     } else {
-        Logger.mempoolWarn("Invalid witness event rejected.");
-        return Vote.invalid("Invalid witness event rejected.");
+        warn("mem", "invalid witness event rejected");
+        return Vote.invalid("invalid witness event rejected");
     }
 }
 
@@ -49,7 +49,7 @@ export function checkWitness(tx: SignedWitnessTx, state: State): Vote {
 export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
     // Check structural validity
     if (!(isValidStakeEvent(tx.data, state))) {
-        Logger.consensusWarn("Invalid witness event rejected.");
+        warn("mem", "invalid witness event rejected");
         return Vote.invalid();
     }
 
@@ -74,7 +74,7 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
                 updateMappings(state, staker, block, amount, type);
 
                 // Voted for valid existing event
-                Logger.consensus("Voted for valid stake event (existing).");
+                log("state", "vote recorded for valid stake event (existing)");
                 return Vote.valid();
 
             } else if (!(state.events[block].hasOwnProperty(staker))) {
@@ -91,12 +91,12 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
                 }
 
                 // Voted for valid new event
-                Logger.consensus("Voted for new valid stake event.");
+                log("state", "voted added for valid stake event (new)");
                 return Vote.valid();
 
             } else {
                 // Block and event are in state, but does not match Tx
-                Logger.consensusWarn("Event Tx does not match event in state.");
+                warn("state", "witness tx does not match in-state event");
                 return Vote.invalid();
             }
         }
@@ -119,7 +119,7 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
             }
 
             // Added new event to state
-            Logger.consensus("Voted for valid stake event (new).");
+            log("state", "voted added for valid stake event (new)");
             return Vote.valid();
         }
 

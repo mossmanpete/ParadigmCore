@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  03-December-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 18-December-2018
  *
  * Implementation of the OrderStream WebSocket server. Creates an "event stream"
  * of valid order and stream broadcast transactions.
@@ -18,7 +18,7 @@ import { EventEmitter } from "events";
 import { Server } from "ws";
 
 // ParadigmCore imports
-import { Logger as log } from "../../util/Logger";
+import { err, log, logStart, warn } from "../../util/log";
 import { messages as msg } from "../../util/static/messages";
 import { WsMessage as Message } from "./WsMessage";
 
@@ -36,8 +36,8 @@ function bind(server: Server): Server {
         // Send connection message
         try {
             Message.sendMessage(connection, msg.websocket.messages.connected);
-        } catch (err) {
-            log.websocketErr(msg.websocket.errors.connect);
+        } catch (error) {
+            err("api", `(ws) ${msg.websocket.errors.connect}`);
         }
 
         // New order/stream transaction
@@ -48,8 +48,8 @@ function bind(server: Server): Server {
                         Message.sendOrder(client, tx);
                     }
                 });
-            } catch (err) {
-                log.websocketErr(msg.websocket.errors.broadcast);
+            } catch (error) {
+                err("api", `(ws) ${msg.websocket.errors.broadcast}`);
             }
         });
 
@@ -74,7 +74,7 @@ export function start(port: number, emitter: EventEmitter) {
     try {
         // Create WebSocket server
         let server = new Server({ port }, () => {
-            log.websocketEvt(msg.websocket.messages.servStart);
+            logStart(msg.websocket.messages.servStart);
         });
 
         // Load global order emitter
@@ -83,6 +83,6 @@ export function start(port: number, emitter: EventEmitter) {
         // Bind handlers to global server object
         wss = bind(server);
     } catch (error) {
-        throw new Error("Error starting WebSocket server.");
+        throw new Error(`error starting websocket server: ${error.message}`);
     }
 }

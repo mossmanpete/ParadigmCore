@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 18-December-2018
  *
  * Handler functions for verifying ABCI Rebalance transactions, originating
  * from validator nodes. Implements state transition logic as specified in the
@@ -19,7 +19,7 @@ import { isEqual } from "lodash";
 
 // ParadigmCore classes
 import { StakeRebalancer } from "../../async/StakeRebalancer";
-import { Logger } from "../../util/Logger";
+import { err, log, warn } from "../../util/log";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities
@@ -42,11 +42,11 @@ export function checkRebalance(tx: SignedRebalanceTx, state: State) {
         case 0: {
             if (proposal.round.number === 1) {
                 // Accept valid initial rebalance proposal to mempool
-                Logger.mempool(msg.rebalancer.messages.iAccept);
+                log("mem", msg.rebalancer.messages.iAccept);
                 return Vote.valid();
             } else {
                 // Reject invalid initial rebalance proposal from mempool
-                Logger.mempoolWarn(msg.rebalancer.messages.iReject);
+                warn("mem", msg.rebalancer.messages.iReject);
                 return Vote.invalid();
             }
         }
@@ -55,11 +55,11 @@ export function checkRebalance(tx: SignedRebalanceTx, state: State) {
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
                 // Accept valid rebalance proposal to mempool
-                Logger.mempool(msg.rebalancer.messages.accept);
+                log("mem", msg.rebalancer.messages.accept);
                 return Vote.valid(msg.rebalancer.messages.accept);
             } else {
                 // Reject invalid rebalance proposal from mempool
-                Logger.mempoolWarn(msg.rebalancer.messages.reject);
+                warn("mem", msg.rebalancer.messages.reject);
                 return Vote.invalid(msg.rebalancer.messages.reject);
             }
         }
@@ -100,11 +100,11 @@ export function deliverRebalance(
                 state.round.limit = proposal.round.limit;
                 // End state modification
 
-                Logger.consensus(msg.rebalancer.messages.iAccept);
+                log("state", msg.rebalancer.messages.iAccept);
                 return Vote.valid();
             } else {
                 // Reject invalid initial rebalance proposal from mempool
-                Logger.consensusWarn(msg.rebalancer.messages.iReject);
+                warn("state", msg.rebalancer.messages.iReject);
                 return Vote.invalid();
             }
         }
@@ -131,22 +131,22 @@ export function deliverRebalance(
                     // End state modification
 
                     // Vote to accept
-                    Logger.consensus(msg.rebalancer.messages.accept);
+                    log("state", msg.rebalancer.messages.accept);
                     return Vote.valid(msg.rebalancer.messages.accept);
                 } else {
                     // Proposal does not match local mapping
-                    Logger.consensusWarn(msg.rebalancer.messages.noMatch);
+                    warn("state", msg.rebalancer.messages.noMatch);
                     return Vote.invalid(msg.rebalancer.messages.noMatch);
                 }
 
             // Proposal is for incorrect period
             } else if ((1 + state.round.number) < proposal.round.number) {
-                Logger.consensusWarn(msg.rebalancer.messages.wrongRound);
+                warn("state", msg.rebalancer.messages.wrongRound);
                 return Vote.invalid(msg.rebalancer.messages.wrongRound);
 
             // Reject invalid rebalance proposals
             } else {
-                Logger.consensusWarn(msg.rebalancer.messages.reject);
+                warn("state", msg.rebalancer.messages.reject);
                 return Vote.invalid(msg.rebalancer.messages.reject);
             }
         }

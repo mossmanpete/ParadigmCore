@@ -24,7 +24,7 @@ import * as helmet from "helmet";
 // ParadigmCore classes and imports
 import { TxBroadcaster } from "../../abci/util/TxBroadcaster";
 import { TxGenerator } from "../../abci/util/TxGenerator";
-import { Logger } from "../../util/Logger";
+import { err, log, logStart, warn } from "../../util/log";
 import { messages as msg } from "../../util/static/messages";
 import { HttpMessage as Message } from "./HttpMessage";
 
@@ -60,9 +60,9 @@ const postHandler = async (req, res, next) => {
             data: req.body,
             type: "order",
         });
-    } catch (err) {
-        Logger.apiErr("Failed to construct local transaction object.");
-        Message.staticSendError(res, "Internal transaction error, try again.", 500);
+    } catch (error) {
+        err("api", "(http) failed to construct local transaction object");
+        Message.staticSendError(res, "bad transaction format, try again", 500);
     }
 
     // Execute local ABCI transaction
@@ -71,20 +71,21 @@ const postHandler = async (req, res, next) => {
         const response = await client.send(tx);
 
         // Send response back to client
-        Logger.apiEvt("Successfully executed local ABCI transaction.");
+        log("api", "successfully executed local abci transaction");
         Message.staticSend(res, response);
     } catch (error) {
-        Logger.apiErr("Failed to execute local ABCI transaction.");
-        Message.staticSendError(res, "Internal error, try again.", 500);
+        err("api", "failed to execute local abci transaction");
+        Message.staticSendError(res, "internal error, try again.", 500);
     }
     // }
 };
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (error, req, res, next) => {
     try {
         Message.staticSendError(res, msg.api.errors.badJSON, 400);
-    } catch (err) {
-        Logger.apiErr(msg.api.errors.response);
+    } catch (caughtError) {
+        err("api", msg.api.errors.response);
+        err("api", `reported error: ${caughtError.message}`);
     }
 };
 
@@ -123,9 +124,9 @@ export async function start(options) {
 
         // Start API server
         await app.listen(options.port);
-        Logger.apiEvt(msg.api.messages.servStart);
+        logStart(msg.api.messages.servStart);
         return;
-    } catch (err) {
-        throw new Error(err.message);
+    } catch (error) {
+        throw new Error(error.message);
     }
 }
