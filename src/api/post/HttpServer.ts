@@ -34,53 +34,44 @@ let generator: TxGenerator; // Generates and signs ABCI tx's
 let app = express();        // Express.js server
 let paradigm;               // ParadigmConnect driver
 
-// Setup express server
-app.enable("trust proxy");
-app.use(helmet());          // More secure headers
-app.use(cors());            // Cross-origin resource sharing (helps browsers)
-app.use(bodyParser.json()); // JSON request and response
-
 // Begin handler implementation
 
-const postHandler = async (req, res, next) => {
+async function postHandler(req, res, next) {
     // Create transaction object
     let tx: SignedTransaction;
 
-    /*
     // Commenting out until v0.5
     const paradigmOrder = new paradigm.Order(req.body);
     if (!await paradigmOrder.isValid()) {
-        Logger.apiEvt("Invalid Order rejected.");
+        warn("api", "invalid order rejected");
         Message.staticSendError(res, "Order is invalid.", 422);
     } else {
-    */
+      try {
+          tx = generator.create({
+              data: req.body,
+              type: "order",
+          });
+      } catch (error) {
+          err("api", "(http) failed to construct local transaction object");
+          Message.staticSendError(res, "bad transaction format, try again", 500);
+      }
 
-    try {
-        tx = generator.create({
-            data: req.body,
-            type: "order",
-        });
-    } catch (error) {
-        err("api", "(http) failed to construct local transaction object");
-        Message.staticSendError(res, "bad transaction format, try again", 500);
+      // Execute local ABCI transaction
+      try {
+          // Await ABCI response
+          const response = await client.send(tx);
+
+          // Send response back to client
+          log("api", "successfully executed local abci transaction");
+          Message.staticSend(res, response);
+      } catch (error) {
+          err("api", "failed to execute local abci transaction");
+          Message.staticSendError(res, "internal error, try again.", 500);
+      }
     }
-
-    // Execute local ABCI transaction
-    try {
-        // Await ABCI response
-        const response = await client.send(tx);
-
-        // Send response back to client
-        log("api", "successfully executed local abci transaction");
-        Message.staticSend(res, response);
-    } catch (error) {
-        err("api", "failed to execute local abci transaction");
-        Message.staticSendError(res, "internal error, try again.", 500);
-    }
-    // }
 };
 
-const errorHandler = (error, req, res, next) => {
+function errorHandler (error, req, res, next) {
     try {
         Message.staticSendError(res, msg.api.errors.badJSON, 400);
     } catch (caughtError) {
@@ -114,17 +105,24 @@ export async function start(options) {
         // Setup rate limiting
         const limiter = rateLimit({
             windowMs: options.rateWindow,
-            max: options.rateMax
+            max: options.rateMax,
+            message: {
+              "error": 429,
+              "message": "burst request limit reached"
+            }
         });
-        app.use(limiter);
 
-        // Attach handlers
+        // Setup express server
+        app.enable("trust proxy");
+        app.use(limiter);
+        app.use(helmet());
+        app.use(cors());
+        app.use(bodyParser.json());
         app.post("/*", postHandler);
         app.use(errorHandler);
 
         // Start API server
         await app.listen(options.port);
-        logStart(msg.api.messages.servStart);
         return;
     } catch (error) {
         throw new Error(error.message);

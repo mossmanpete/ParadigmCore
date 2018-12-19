@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .vscode
+.notes
 
 /node_modules
 /tendermint/bin/tendermint

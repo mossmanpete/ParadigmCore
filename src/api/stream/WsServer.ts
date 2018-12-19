@@ -74,7 +74,7 @@ export function start(port: number, emitter: EventEmitter) {
     try {
         // Create WebSocket server
         let server = new Server({ port }, () => {
-            logStart(msg.websocket.messages.servStart);
+            log("api", msg.websocket.messages.servStart);
         });
 
         // Load global order emitter

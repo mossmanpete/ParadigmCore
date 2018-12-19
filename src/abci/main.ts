@@ -114,7 +114,7 @@ export async function startMain(options: ParadigmCoreOptions): Promise<null> {
 
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
-        logStart(templates.abci.messages.servStart);
+        log("state", templates.abci.messages.servStart);
     } catch (error) {
         throw new Error(`initializing abci application: ${error.message}`);
     }
