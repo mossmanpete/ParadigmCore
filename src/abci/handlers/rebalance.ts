@@ -76,7 +76,6 @@ export function checkRebalance(tx: SignedRebalanceTx, state: State) {
 export function deliverRebalance(
     tx: SignedRebalanceTx,
     state: State,
-    rb: StakeRebalancer
 ) {
     const proposal: RebalanceData = tx.data;
 

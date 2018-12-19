@@ -4,9 +4,9 @@
         "baseUrl": "./",
         "target": "esnext",
         "module": "commonjs",
-        "typeRoots": ["node_modules/@types", "src/typings/typings"],
+        "typeRoots": ["./node_modules/@types", "./src/typings"],
         "removeComments": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
     },
     "include":[
         "./src"

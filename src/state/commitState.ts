@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  22-October-2018
- * @date (modified) 14-November-2018
+ * @date (modified) 18-December-2018
  *
  * Object representing the post-commit state of the network.
  */
@@ -27,6 +27,12 @@ export let commitState: State = {
     remove: 0
   },
   validators: {},
+  consensusParams: {
+    finalityThreshold: 0,
+    periodLength: 0,
+    periodLimit: 0,
+    maxOrderBytes: 0,
+  },
   orderCounter: 0,
   lastBlockHeight: 0,
   lastBlockAppHash: null

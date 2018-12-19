@@ -16,6 +16,7 @@
 // ParadigmCore classes
 import { PayloadCipher } from "../../crypto/PayloadCipher";
 import { err, log, warn } from "../../util/log";
+import { bigIntReplacer } from "../../util/static/bigIntUtils";
 import { TxGenerator } from "./TxGenerator";
 
 /**
@@ -35,7 +36,9 @@ export function preVerifyTx(
     if (!txGen.verify(tx)) { return false; }
 
     // Check that signing party is an active validator
-    if (!state.validators.hasOwnProperty(tx.proof.fromAddr)) { return false; }
+    if (!state.validators.hasOwnProperty(tx.proof.fromAddr)) {
+        return false;
+    }
 
     // Above conditions pass mean tx is from active validator
     return true;

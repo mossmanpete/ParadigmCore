@@ -26,6 +26,7 @@ import * as tendermint from "../lib/tendermint";
 // ParadigmCore classes
 import { TxBroadcaster } from "./abci/util/TxBroadcaster";
 import { TxGenerator } from "./abci/util/TxGenerator";
+import { OrderTracker } from "./async/OrderTracker";
 import { err, log, logStart, warn } from "./util/log";
 import { messages as msg } from "./util/static/messages";
 
@@ -45,6 +46,7 @@ import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 let emitter: EventEmitter;      // Emitter to track events
 let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
 let generator: TxGenerator;     // Signs and builds ABCI tx's
+let tracker: OrderTracker;
 let node: any;                  // Tendermint node instance
 let web3;
 let paradigm;
@@ -128,6 +130,7 @@ let paradigm;
     try {
         // Create a "parent" EventEmitter
         emitter = new EventEmitter();
+        tracker = new OrderTracker(emitter);
 
         // Start OrderStream WebSocket server
         startStreamServer(parseInt(env.WS_PORT, 10), emitter);
@@ -146,18 +149,19 @@ let paradigm;
 
             // Transaction broadcaster and emitter instances
             broadcaster,
-            emitter,
+            tracker,
 
             // ABCI configuration options
-            abciServPort: env.ABCI_PORT,
+            abciServPort: parseInt(env.ABCI_PORT, 10),
             commitState: cState,
             deliverState: dState,
             version: env.npm_package_version,
 
-            // Rebalancer options
+            // Rebalancer and consensus options
             finalityThreshold: parseInt(env.FINALITY_THRESHOLD, 10),
             periodLength: parseInt(env.PERIOD_LENGTH, 10),
             periodLimit: parseInt(env.PERIOD_LIMIT, 10),
+            maxOrderBytes: parseInt(env.MAX_ORDER_SIZE, 10),
             provider: env.WEB3_PROVIDER,
             stakeABI: STAKE_CONTRACT_ABI,
             stakeAddress: env.STAKE_CONTRACT_ADDR,
@@ -172,8 +176,9 @@ let paradigm;
         await node.synced();
         logStart("tendermint initialized and synchronized");
 
-        // Activate transaction broadcaster
+        // Activate transaction broadcaster and order tracker
         broadcaster.start();
+        tracker.activate();
 
         // Start state rebalancer sub-process AFTER sync
         await startRebalancer();

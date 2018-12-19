@@ -6,6 +6,7 @@
         "trailing-comma":[false],
         "prefer-const":false,
         "object-literal-sort-keys": false,
-        "no-console": false
+        "no-console": false,
+        "interface-name": false
     }
 }
