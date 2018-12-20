@@ -5,7 +5,10 @@ const env = require("dotenv").config().parsed;
 let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address;
 
 // exit if ParadigmCore home directory not set
-if (process.env.PCHOME === undefined || process.env.PCHOME !== process.cwd()) {
+if (
+    process.env.PCHOME === undefined || 
+    process.env.PCHOME.toLocaleLowerCase() !== process.cwd().toLocaleLowerCase()
+) {
     console.log("\nParadigmCore setup failed...");
     console.log("Environment variable PCHOME is not set, or does not match CWD.\n");
     process.exit(1);
