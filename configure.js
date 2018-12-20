@@ -16,7 +16,7 @@ if (
     pchome = process.env.PCHOME;
     tmhome = `${pchome}/lib/tendermint`;
     try {
-        appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
+        if (!env.TM_HOME) appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
     } catch (err) {
         console.log(`\nParadigmCore setup failed with: ${err.message}`);
         console.log("Failed to set tendermint home... check /lib and try again.");
