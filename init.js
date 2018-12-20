@@ -6,8 +6,8 @@
 // -> post install?
 // todo deal with case where keys are in env file but all other config is gone
 
-const { spawn } = require("child_process");
-const { readdirSync, appendFileSync } = require('fs');
+const { spawn, execSync } = require("child_process");
+const { readdirSync, appendFileSync, readFileSync } = require('fs');
 const env = require("dotenv").config().parsed;
 const c = require("ansi-colors");
 let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address;
@@ -23,22 +23,35 @@ if (
     process.env.PCHOME === undefined || 
     process.env.PCHOME.toLocaleLowerCase() !== process.cwd().toLocaleLowerCase()
 ) {
-    err("\nParadigmCore setup failed...");
-    err("Environment variable PCHOME is not set, or does not match CWD.\n");
-    process.exit(1);
+    fail("Environment variable PCHOME is not set, or does not match CWD.", error);
 } else {
+    write("Setting tendermint home directory...")
     pchome = process.env.PCHOME;
     tmhome = `${pchome}/lib/tendermint`;
     try {
-        if (!env.TM_HOME || env.TM_HOME === "") {
+        write("Checking environment file (step 1/2)...");
+        if (!env) {
+            fail("Missing or empty environment file, try using the template.");
+        } else if (!env.TM_HOME || env.TM_HOME === "") {
             appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
         } else {
             write("TM_HOME already set, skipping.");
         }
     } catch (error) {
-        err(`\nParadigmCore setup failed with: ${error.message}`);
-        err("Failed to set tendermint home; check /lib and try again.");
-        process.exit(1);
+        fail("Failed to set tendermint home; check /lib and try again.", error);
+    }
+}
+
+// check if tendermint binary is already installed, download if needed
+if (readdirSync(`${tmhome}/bin`).indexOf("tendermint") === -1) {
+    write("No tendermint install found, downloading...");
+    try {
+        let upV = readFileSync(`${tmhome}/bin/version`).toString("utf8");
+        execSync(`node ${tmhome}/bin/download.js`);
+        execSync(`node ${tmhome}/bin/update.js ${upV}`);
+        write("Successfully downloaded and updated tendermint.");
+    } catch (error) {
+        fail("Failed to set tendermint home; check /lib and try again.", error);
     }
 }
 
@@ -62,18 +75,13 @@ const reqVars = [
 ]
 
 // check for missing options
+write("Checking environment file (step 2/2)...");
 let missing = reqVars.filter(k => env[k] === undefined || env[k] === "");
 if (missing.length > 0) {
-    err("\nParadigmCore setup failed:");
-    err("Missing the following required parameters:\n")
-    missing.forEach((k, i) => console.log(`\t${i+1}.\t${k}`));
-    err("\nPlease fix your environment file and try again.");
-    process.exit(1);
+    fail("Missing the following required parameters:", null, missing);
 }
 
-if (
-    !env.PRIV_KEY || !env.PUB_KEY || !env.NODE_ID
-) {
+if (!env.PRIV_KEY || !env.PUB_KEY || !env.NODE_ID) {
     setupValidator();
     done();
 } else {
@@ -86,9 +94,7 @@ function setupValidator() {
     try {
         tendermint = require("./lib/tendermint");
     } catch (error) {
-        err(`\nParadigmCore setup failed with: ${error.message}`);
-        err("Missing tendermint driver... check /lib and try again.");
-        process.exit(1);
+        fail("Missing tendermint driver... check /lib and try again.", error);
     }
 
     // check if there is already a data and/or config dir
@@ -108,9 +114,7 @@ function setupValidator() {
     try {
         tendermint.initSync(tmhome);
     } catch (error) {
-        err(`\nParadigmCore setup failed with: ${error.message}`);
-        err("Failed to setup tendermint config and data directories.");
-        process.exit(1);
+        fail("Failed to setup tendermint config and data directories.", error);
     }
     write(`Created tendermint config in '${pchome}/lib/tendermint.'`);
     copyKeysToEnv();
@@ -122,9 +126,7 @@ function validateKeys() {
         const pathstr = `${tmhome}/config/priv_validator.json`;
         privValidator = require(pathstr);
     } catch (error) {
-        err(`\nParadigmCore setup failed with: ${error.message}`);
-        err(`Failed to load keypair.`);
-        process.exit(1);
+        fail("Failed to load keypair.", error);
     }
 
     write("Validating keys...");
@@ -137,9 +139,7 @@ function validateKeys() {
         Buffer.from(priv_key, "base64").length !== 64 ||
         Buffer.from(pub_key, "base64").length !== 32
     ) {
-        err(`\nParadigmCore setup failed:`);
-        err("Current keys invalid, check keys or regenerate.\n");
-        process.exit(1);
+        fail("Current keys invalid, check keys or regenerate.");
     }
     return;
 }
@@ -153,9 +153,7 @@ function copyKeysToEnv() {
         appendFileSync(".env", `PUB_KEY="${pub_key}"\n`);
         appendFileSync(".env", `NODE_ID="${address}"\n`);
     } catch (error) {
-        err(`\nParadigmCore setup failed with: ${error.message}`);
-        err("failed to copy keys to environment.");
-        process.exit(1);
+        fail("Failed to copy keys to environment.", error);
     }
     return;
 }
@@ -164,7 +162,28 @@ function validateEnvironment(){
     // todo
 }
 
+// only called if all setup completes
 function done() {
     console.log(c.green.bold("\n\tParadigmCore setup completed.\n"));
     process.exit(0);
 }
+
+// called on fatal failure
+function fail(msg, error, missing) {
+    // log error message from stack, if present
+    if (error) {
+        err(`\n\tParadigmCore setup failed with: ${error.message}`);
+    } else {
+        err(`\n\tParadigmCore setup failed...`);
+    }
+
+    // log additional failure message
+    err(`\t${msg}\n`);
+
+    // log missing environment variables
+    if (missing) {
+        missing.forEach((k, i) => console.log(`\t${i+1}.\t${k}\n`));
+        err("\tPlease fix your environment file and try again.");
+    }
+    process.exit(1);
+} 
