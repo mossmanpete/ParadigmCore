@@ -4,5 +4,9 @@
 .notes
 
 /node_modules
-/tendermint/bin/tendermint
+
+/lib/tendermint/bin/tendermint
+/lib/tendermint/config
+/lib/tendermint/data
+
 /dist

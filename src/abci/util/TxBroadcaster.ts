@@ -137,7 +137,7 @@ export class TxBroadcaster {
         } catch (error) {
             // Reject promise to error object
             txEmitter.emit("failed", error);
-            err("tx", "failed to send abci transaction");
+            err("tx", `failed to send abci transaction: ${error.message}`);
         } // finally {
         // @TODO: should this be inside 'finally'?
         // If queue is now empty, stop broadcasting

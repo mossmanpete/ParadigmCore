@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
+    "postinstall": "git submodule update --init --recursive && export PCHOME=$(pwd) && node configure.js",
     "start": "node ./dist/index.js",
     "launch": "tsc && node ./dist/index.js",
     "reset": "./lib/tendermint/bin/tendermint unsafe_reset_all",
@@ -33,6 +34,7 @@
     "ed25519": "0.0.4",
     "execa": "^1.0.0",
     "express": "^4.16.3",
+    "express-async-handler": "^1.1.4",
     "express-rate-limit": "^3.3.2",
     "helmet": "^3.15.0",
     "mkdirp": "^0.5.1",
@@ -41,7 +43,7 @@
     "progress": "^2.0.1",
     "ripemd160": "^2.0.2",
     "tendermint": "^3.2.1",
-    "tendermint-node": "^3.4.3",
+    "typescript": "^3.2.2",
     "unzip": "^0.1.11",
     "web3": "^1.0.0-beta.36",
     "ws": "^6.0.0"

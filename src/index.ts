@@ -43,7 +43,7 @@ import { start as startStreamServer } from "./api/stream/WsServer";
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
 // "Globals"
-let emitter:EventEmitter;      // Emitter to track events
+let emitter: EventEmitter;      // Emitter to track events
 let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
 let generator: TxGenerator;     // Signs and builds ABCI tx's
 let tracker: OrderTracker;
@@ -83,13 +83,14 @@ let paradigm;
 
         // Initialize and start Tendermint
         await tendermint.init(tmHome);
+
         node = tendermint.node(tmHome, {
             rpc: {
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
         });
     } catch (error) {
-        err("state", "failed initializing tendermint");
+        err("state", "failed initializing tendermint, check configuration.");
         err("start", error.message);
         err("start", msg.general.errors.fatal);
         process.exit(1);

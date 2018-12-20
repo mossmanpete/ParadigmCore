@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 19-December-2018
  *
  * ExpressJS server to enable incoming orders to be received as POST requests.
  *
@@ -18,6 +18,7 @@
 import * as bodyParser from "body-parser";
 import cors = require("cors");
 import * as express from "express";
+import * as wrapAsync from "express-async-handler";
 import * as rateLimit from "express-rate-limit";
 import * as helmet from "helmet";
 
@@ -28,59 +29,14 @@ import { err, log, logStart, warn } from "../../util/log";
 import { messages as msg } from "../../util/static/messages";
 import { HttpMessage as Message } from "./HttpMessage";
 
+// Type defs
+import { NextFunction, Request, RequestHandler, Response } from "express";
+
 // "Globals"
 let client: TxBroadcaster;  // Tendermint client for RPC
 let generator: TxGenerator; // Generates and signs ABCI tx's
 let app = express();        // Express.js server
 let paradigm;               // ParadigmConnect driver
-
-// Begin handler implementation
-
-async function postHandler(req, res, next) {
-    // Create transaction object
-    let tx: SignedTransaction;
-
-    // Commenting out until v0.5
-    const paradigmOrder = new paradigm.Order(req.body);
-    if (!await paradigmOrder.isValid()) {
-        warn("api", "invalid order rejected");
-        Message.staticSendError(res, "Order is invalid.", 422);
-    } else {
-      try {
-          tx = generator.create({
-              data: req.body,
-              type: "order",
-          });
-      } catch (error) {
-          err("api", "(http) failed to construct local transaction object");
-          Message.staticSendError(res, "bad transaction format, try again", 500);
-      }
-
-      // Execute local ABCI transaction
-      try {
-          // Await ABCI response
-          const response = await client.send(tx);
-
-          // Send response back to client
-          log("api", "successfully executed local abci transaction");
-          Message.staticSend(res, response);
-      } catch (error) {
-          err("api", "failed to execute local abci transaction");
-          Message.staticSendError(res, "internal error, try again.", 500);
-      }
-    }
-};
-
-function errorHandler (error, req, res, next) {
-    try {
-        Message.staticSendError(res, msg.api.errors.badJSON, 400);
-    } catch (caughtError) {
-        err("api", msg.api.errors.response);
-        err("api", `reported error: ${caughtError.message}`);
-    }
-};
-
-// End handler implementations
 
 /**
  * Start and bind API server.
@@ -107,8 +63,8 @@ export async function start(options) {
             windowMs: options.rateWindow,
             max: options.rateMax,
             message: {
-              "error": 429,
-              "message": "burst request limit reached"
+              error: 429,
+              message: "burst request limit reached"
             }
         });
 
@@ -118,7 +74,7 @@ export async function start(options) {
         app.use(helmet());
         app.use(cors());
         app.use(bodyParser.json());
-        app.post("/*", postHandler);
+        app.post("/*", wrapAsync(postHandler));
         app.use(errorHandler);
 
         // Start API server
@@ -126,5 +82,82 @@ export async function start(options) {
         return;
     } catch (error) {
         throw new Error(error.message);
+    }
+}
+
+/* *
+ * Express POST handler for incoming orders (and eventually stream tx's).
+ * /
+async function postHandler(req: Request, res: Response, next: NextFunction) {
+    // Create transaction object
+    let tx: SignedTransaction;
+
+    try {
+    // verify order validity before submitting to state machine
+    const paradigmOrder = new paradigm.Order(req.body);
+    if (!await paradigmOrder.isValid()) {
+        warn("api", "invalid order rejected");
+        Message.staticSendError(res, "submitted order is invalid.", 422);
+    } else {
+      try {
+          tx = generator.create({
+              data: req.body,
+              type: "order",
+          });
+          // throw new Error();
+      } catch (error) {
+          err("api", "(http) failed to construct local transaction object");
+          next(error);
+      }
+
+      // Execute local ABCI transaction
+      try {
+          // Await ABCI response
+          const response = await client.send(tx);
+
+          // Send response back to client
+          log("api", "successfully executed local abci transaction");
+          Message.staticSend(res, response);
+      } catch (error) {
+          err("api", "failed to execute local abci transaction");
+          next(error);
+      }
+    }
+} catch (error) {
+    next(error);
+}
+}*/
+
+async function postHandler(req: Request, res: Response, next: NextFunction) {
+    // Create transaction object
+    let tx: SignedTransaction;
+
+    // verify order validity before submitting to state machine
+    const paradigmOrder = new paradigm.Order(req.body);
+    if (!await paradigmOrder.isValid()) {
+        warn("api", "invalid order rejected");
+        Message.staticSendError(res, "submitted order is invalid.", 422);
+    } else {
+        // create and sign transaction (as validator)
+        tx = generator.create({ data: req.body, type: "order" });
+
+        // submit transaction to mempool and network
+        const response = await client.send(tx);
+
+        // send response from application back to client
+        Message.staticSend(res, response);
+    }
+}
+
+/**
+ * General error handler.
+ */
+function errorHandler(error: Error, req: Request, res: Response, next: NextFunction) {
+    console.log("in err handler:" + error);
+    try {
+        Message.staticSendError(res, `request failed with error: ${error.message}`, 500);
+    } catch (caughtError) {
+        err("api", msg.api.errors.response);
+        err("api", `reported error: ${caughtError.message}`);
     }
 }
