@@ -10,8 +10,9 @@
  * - copy new keys from tendermint config to environment
  * - validates environment config file
  * - validates copied keys
+ * 
+ * @todo move genesis file if found in PCHOME?
  **/
-// todo move genesis file if found in homedir?
 
 // imports, scope, etc.
 const { execSync } = require("child_process");
@@ -23,7 +24,7 @@ let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address;
 // stdout formatter functions, etc
 let n = 0;
 const write = m => console.log(`\n\t${c.bold(`@${++n}`)}\t${m}`);
-const err = m => console.log(c.red.bold(m));
+const err = m => console.log(`\n\t${c.red.bold(m)}`);
 
 // exit if paradigmcore home directory environment var not set
 if (
@@ -38,7 +39,10 @@ if (
     try {
         write("Checking environment file (step 1/2)...");
         if (!env) {
-            fail("Missing or empty environment file, try using the template.");
+            fail(
+                "Missing or empty environment file (should at be $PCHOME/.env)\n"+
+                "\tTry starting with a template from $PCHOME/lib"
+            );
         } else if (!env.TM_HOME || env.TM_HOME === "") {
             appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
         } else {
@@ -135,7 +139,7 @@ function validateKeys() {
         const pathstr = `${tmhome}/config/priv_validator.json`;
         privValidator = require(pathstr);
     } catch (error) {
-        fail("Failed to load keypair.", error);
+        fail("Failed to load keypair, try removing 'NODE_ID', ... from .env", error);
     }
 
     write("Validating keys...");
@@ -212,7 +216,8 @@ function checkReqs(reqs, env){
 
 // only called if all setup completes
 function done() {
-    console.log(c.green.bold("\n\tParadigmCore setup completed.\n"));
+    console.log(c.green.bold("\n\tParadigmCore setup completed!"));
+    console.log(c.green.bold("\n\tStart your node with `yarn launch` or `npm run launch`.\n"));
     process.exit(0);
 }
 
@@ -220,18 +225,18 @@ function done() {
 function fail(msg, error, missing) {
     // log error message from stack, if present
     if (error) {
-        err(`\n\tParadigmCore setup failed with: ${error.message}`);
+        err(`ParadigmCore setup failed with: ${error.message}`);
     } else {
-        err(`\n\tParadigmCore setup failed...`);
+        err(`ParadigmCore setup failed...`);
     }
 
     // log additional failure message
-    err(`\t${msg}\n`);
+    err(`${msg}\n`);
 
     // log missing environment variables
     if (missing) {
         missing.forEach((k, i) => console.log(`\t${i+1}.\t${k}\n`));
-        err("\tPlease fix your environment file and try again.");
+        err("Please fix your environment file and try again.");
     }
     process.exit(1);
 } 

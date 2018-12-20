@@ -60,7 +60,7 @@ let paradigm;
  * @param env   {object}    environment variables (expected as process.env)
  */
 (async (env) => {
-    // welcome
+    // welcome :)
     logStart();
 
     /*
@@ -90,8 +90,9 @@ let paradigm;
             },
         });
     } catch (error) {
+        err("state", "failed starting tendermint.");
         err("state", "tendermint may not be installed or configured.");
-        err("state", "failed starting tendermint, check configuration.");
+        err("state", "use `npm i` to setup tendermint and paradigmcore.");
         err("start", error.message);
         err("start", msg.general.errors.fatal);
         process.exit(1);
