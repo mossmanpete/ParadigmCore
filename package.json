@@ -5,8 +5,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc",
-    "preinstall": "git submodule update --init --recursive && node ./lib/tendermint/bin/download.js",
-    "postinstall": "export PCHOME=$(pwd) && node configure.js",
+    "preinstall": "git submodule update --init --recursive",
+    "postinstall": "export PCHOME=$(pwd) && node ./init.js",
     "start": "node ./dist/index.js",
     "launch": "tsc && node ./dist/index.js",
     "reset": "./lib/tendermint/bin/tendermint unsafe_reset_all",

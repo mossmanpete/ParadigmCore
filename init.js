@@ -1,29 +1,36 @@
 #!/usr/local/bin/node
-// todo validate keys in env
-// todo support full vs validator setup
-// todo run tendermint binary install script from here
-// -> instead of from package JSON. set env in package?
-// -> post install?
-// todo deal with case where keys are in env file but all other config is gone
+/**
+ * ParadigmCore (optional) initialize/setup script
+ * 
+ * Can perform the following:
+ * - sets required environment variable
+ * - download tendermint binary
+ * - set up tendermint config and data-store
+ * - generate validator keypair and node_id
+ * - copy new keys from tendermint config to environment
+ * - validates environment config file
+ * - validates copied keys
+ **/
+// todo move genesis file if found in homedir?
 
-const { spawn, execSync } = require("child_process");
+// imports, scope, etc.
+const { execSync } = require("child_process");
 const { readdirSync, appendFileSync, readFileSync } = require('fs');
 const env = require("dotenv").config().parsed;
 const c = require("ansi-colors");
 let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address;
 
-
-// stdout formatter functions
+// stdout formatter functions, etc
 let n = 0;
 const write = m => console.log(`\n\t${c.bold(`@${++n}`)}\t${m}`);
 const err = m => console.log(c.red.bold(m));
 
-// exit if ParadigmCore home directory not set
+// exit if paradigmcore home directory environment var not set
 if (
     process.env.PCHOME === undefined || 
     process.env.PCHOME.toLocaleLowerCase() !== process.cwd().toLocaleLowerCase()
 ) {
-    fail("Environment variable PCHOME is not set, or does not match CWD.", error);
+    fail("Environment variable PCHOME is not set, or does not match CWD.");
 } else {
     write("Setting tendermint home directory...")
     pchome = process.env.PCHOME;
@@ -51,10 +58,11 @@ if (readdirSync(`${tmhome}/bin`).indexOf("tendermint") === -1) {
         execSync(`node ${tmhome}/bin/update.js ${upV}`);
         write("Successfully downloaded and updated tendermint.");
     } catch (error) {
-        fail("Failed to set tendermint home; check /lib and try again.", error);
+        fail("Failed to download or verify tendermint binary.", error);
     }
 }
 
+// initially required variables
 const reqVars = [
     "NODE_TYPE",
     "WEB3_PROVIDER",
@@ -76,19 +84,19 @@ const reqVars = [
 
 // check for missing options
 write("Checking environment file (step 2/2)...");
-let missing = reqVars.filter(k => env[k] === undefined || env[k] === "");
-if (missing.length > 0) {
-    fail("Missing the following required parameters:", null, missing);
-}
+checkReqs(reqVars, env);
 
-if (!env.PRIV_KEY || !env.PUB_KEY || !env.NODE_ID) {
+if (!env.PRIV_KEY && !env.PUB_KEY && !env.NODE_ID) {
     setupValidator();
-    done();
+    validateEnvironment();
+} else if (!env.PRIV_KEY || !env.PUB_KEY || !env.NODE_ID) {
+    fail("Please remove 'NODE_ID', 'PRIV_KEY', and 'PUB_KEY' from .env.");
 } else {
     validateKeys();
-    done();
+    validateEnvironment();
 }
 
+// setup tendermint config/data dir
 function setupValidator() {
     write("Configuring and setting up tendermint...");
     try {
@@ -120,6 +128,7 @@ function setupValidator() {
     copyKeysToEnv();
 }
 
+// validate keys (purely based on structure) from priv_validator.json only
 function validateKeys() {
     write("Loading validator keys...");
     try {
@@ -144,6 +153,7 @@ function validateKeys() {
     return;
 }
 
+// copy keys from priv_validator.json 
 function copyKeysToEnv() {
     write("Validating tendermint keys...");
     validateKeys();
@@ -158,8 +168,46 @@ function copyKeysToEnv() {
     return;
 }
 
+// freshly parse environment vars and priv_validator.json and validate
 function validateEnvironment(){
-    // todo
+    write("Validating keys in environment file...");
+    let newEnv = require("dotenv").config().parsed;
+    if (!newEnv) fail("Failed to validate environment file, no file found.");
+
+    // check all reqs, plus keys
+    write("Checking for all required config variables...");
+    let newReqs = [...reqVars, "TM_HOME", "NODE_ID", "PRIV_KEY", "PUB_KEY"];
+    checkReqs(newReqs, newEnv);
+
+    // check env keys match priv_validator.json keys
+    write("Checking that config keys match validator keys...");
+    try {
+        const pathstr = `${tmhome}/config/priv_validator.json`;
+        const ks = require(pathstr);
+        if (
+            !pad(ks.address, "hex").equals(pad(newEnv.NODE_ID, "hex")) ||
+            !pad(ks.priv_key.value, "base64").equals(pad(newEnv.PRIV_KEY, "base64")) ||
+            !pad(ks.pub_key.value, "base64").equals(pad(newEnv.PUB_KEY, "base64"))
+        ) {
+            fail("Environment verification failed, keys do not match.");
+        }
+    } catch (error) {
+        fail("Key verification failed, please regenerate.", error);
+    }
+    done();
+}
+
+// buffer generator wrapper
+function pad(b, enc) {
+    return Buffer.from(b, enc);
+}
+
+// check environment object for required config vars
+function checkReqs(reqs, env){
+    let missing = reqs.filter(k => env[k] === undefined || env[k] === "");
+    if (missing.length > 0) {
+        fail("Missing the following required parameters:", null, missing);
+    }
 }
 
 // only called if all setup completes
