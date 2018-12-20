@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 17-December-2018
+ * @date (modified) 20-December-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
@@ -25,10 +25,9 @@ import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
 import { OrderTracker } from "./async/OrderTracker";
+import { Witness } from "./async/Witness";
 import { TxBroadcaster } from "./core/util/TxBroadcaster";
 import { TxGenerator } from "./core/util/TxGenerator";
-import { err, log, logStart, warn } from "./util/log";
-import { messages as msg } from "./util/static/messages";
 
 // State object templates
 import { commitState as cState } from "./state/commitState";
@@ -37,19 +36,25 @@ import { deliverState as dState } from "./state/deliverState";
 // Initialization functions
 import { start as startAPIserver } from "./api/post/HttpServer";
 import { start as startStreamServer } from "./api/stream/WsServer";
-import { startMain, startRebalancer } from "./core/main";
+import { start as startMain } from "./core/main";
+// import { startMain, startRebalancer } from "./core/main";
+
+// General utilities and misc.
+import { err, log, logStart, warn } from "./util/log";
+import { messages as msg } from "./util/static/messages";
 
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
 // "Globals"
-let emitter: EventEmitter;      // Emitter to track events
-let broadcaster: TxBroadcaster; // Internal ABCI transaction broadcaster
-let generator: TxGenerator;     // Signs and builds ABCI tx's
-let tracker: OrderTracker;
-let node: any;                  // Tendermint node instance
-let web3;
-let paradigm;
+let witness: Witness;           // implements peg-zone and Ethereum SSM
+let emitter: EventEmitter;      // emitter to track order/stream events
+let broadcaster: TxBroadcaster; // internal ABCI transaction broadcaster
+let generator: TxGenerator;     // signs and builds ABCI tx's
+let tracker: OrderTracker;      // uses emitter to track order/stream txs
+let web3: Web3;                 // web3 instance
+let paradigm;                   // paradigm instance (paradigm-connect)
+let node;                       // tendermint node child process instance
 
 /**
  * This function executes immediately upon this file being loaded. It is
@@ -78,12 +83,6 @@ let paradigm;
     // tendermint core
     logStart("starting tendermint core...");
     try {
-        // Set Tendermint home directory
-        // const tmHome = `${env.HOME}/.tendermint`;
-
-        // Initialize and start Tendermint
-        // await tendermint.init(tmHome);
-
         node = tendermint.node(env.TM_HOME, {
             rpc: {
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
@@ -179,16 +178,42 @@ let paradigm;
         process.exit(1);
     }
 
-    // paradigmcore
+    // create witness (stake-rebalancer)
+    logStart("creating witness instance...");
+    try {
+        const options = {
+            // Tx generator/broadcaster
+            broadcaster,
+            txGenerator: generator,
+
+            // web3 provider url and contract config
+            provider: env.WEB3_PROVIDER,
+            stakeABI: STAKE_CONTRACT_ABI,
+            stakeAddress: env.STAKE_CONTRACT_ADDR,
+
+            // consensus params
+            finalityThreshold: parseInt(env.FINALITY_THRESHOLD, 10),
+            periodLength: parseInt(env.PERIOD_LENGTH, 10),
+            periodLimit: parseInt(env.PERIOD_LIMIT, 10),
+        };
+
+        witness = await Witness.create(options);
+        log("witness", "created new idle witness instance.");
+    } catch (error) {
+        err("witness", "failed initializing witness component.");
+        err("start", error.message);
+        err("start", msg.general.errors.fatal);
+        process.exit(1);
+    }
+
+    // start main paradigmcore
     logStart("starting paradigmcore...");
     try {
         const options = {
-            // Paradigm instance
+            // Paradigm instance, order tracker, and witness component
             paradigm,
-
-            // Transaction broadcaster and emitter instances
-            broadcaster,
             tracker,
+            witness,
 
             // ABCI configuration options
             abciServPort: parseInt(env.ABCI_PORT, 10),
@@ -201,9 +226,6 @@ let paradigm;
             periodLength: parseInt(env.PERIOD_LENGTH, 10),
             periodLimit: parseInt(env.PERIOD_LIMIT, 10),
             maxOrderBytes: parseInt(env.MAX_ORDER_SIZE, 10),
-            provider: env.WEB3_PROVIDER,
-            stakeABI: STAKE_CONTRACT_ABI,
-            stakeAddress: env.STAKE_CONTRACT_ADDR,
             txGenerator: generator,
         };
 
@@ -224,9 +246,9 @@ let paradigm;
         tracker.activate();
 
         // Start state rebalancer sub-process AFTER sync
-        log("witness", "starting witness component...");
-        await startRebalancer();
-        log("witness", msg.rebalancer.messages.activated);
+        log("peg", "starting witness component...");
+        if (witness.start() !== 0) { throw Error("failed to start witness."); }
+        log("peg", msg.rebalancer.messages.activated);
     } catch (error) {
         err("state", "failed initializing abci application");
         err("start", error.message);

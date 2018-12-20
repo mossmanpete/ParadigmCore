@@ -7,20 +7,18 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 04-December-2018
+ * @date (modified) 20-December-2018
  *
  * ParadigmCore primary state machine, and implementation of Tendermint handler
  * functions and state transition logic.
  */
 
 // 3rd party and STDLIB imports
-// const abci: any = require("abci");
 const abci: any = require("../../lib/js-abci");
-import { cloneDeep } from "lodash";
 
 // ParadigmCore classes
 import { OrderTracker } from "../async/OrderTracker";
-import { StakeRebalancer } from "../async/StakeRebalancer";
+import { Witness } from "../async/Witness";
 import { Hasher } from "../crypto/Hasher";
 import { TxGenerator } from "./util/TxGenerator";
 import { Vote } from "./util/Vote";
@@ -32,17 +30,14 @@ import { checkStream, deliverStream } from "./handlers/stream";
 import { checkWitness, deliverWitness } from "./handlers/witness";
 
 // General utilities
-import { err, log, logStart, warn } from "../util/log";
+import { err, log, warn } from "../util/log";
 import { bigIntReplacer } from "../util/static/bigIntUtils";
 import { messages as templates } from "../util/static/messages";
 import { pubToAddr } from "../util/static/valFunctions";
-import { decodeTx, preVerifyTx } from "./util/utils";
+import { computeConf, decodeTx, preVerifyTx, syncStates } from "./util/utils";
 
 // Custom types
 import { ParadigmCoreOptions } from "../typings/abci";
-
-// temporary "module-wide" global
-let rebalancer: StakeRebalancer;    // Witness component
 
 /**
  * Initialize and start the ABCI application.
@@ -50,21 +45,18 @@ let rebalancer: StakeRebalancer;    // Witness component
  * @param options {object} Options object with parameters:
  *  - options.version       {string}        paradigmcore version string
  *  - options.tracker       {OrderTracker}  tracks valid orders
+ *  - options.witness       {Witness}       witness instance (tracks Ethereum)
  *  - options.deliverState  {object}        deliverTx state object
  *  - options.commitState   {object}        commit state object
  *  - options.abciServPort  {number}        local ABCI server port
  *  - options.txGenerator   {TxGenerator}   transaction signer and verification
- *  - options.broadcaster   {TxBroadcaster} deliver transactions to tendermint
  *  - options.finalityThreshold {number}    Ethereum block finality threshold
  *  - options.maxOrderBytes {number}        maximum order size in bytes
  *  - options.periodLength  {number}        length of rebalance period
  *  - options.periodLimit   {number}        transactions accepted per period
- *  - options.provider      {string}        web3 provider URI (use websocket)
- *  - options.stakeABI      {array/JSON}    Ethereum staking contract ABI
- *  - options.stakeAddress  {string}        Ethereum staking contract address
  *  - options.paradigm      {Paradigm}      paradigm-connect instance
  */
-export async function startMain(options: ParadigmCoreOptions): Promise<null> {
+export async function start(options: ParadigmCoreOptions): Promise<null> {
     try {
         // Set application version
         let version = options.version;
@@ -82,6 +74,9 @@ export async function startMain(options: ParadigmCoreOptions): Promise<null> {
         // Transaction generator/verifier
         let generator = options.txGenerator;
 
+        // witness instance
+        let witness = options.witness;
+
         // Load initial consensus params
         let consensusParams: ConsensusParams = {
             finalityThreshold: options.finalityThreshold,
@@ -94,46 +89,17 @@ export async function startMain(options: ParadigmCoreOptions): Promise<null> {
         let handlers = {
             beginBlock: beginBlockWrapper(dState),
             checkTx: checkTxWrapper(cState, templates, generator, Order),
-            commit: commitWrapper(dState, cState, tracker, templates),
+            commit: commitWrapper(dState, cState, tracker, templates, witness),
             deliverTx: deliverTxWrapper(dState, templates, tracker, generator, Order),
             info: infoWrapper(cState, version),
             initChain: initChainWrapper(dState, cState, consensusParams),
         };
-
-        // Configure StakeRebalancer module
-        rebalancer = await StakeRebalancer.create({
-            broadcaster: options.broadcaster,
-            finalityThreshold: options.finalityThreshold,
-            periodLength: options.periodLength,
-            periodLimit: options.periodLimit,
-            provider: options.provider,
-            stakeABI: options.stakeABI,
-            stakeAddress: options.stakeAddress,
-            txGenerator: options.txGenerator,
-        });
 
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
         log("state", templates.abci.messages.servStart);
     } catch (error) {
         throw new Error(`initializing abci application: ${error.message}`);
-    }
-    return;
-}
-
-/**
- * Starts rebalancer module and order tracker module.
- */
-export async function startRebalancer(): Promise<null> {
-    try {
-        // Start rebalancer after sync
-        const code = rebalancer.start(); // Start listening to Ethereum events
-        if (code !== 0) {
-            log("peg", `failed to start with code ${code}`);
-            throw new Error(code.toString());
-        }
-    } catch (error) {
-        throw new Error(`activating stake rebalancer: ${error.message}`);
     }
     return;
 }
@@ -174,7 +140,7 @@ function initChainWrapper(
         finalityThreshold,
         periodLimit,
         periodLength,
-        maxOrderBytes,
+        maxOrderBytes
     } = params;
 
     // Return initChain function
@@ -202,16 +168,11 @@ function initChainWrapper(
             periodLength,
             periodLimit,
             maxOrderBytes,
+            confirmationThreshold: computeConf(request.validators.length),
         };
 
         // synchronize states upon network genesis
-        Object.keys(deliverState).forEach((key) => {
-            if (typeof deliverState[key] !== "object") {
-                commitState[key] = deliverState[key].valueOf();
-            } else {
-                commitState[key] = cloneDeep(deliverState[key]);
-            }
-        });
+        syncStates(deliverState, commitState);
 
         // Do not change any other parameters here
         return {};
@@ -224,6 +185,7 @@ function initChainWrapper(
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function beginBlockWrapper(state: State): (r) => any {
+    console.log(`\n... (begin) state: ${JSON.stringify(state, bigIntReplacer)}\n`);
     return (request) => {
         // Parse height and proposer from header
         const currHeight: number = request.header.height.low; // @TODO: consider
@@ -262,6 +224,12 @@ function beginBlockWrapper(state: State): (r) => any {
                 state.validators[valHex].votePower = valPower;
             });
         }
+
+        // update confirmation threshold based on number of active validators
+        // confirmation threshold is >=2/3 active validators, unless there is
+        // only one active validator, in which case it MUST be 1 in order for
+        // state.balances to remain accurate.
+        state.consensusParams.confirmationThreshold = computeConf(lastVotes.length);
 
         // Indicate new round, return no indexing tags
         log(
@@ -409,7 +377,8 @@ function commitWrapper(
     deliverState: State,
     commitState: State,
     tracker: OrderTracker,
-    msg: MasterLogTemplates
+    msg: MasterLogTemplates,
+    witness: Witness
 ): (r) => string {
     return (request) => {
         // store string encoded state hash
@@ -432,10 +401,10 @@ function commitWrapper(
                     const newEnd = deliverState.round.endsAt;
 
                     // Synchronize staking period parameters
-                    rebalancer.synchronize(newRound, newStart, newEnd);
+                    witness.synchronize(newRound, newStart, newEnd);
 
                     // Temporary
-                    console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
+                    // console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
                     break;
                 }
 
@@ -457,14 +426,7 @@ function commitWrapper(
             tracker.triggerBroadcast();
 
             // Synchronize commit state from delivertx state
-            // @todo move to utils folder
-            Object.keys(deliverState).forEach((key) => {
-                if (typeof deliverState[key] !== "object") {
-                    commitState[key] = deliverState[key].valueOf();
-                } else {
-                    commitState[key] = cloneDeep(deliverState[key]);
-                }
-            });
+            syncStates(deliverState, commitState);
 
             log(
                 "state",
@@ -473,6 +435,9 @@ function commitWrapper(
         } catch (error) {
             err("state", msg.abci.errors.broadcast);
         }
+
+        // temporary
+        console.log(`\n... (end) commmit state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
 
         // Return state's hash to be included in next block header
         return stateHash;

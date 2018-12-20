@@ -7,15 +7,12 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 20-December-2018
  *
  * Handler functions for verifying ABCI Order transactions, originating from
  * external API calls. Implements state transition logic as specified in the
  * spec for this TX type.
  */
-
-// ParadigmConnect protocol driver and library
-// import * as Paradigm from "paradigm-connect";
 
 // ParadigmCore classes
 import { OrderTracker } from "../../async/OrderTracker";
@@ -26,9 +23,6 @@ import { Vote } from "../util/Vote";
 // ParadigmCore utilities
 import { messages as msg } from "../../util/static/messages";
 import { verifyOrder } from "../util/utils";
-
-// Order constructor using ParadigmConnect Order object
-// const Order = new Paradigm().Order;
 
 /**
  * Performs light verification of OrderBroadcast transactions before accepting
@@ -48,7 +42,7 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
 
         // Verify order size
         // @TODO: get max size from state
-        if (!verifyOrder(order)) {
+        if (!verifyOrder(order, state)) {
             warn("mem", "rejected order that exceeds maximum size");
             return Vote.invalid("order exceeds maximum size");
         }

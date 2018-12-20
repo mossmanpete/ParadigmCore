@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  14-November-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 20-December-2018
  *
  * Type definitions for ParadigmCore's state.
  */
@@ -151,4 +151,5 @@ interface ConsensusParams {
     periodLimit:            number;
     periodLength:           number;
     maxOrderBytes:          number;
+    confirmationThreshold?:  number;
 }

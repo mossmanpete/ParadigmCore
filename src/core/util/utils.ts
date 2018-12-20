@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 20-December-2018
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
@@ -18,6 +18,9 @@ import { PayloadCipher } from "../../crypto/PayloadCipher";
 import { err, log, warn } from "../../util/log";
 import { bigIntReplacer } from "../../util/static/bigIntUtils";
 import { TxGenerator } from "./TxGenerator";
+
+// Other
+import { cloneDeep } from "lodash";
 
 /**
  * Verify validator signature, and confirm transaction originated from an
@@ -45,6 +48,23 @@ export function preVerifyTx(
 }
 
 /**
+ * Clones the 'source' state into the 'target' state.
+ * @todo expand, add additional checks
+ *
+ * @param source {State} the state to copy FROM
+ * @param target {State} the state to copy TO
+ */
+export function syncStates(source: State, target: State): void {
+    Object.keys(source).forEach((key) => {
+        if (typeof source[key] !== "object") {
+            target[key] = source[key].valueOf();
+        } else {
+            target[key] = cloneDeep(source[key]);
+        }
+    });
+}
+
+/**
  * Decode and decompress input transaction. Wrapper for PayloadCipher class.
  *
  * @param raw {Buffer} encoded/compressed raw transaction
@@ -54,16 +74,33 @@ export function decodeTx(raw: Buffer): SignedTransaction {
 }
 
 /**
+ * Compute the witness confirmation threshold based on number of active
+ * validators.
+ *
+ * @param active {number} number of active validators (or initial)
+ */
+export function computeConf(active: number): number {
+    if (active === 1 || active === 0) {
+        return 1;
+    } else if (active > 1) {
+        return Math.floor(2 * (active / 3));
+    } else {
+        err("state", "unexpected case.");
+        return 1;
+    }
+}
+
+/**
  * Verify an order conforms to max size requirement.
  *
  * @param order {paradigm.Order} paradigm order object
  *
  * @todo make size parameter an in-state parameter
  */
-export function verifyOrder(order: any, max?: number): boolean {
+export function verifyOrder(order: any, state: State): boolean {
     // Convert order => string => buffer and count bytes
     let orderBuf: Buffer = Buffer.from(JSON.stringify(order), "utf8");
-    let maxSize: number = max || parseInt(process.env.MAX_ORDER_SIZE, 10);
+    let maxSize: number = state.consensusParams.maxOrderBytes;
 
     // Constrain to max size
     return (orderBuf.length <= maxSize);
@@ -169,7 +206,7 @@ export function updateMappings(
     ) {
         // Is this event now confirmed?
         if (state.events[block][staker].conf >=
-            parseInt(process.env.CONF_THRESHOLD, 10)
+            state.consensusParams.confirmationThreshold
         ) {
             log("state", "witness event confirmed, updating balances");
 

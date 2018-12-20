@@ -1,7 +1,7 @@
 /**
  * ===========================
  * ParadigmCore: Blind Star
- * @name StakeRebalancer.ts
+ * @name Witness.ts
  * @module src/async
  * ===========================
  *
@@ -9,7 +9,7 @@
  * @date (initial)  15-October-2018
  * @date (modified) 18-December-2018
  *
- * The StakeRebalancer class implements a one-way (read only) peg to Ethereum,
+ * The Witness class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
  * before they can modify the OrderStream's state.
  *
@@ -31,11 +31,12 @@ import { err, log, warn } from "../util/log";
 import { messages as msg } from "../util/static/messages";
 
 /**
- * Supports a one way peg-zone between Ethereum and the OrderStream to enable
- * tracking of the PosterStaking contract and witness events. See spec for more
- * details.
+ * A Witness supports a one way peg-zone between Ethereum and the OrderStream to
+ * enable tracking of the PosterStaking contract and witness events.
+ *
+ * See spec for more details.
  */
-export class StakeRebalancer {
+export class Witness {
 
     /**
      * Static generator to create new rebalancer instances.
@@ -52,12 +53,12 @@ export class StakeRebalancer {
      *  - options.broadcaster       {TxBroadcaster} broadcaster instance
      *  - options.txGenerator       {TxGenerator} tx generator/signer
      */
-    public static async create(options: any): Promise<StakeRebalancer> {
-        let instance: StakeRebalancer;   // Stores new StakeRebalancer instance
+    public static async create(options: any): Promise<Witness> {
+        let instance: Witness;   // Stores new Witness instance
 
         try {
             // Create new rebalancer instance
-            instance = new StakeRebalancer(options);
+            instance = new Witness(options);
 
             // Initialize instance (and store response code)
             const code = await instance.initialize();
@@ -192,7 +193,7 @@ export class StakeRebalancer {
 
     /**
      * PRIVATE constructor. Do not use. Create new rebalancers with
-     * StakeRebalancer.create(options)
+     * Witness.create(options)
      *
      * @param opts {object} options object - see .create() docstring
      */
@@ -423,7 +424,7 @@ export class StakeRebalancer {
         const block = res.blockNumber;
 
         // Generate event object
-        const event = StakeRebalancer.genEvtObject(staker, type, amount, block);
+        const event = Witness.genEvtObject(staker, type, amount, block);
 
         // See if this is a historical event that has already matured
         // @TODO: should be this.currentHeight?
@@ -574,7 +575,7 @@ export class StakeRebalancer {
             map = {};
         } else {
             // Generate a mapping based on balances otherwise
-            map = StakeRebalancer.genLimits(this.balances, this.periodLimit);
+            map = Witness.genLimits(this.balances, this.periodLimit);
         }
 
         // Create and sign transaction object
