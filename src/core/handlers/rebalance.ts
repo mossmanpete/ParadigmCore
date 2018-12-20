@@ -18,11 +18,10 @@
 import { isEqual } from "lodash";
 
 // ParadigmCore classes
-import { StakeRebalancer } from "../../async/StakeRebalancer";
-import { err, log, warn } from "../../util/log";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities
+import { err, log, warn } from "../../util/log";
 import { messages as msg } from "../../util/static/messages";
 import { genLimits } from "../util/utils";
 
