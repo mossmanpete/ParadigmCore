@@ -14,7 +14,14 @@ if (
     process.exit(1);
 } else {
     pchome = process.env.PCHOME;
-    tmhome = `${pchome}/lib/tendermint`; 
+    tmhome = `${pchome}/lib/tendermint`;
+    try {
+        appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
+    } catch (err) {
+        console.log(`\nParadigmCore setup failed with: ${err.message}`);
+        console.log("Failed to set tendermint home... check /lib and try again.");
+        process.exit(1);
+    }
 }
 
 const reqVars = [

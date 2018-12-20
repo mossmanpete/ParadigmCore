@@ -79,18 +79,19 @@ let paradigm;
     logStart("starting tendermint core...");
     try {
         // Set Tendermint home directory
-        const tmHome = `${env.HOME}/.tendermint`;
+        // const tmHome = `${env.HOME}/.tendermint`;
 
         // Initialize and start Tendermint
-        await tendermint.init(tmHome);
+        // await tendermint.init(tmHome);
 
-        node = tendermint.node(tmHome, {
+        node = tendermint.node(env.TM_HOME, {
             rpc: {
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
         });
     } catch (error) {
-        err("state", "failed initializing tendermint, check configuration.");
+        err("state", "tendermint may not be installed or configured.");
+        err("state", "failed starting tendermint, check configuration.");
         err("start", error.message);
         err("start", msg.general.errors.fatal);
         process.exit(1);
