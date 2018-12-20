@@ -24,9 +24,9 @@ import Web3 = require("web3");
 import * as tendermint from "../lib/tendermint";
 
 // ParadigmCore classes
-import { TxBroadcaster } from "./abci/util/TxBroadcaster";
-import { TxGenerator } from "./abci/util/TxGenerator";
 import { OrderTracker } from "./async/OrderTracker";
+import { TxBroadcaster } from "./core/util/TxBroadcaster";
+import { TxGenerator } from "./core/util/TxGenerator";
 import { err, log, logStart, warn } from "./util/log";
 import { messages as msg } from "./util/static/messages";
 
@@ -35,9 +35,9 @@ import { commitState as cState } from "./state/commitState";
 import { deliverState as dState } from "./state/deliverState";
 
 // Initialization functions
-import { startMain, startRebalancer } from "./abci/main";
 import { start as startAPIserver } from "./api/post/HttpServer";
 import { start as startStreamServer } from "./api/stream/WsServer";
+import { startMain, startRebalancer } from "./core/main";
 
 // Staking contract ABI
 import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";

@@ -23,8 +23,8 @@ import * as rateLimit from "express-rate-limit";
 import * as helmet from "helmet";
 
 // ParadigmCore classes and imports
-import { TxBroadcaster } from "../../abci/util/TxBroadcaster";
-import { TxGenerator } from "../../abci/util/TxGenerator";
+import { TxBroadcaster } from "../../core/util/TxBroadcaster";
+import { TxGenerator } from "../../core/util/TxGenerator";
 import { err, log, logStart, warn } from "../../util/log";
 import { messages as msg } from "../../util/static/messages";
 import { HttpMessage as Message } from "./HttpMessage";
@@ -85,49 +85,9 @@ export async function start(options) {
     }
 }
 
-/* *
+/**
  * Express POST handler for incoming orders (and eventually stream tx's).
- * /
-async function postHandler(req: Request, res: Response, next: NextFunction) {
-    // Create transaction object
-    let tx: SignedTransaction;
-
-    try {
-    // verify order validity before submitting to state machine
-    const paradigmOrder = new paradigm.Order(req.body);
-    if (!await paradigmOrder.isValid()) {
-        warn("api", "invalid order rejected");
-        Message.staticSendError(res, "submitted order is invalid.", 422);
-    } else {
-      try {
-          tx = generator.create({
-              data: req.body,
-              type: "order",
-          });
-          // throw new Error();
-      } catch (error) {
-          err("api", "(http) failed to construct local transaction object");
-          next(error);
-      }
-
-      // Execute local ABCI transaction
-      try {
-          // Await ABCI response
-          const response = await client.send(tx);
-
-          // Send response back to client
-          log("api", "successfully executed local abci transaction");
-          Message.staticSend(res, response);
-      } catch (error) {
-          err("api", "failed to execute local abci transaction");
-          next(error);
-      }
-    }
-} catch (error) {
-    next(error);
-}
-}*/
-
+ */
 async function postHandler(req: Request, res: Response, next: NextFunction) {
     // Create transaction object
     let tx: SignedTransaction;

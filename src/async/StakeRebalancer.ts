@@ -24,8 +24,8 @@ import Contract from "web3/eth/contract";
 import { WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
-import { TxGenerator } from "src/abci/util/TxGenerator";
-import { TxBroadcaster } from "../abci/util/TxBroadcaster";
+import { TxGenerator } from "src/core/util/TxGenerator";
+import { TxBroadcaster } from "../core/util/TxBroadcaster";
 import { default as codes } from "../util/Codes";
 import { err, log, warn } from "../util/log";
 import { messages as msg } from "../util/static/messages";
