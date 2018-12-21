@@ -35,7 +35,7 @@ You can recover the order object client-side (node.js shown, can be adapted to b
 ```js
 // incomplete snippet shown
 
-let paradigm = new Paradigm();
+let paradigm = new Paradigm({ /* config options */ });
 
 ws.on("message", (msg) => { // msg is the string of above
     let eventObject = JSON.parse(msg);

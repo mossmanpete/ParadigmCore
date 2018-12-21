@@ -7,10 +7,12 @@
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 04-December-2018
+ * @date (modified) 18-December-2018
  *
  * Hashing class to allow creation of state hashes. Also used to generate
  * ID's (orderID) for valid orders.
+ *
+ * @todo create better method of hashing state/orders
  */
 
 // Object hashing library (3rd party)
@@ -26,7 +28,8 @@ export class Hasher {
    *
    * @param order {paradigm.Order} A Paradigm order object to be hashed
    */
-  public static hashOrder(order: OrderData): string {
+  public static hashOrder(order: Order): string {
+    let orderHash: string;
     const hashPrep: object = {
       makerValues: order.makerValues,
       posterSignature: order.posterSignature,
@@ -34,12 +37,13 @@ export class Hasher {
     };
 
     try {
-      const orderHash: string = hash(hashPrep);
-      return orderHash;
-
+      orderHash = hash(hashPrep);
     } catch (error) {
-      throw new Error("Error generating order hash.");
+      throw new Error(`failed generating order hash: ${error.message}`);
     }
+
+    // return computed hash
+    return orderHash;
   }
 
   /**
@@ -48,6 +52,7 @@ export class Hasher {
    * @param state {State} the current state object
    */
   public static hashState(state: State): string {
+    let stateHash: string;
     const hashPrep: object = {
       balances: JSON.stringify(state.balances, bigIntReplacer),
       endHeight: state.round.endsAt,
@@ -61,11 +66,12 @@ export class Hasher {
     };
 
     try {
-      const stateHash: string = hash(hashPrep);
-      return stateHash;
-
+      stateHash = hash(hashPrep);
     } catch (error) {
-      throw new Error("Error generating state hash.");
+      throw new Error(`failed generating state hash: ${error.message}`);
     }
+
+    // return computed hash
+    return stateHash;
   }
 }

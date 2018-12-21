@@ -16,7 +16,7 @@ export class Queue extends Array {
 
     // Inherit properties of Array
     constructor() {
-        if (arguments.length) {throw Error("Queue accepts no arguments."); }
+        if (arguments.length) {throw Error("constructor accepts no arguments"); }
         super();
     }
 

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  21-September-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 18-December-2018
  *
  * Compression and encoding (and decompression and decoding) for local ABCI
  * transactions.
@@ -48,7 +48,7 @@ export class PayloadCipher {
             cpBuff = zlib.deflateSync(inBuff);
             outStr = cpBuff.toString(PayloadCipher.outEncoding);
         } catch (error) {
-            throw new Error("Error encoding payload.");
+            throw new Error(`error encoding payload: ${error.message}`);
         }
         return outStr;
     }
@@ -70,8 +70,8 @@ export class PayloadCipher {
             inBuff = Buffer.from(rawStr, PayloadCipher.inEncoding);
             cpBuff = zlib.deflateSync(inBuff);
             outStr = cpBuff.toString(PayloadCipher.outEncoding);
-        } catch (err) {
-            throw new Error("Error encoding payload.");
+        } catch (error) {
+            throw new Error(`error encoding payload: ${error.message}`);
         }
         return outStr;
     }
@@ -91,8 +91,8 @@ export class PayloadCipher {
             inBuff = Buffer.from(rawStr, PayloadCipher.inEncoding);
             cpBuff = zlib.deflateSync(inBuff);
             outStr = cpBuff.toString(PayloadCipher.outEncoding);
-        } catch (err) {
-            throw new Error("Error encoding payload.");
+        } catch (error) {
+            throw new Error(`error encoding payload: ${error.message}`);
         }
         return outStr;
     }
@@ -112,8 +112,8 @@ export class PayloadCipher {
             inBuff = Buffer.from(input, PayloadCipher.outEncoding);
             dcBuff = zlib.inflateSync(inBuff);
             outStr = dcBuff.toString(PayloadCipher.inEncoding);
-        } catch (err) {
-            throw new Error("Error decoding payload.");
+        } catch (error) {
+            throw new Error(`error decoding payload: ${error.message}`);
         }
         return outStr;
     }
@@ -133,14 +133,14 @@ export class PayloadCipher {
             inBuff = Buffer.from(input, PayloadCipher.outEncoding);
             dcBuff = zlib.inflateSync(inBuff);
             outStr = dcBuff.toString(PayloadCipher.inEncoding);
-        } catch (err) {
-            throw new Error("Error decoding payload.");
+        } catch (error) {
+            throw new Error(`error decoding payload: ${error.message}`);
         }
 
         try {
             outObj = JSON.parse(outStr);
-        } catch (err) {
-            throw new Error("Error creating object from JSON");
+        } catch (error) {
+            throw new Error(`error parsing json: ${error.message}`);
         }
 
         return outObj;

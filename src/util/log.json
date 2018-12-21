@@ -1,0 +1,15 @@
+{
+    "levels": {
+        "0":    { "label": "info" },
+        "1":    { "label": "warn", "color": "yellow" },
+        "2":    { "label": "error", "color": "red" }
+    },
+    "modules": {
+        "start":    { "label": "startup", "color": "green" },
+        "state":    { "label": "core", "color": "cyan" },
+        "mem":      { "label": "mempool", "color": "magenta" },
+        "tx":       { "label": "abci", "color": "blue" },
+        "api":      { "label": "api", "color": "green" },
+        "peg":      { "label": "witness", "color": "yellow" }
+    }
+}

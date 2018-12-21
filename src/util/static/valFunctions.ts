@@ -22,8 +22,8 @@ import { createHash } from "crypto";
  */
 export function pubToAddr(input: Buffer): Buffer {
     // Validate input
-    if (!(input instanceof Buffer)) { throw Error("Bad input type."); }
-    if (input.length !== 32) { throw Error("Expected input to be 32 bytes."); }
+    if (!(input instanceof Buffer)) { throw Error("bad input type"); }
+    if (input.length !== 32) { throw Error("expected input to be 32 bytes"); }
 
     // Compute and return address
     return Buffer.from(
@@ -42,8 +42,8 @@ export function pubToAddr(input: Buffer): Buffer {
  */
 export function privToPub(input: Buffer): Buffer {
     // Validate input
-    if (!(input instanceof Buffer)) { throw Error("Bad input type."); }
-    if (input.length !== 64) { throw Error("Expected input to be 64 bytes."); }
+    if (!(input instanceof Buffer)) { throw Error("bad input type"); }
+    if (input.length !== 64) { throw Error("expected input to be 64 bytes"); }
 
     // Compute and return public key
     return input.slice(32, 64);

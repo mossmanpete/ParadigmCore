@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  14-November-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 20-December-2018
  *
  * Type definitions for ParadigmCore's state.
  */
@@ -23,6 +23,7 @@ interface State {
     limits:             Limits;
     lastEvent:          EventInfo
     validators:         Validators;
+    consensusParams:    ConsensusParams;
     orderCounter:       number;
     lastBlockHeight:    number;
     lastBlockAppHash:   string;
@@ -139,4 +140,16 @@ interface ValidatorInfo {
     totalVotes:     number;
     votePower:      number;
     active?:        boolean;    // @TODO: implement in state-machine
+}
+
+/**
+ * Parameters required for validators within a network to reach consensus on
+ * valid transactions.
+ */
+interface ConsensusParams {
+    finalityThreshold:      number;
+    periodLimit:            number;
+    periodLength:           number;
+    maxOrderBytes:          number;
+    confirmationThreshold?:  number;
 }

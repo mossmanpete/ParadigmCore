@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  27-August-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 18-December-2018
  *
  * Simple wrapper class for JSON WebSocket messages.
  */
@@ -28,11 +28,11 @@ export class WsMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if (err !== undefined) {
-                    throw new Error("Error in ws.send(...)");
+                    throw new Error(`error in ws server: ${err}`);
                 }
             });
         } catch (error) {
-            throw new Error("Error sending WS event.");
+            throw new Error(`error sending ws event: ${error.message}`);
         }
     }
 
@@ -48,11 +48,11 @@ export class WsMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if (err !== undefined) {
-                    throw new Error("Error in ws.send(...)");
+                    throw new Error(`error in ws server: ${err}`);
                 }
             });
         } catch (error) {
-            throw new Error("Error sending WS event.");
+            throw new Error(`error sending ws event: ${error.message}`);
         }
     }
 
@@ -68,11 +68,11 @@ export class WsMessage {
         try {
             ws.send(`${JSON.stringify(msg)}\n`, (err) => {
                 if (err !== undefined) {
-                    throw new Error("Error in ws.send(...)");
+                    throw new Error(`error in ws server: ${err}`);
                 }
             });
         } catch (error) {
-            throw new Error("Error sending WS event.");
+            throw new Error(`error sending ws event: ${error.message}`);
         }
     }
 }

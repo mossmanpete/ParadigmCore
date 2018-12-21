@@ -1,4 +1,5 @@
 # Fork of `npm tendermint-node` (by @mappum)
+
 This is my fork of the NPM package [`tendermint-node`](https://www.npmjs.com/package/tendermint-node) with a few modifications I've made to better suit the needs of ParadigmCore. You can view the GitHub repo for the original package [here](https://github.com/mappum/tendermint-node).
 
 # (Original README below)

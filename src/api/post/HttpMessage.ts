@@ -30,7 +30,7 @@ export class HttpMessage {
         try {
             res.status(error).send(json);
         } catch (err) {
-            throw new Error("Error sending Express message.");
+            throw new Error("error sending express message");
         }
     }
 
@@ -43,7 +43,7 @@ export class HttpMessage {
         try {
             res.status(200).send(json);
         } catch (err) {
-            throw new Error("Error sending Express message.");
+            throw new Error("error sending express message");
         }
     }
 
@@ -70,7 +70,7 @@ export class HttpMessage {
         try {
             this.res.status(this.err).send(this.json);
         } catch (err) {
-            throw new Error("Error sending Express message.");
+            throw new Error("error sending express message");
         }
     }
 
