@@ -10,8 +10,6 @@
  * - copy new keys from tendermint config to environment
  * - validates environment config file
  * - validates copied keys
- * 
- * @todo move genesis file if found in PCHOME?
  **/
 
 // imports, scope, etc.
@@ -25,6 +23,12 @@ let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address;
 let n = 0;
 const write = m => console.log(`\n\t${c.bold(`@${++n}`)}\t${m}`);
 const err = m => console.log(`\n\t${c.red.bold(m)}`);
+
+// exit and indicate failure if node is incompatible
+let versionArr = process.version.slice(1).split(".").map(i => parseInt(i));
+if (versionArr[0] <= 10) {
+    versionArr[1] >= 4 ? null : fail("ParadigmCore requires Node.JS v10.4 or greater."); 
+}
 
 // exit if paradigmcore home directory environment var not set
 if (

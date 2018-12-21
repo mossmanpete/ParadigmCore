@@ -83,11 +83,16 @@ let node;                       // tendermint node child process instance
     // tendermint core
     logStart("starting tendermint core...");
     try {
-        node = tendermint.node(env.TM_HOME, {
+        let options = {
             rpc: {
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
-        });
+            p2p: {
+                seeds: env.SEEDS !== "" ? env.SEEDS : undefined
+            }
+        };
+
+        node = tendermint.node(env.TM_HOME, options);
     } catch (error) {
         err("state", "failed starting tendermint.");
         err("state", "tendermint may not be installed or configured.");
