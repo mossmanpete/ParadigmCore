@@ -8,8 +8,9 @@ A description of the primary endpoint provided by an OrderStream node can be fou
 ParadigmCore (`blind-star`) is built on [Tendermint Core](https://tendermint.com/), which it uses for networking and BFT consensus.
 
 #### Order books and storage
-The OrderStream network design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by the underlying Tendermint consensus protocol. The network and client implementations are specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
+The OrderStream network's design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by it's underlying Tendermint consensus protocol. The network and client implementation is specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple order "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
 
+#### Standard relayer API
 We have released one database driver so far, [`OrderStream-SRA`](https://github.com/ParadigmFoundation/OrderStream-SRA). It subscribes to a full or validating OrderStream node's WebSocket endpoint, and derives an order book of valid, executable [0x](https://0x.org) order messages. `OrderStream-SRA` serves this order book through a [0x Standard Relayer API](https://github.com/0xProject/standard-relayer-api) compliant interface. You can preview a live version of this software at [https://sra.zaidan.io/v2/](https://sra.zaidan.io/v2/). 
 
 #### Primary endpoint
