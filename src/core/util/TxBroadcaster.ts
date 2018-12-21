@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name TxBroadcaster.ts
- * @module src/abci
+ * @module src/core
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 21-December-2018
  *
  * This class is responsible for executing local ABCI transactions. It
  * implements a queue, and allows multiple "concurrent" usage of a given

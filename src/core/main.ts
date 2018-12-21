@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name main.ts
- * @module src/abci
+ * @module src/core
  * ===========================
  *
  * @author Henry Harder

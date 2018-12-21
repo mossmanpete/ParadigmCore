@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name order.ts
- * @module src/abci/handlers
+ * @module src/core/handlers
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 20-December-2018
+ * @date (modified) 21-December-2018
  *
  * Handler functions for verifying ABCI Order transactions, originating from
  * external API calls. Implements state transition logic as specified in the

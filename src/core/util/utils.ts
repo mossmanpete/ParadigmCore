@@ -2,12 +2,12 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name utils.ts
- * @module src/abci/util
+ * @module src/abci/core
  * ===========================
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 20-December-2018
+ * @date (modified) 21-December-2018
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
