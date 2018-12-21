@@ -404,7 +404,7 @@ function commitWrapper(
                     witness.synchronize(newRound, newStart, newEnd);
 
                     // Temporary
-                    // console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
+                    console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
                     break;
                 }
 
@@ -435,9 +435,6 @@ function commitWrapper(
         } catch (error) {
             err("state", msg.abci.errors.broadcast);
         }
-
-        // temporary
-        console.log(`\n... (end) commmit state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
 
         // Return state's hash to be included in next block header
         return stateHash;
