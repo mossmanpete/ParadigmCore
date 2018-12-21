@@ -65,6 +65,12 @@ A local Ethereum node is recommended, but for development purposes the WebSocket
 
 If you use the `STAKE_CONTRACT_ADDR` set in the template, you must use a Ropsten provider. The Paradigm Protocol is not yet deployed on the main Ethereum network.
 
+#### Join an existing network
+If you are setting up a full or validating node with the intention of joining an existing, running network, you must specify the following variable in your `.env` file:
+```bash
+SEEDS="" # with format "{NODE_ID}@{NODE_HOST}:26656[, ...]"
+```
+
 A blank template is also included at [`./lib/raw_template.env`](./lib/raw_template.env) for more granular control and fully-custom configuration.
 
 ### Install Dependencies and Configure
