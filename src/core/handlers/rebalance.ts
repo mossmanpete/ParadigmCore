@@ -21,7 +21,7 @@ import { isEqual } from "lodash";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities
-import { err, log, warn } from "../../util/log";
+import { log, warn } from "../../util/log";
 import { messages as msg } from "../../util/static/messages";
 import { genLimits } from "../util/utils";
 
@@ -93,8 +93,6 @@ export function deliverRebalance(
                 state.round.number += 1;
                 state.round.startsAt = proposal.round.startsAt;
                 state.round.endsAt = proposal.round.endsAt;
-
-                // TODO: make sure limit is agreed upon
                 state.round.limit = proposal.round.limit;
                 // End state modification
 

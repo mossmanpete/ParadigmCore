@@ -1,4 +1,4 @@
-# ParadigmCore ([`v0.5.0-alpha`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24))
+# ParadigmCore ([`v0.5.1-alpha`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24))
 
 ## Introduction
 ParadigmCore is the WIP reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper,](https://paradigm.market/whitepaper) and the WIP [`docs`](./docs) folder. 
@@ -70,11 +70,15 @@ A local Ethereum node is recommended, but for development purposes the WebSocket
 
 If you use the `STAKE_CONTRACT_ADDR` set in the template, you must use a Ropsten provider. The Paradigm Protocol is not yet deployed on the main Ethereum network.
 
-#### Join an existing network
+#### Joining an existing network
 If you are setting up a full or validating node with the intention of joining an existing, running network, you must specify the following variable in your `.env` file:
 ```bash
 SEEDS="" # with format "{NODE_ID}@{NODE_HOST}:26656[, ...]"
 ```
+
+When joining an existing network (as a full or validating node), you will also need to obtain the `genesis.json` file that network was initialized with. Replace the auto-generated genesis file with the correct one for you network in `./lib/tendermint/config/genesis.json`.
+
+#### Blank template
 
 A blank template is also included at [`./lib/raw_template.env`](./lib/raw_template.env) for more granular control and fully-custom configuration.
 

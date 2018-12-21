@@ -17,10 +17,14 @@
 // 3rd party and STDLIB imports
 import { EventEmitter } from "events";
 
-// ParadigmCore classes
+// ParadigmCore classes/functions
 import { PayloadCipher } from "../../crypto/PayloadCipher";
-import { err, log, warn } from "../../util/log";
+import { err } from "../../util/log";
 
+/**
+ * Delivers transactions to the ABCI application. Implements a queue to support
+ * "concurrent" usage of one instance across modules.
+ */
 export class TxBroadcaster {
     private client: any;            // Tendermint RPC client
     private queue: any[][];         // Pending transaction queue
@@ -138,8 +142,8 @@ export class TxBroadcaster {
             // Reject promise to error object
             txEmitter.emit("failed", error);
             err("tx", `failed to send abci transaction: ${error.message}`);
-        } // finally {
-        // @TODO: should this be inside 'finally'?
+        }
+
         // If queue is now empty, stop broadcasting
         if (_this.isEmpty()) {
             this.broadcasting = false;
@@ -148,7 +152,6 @@ export class TxBroadcaster {
 
         // Otherwise, move onto the next Tx
         this.broadcast();
-        // }
         return;
     }
 
