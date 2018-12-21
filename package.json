@@ -9,7 +9,7 @@
     "postinstall": "export PCHOME=$(pwd) && node ./init.js",
     "start": "node ./dist/index.js",
     "launch": "tsc && node ./dist/index.js",
-    "reset": "./lib/tendermint/bin/tendermint unsafe_reset_all",
+    "reset": "./lib/tendermint/bin/tendermint unsafe_reset_all --home ./lib/tendermint",
     "getTendermint": "node ./lib/tendermint/bin/download.js",
     "test": "jest"
   },

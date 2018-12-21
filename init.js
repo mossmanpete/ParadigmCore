@@ -81,7 +81,6 @@ const reqVars = [
     "PERIOD_LENGTH",
     "PERIOD_LIMIT",
     "FINALITY_THRESHOLD",
-    "CONF_THRESHOLD",
     "MAX_ORDER_SIZE",
     "SIG_ENC",
 ]
@@ -236,7 +235,7 @@ function fail(msg, error, missing) {
     // log missing environment variables
     if (missing) {
         missing.forEach((k, i) => console.log(`\t${i+1}.\t${k}\n`));
-        err("Please fix your environment file and try again.");
+        err("Please fix your environment file and try again.\n");
     }
     process.exit(1);
 } 
