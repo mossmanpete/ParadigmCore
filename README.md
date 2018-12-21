@@ -1,4 +1,4 @@
-# ParadigmCore ([`v0.5.0-alpha`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24))
+# ParadigmCore ([`v0.5.1-alpha`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24))
 
 ## Introduction
 ParadigmCore is the WIP reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper,](https://paradigm.market/whitepaper) and the WIP [`docs`](./docs) folder. 
