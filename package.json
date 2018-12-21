@@ -10,7 +10,6 @@
     "start": "node ./dist/index.js",
     "launch": "tsc && node ./dist/index.js",
     "reset": "./lib/tendermint/bin/tendermint unsafe_reset_all --home ./lib/tendermint",
-    "getTendermint": "node ./lib/tendermint/bin/download.js",
     "test": "jest"
   },
   "repository": {
@@ -18,7 +17,7 @@
     "url": "https://github.com/ParadigmFoundation/ParadigmCore"
   },
   "author": "Henry Harder",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "dependencies": {
     "@types/express": "^4.16.0",
     "@types/lodash": "^4.14.119",
