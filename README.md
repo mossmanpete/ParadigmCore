@@ -22,11 +22,11 @@ ws://localhost:4242/
 
 ### Setup Runtime
 
-ParadigmCore uses the [`bigint`](https://github.com/tc39/proposal-bigint) primitive, a stage-three proposal slated for inclusion in the next ECMAScript specification. The spec has been integrated into [mainline v8](https://v8.dev/blog/bigint), and Node.JS [since `v10.4`](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V10.md#2018-06-06-version-1040-current-mylesborins).
+ParadigmCore uses the [`bigint`](https://github.com/tc39/proposal-bigint) primitive, a stage-three proposal slated for inclusion in the next ECMAScript specification. The spec has been integrated into [mainline v8](https://v8.dev/blog/bigint), and Node.JS [since v10.4](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V10.md#2018-06-06-version-1040-current-mylesborins).
 
-This means that ___ParadigmCore requires [Node.JS `v10.4` or greater](https://github.com/nodejs/node/releases).___ Make sure you have a compatible version with `node -v` before trying to build or run.
+This means that ___ParadigmCore requires [`node.js v10.4` or greater](https://github.com/nodejs/node/releases).___ Make sure you have a compatible version with `node -v` before trying to build or run.
 
-TypeScript support for the `bigint` primitive was released with TSC `v3.2.2`, and the correct compiler version is specified in ParadigmCore's package file, so you won't need to update your global version (if present).
+TypeScript support for the `bigint` primitive was released with `tsc v3.2.2`, and the correct compiler version is specified in ParadigmCore's package file, so you won't need to update your global version (if present).
 
 ### Clone ParadigmCore
 
