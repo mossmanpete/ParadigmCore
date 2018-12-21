@@ -7,7 +7,10 @@ A one-way "peg zone" implementation is necessary for the OrderStream network to:
 2) Reach consensus about the state (balances) of the MakerStaking contract.
 3) Accept data (via events) from Ethereum into the OrderStream's state, which is then used to validate external transactions.
 
-The solution this document outlines implements a shared security model, where OrderStream validators are also full Ethereum nodes that act as witnesses to events from a specific contract address. 
+The solution this document outlines implements a shared security model, where OrderStream validators are also full Ethereum nodes that act as witnesses to events from a specific contract address.
+
+### UPDATE (12/21/18):
+The implementation of this spec can be found at [`src/async/Witness.ts`](../src/async/Witness.ts).
 
 ## Background/Terminology
 - The finality threshold is an arbitrary maturity that blocks must reach before events within that block can modify the OrderStream’s state.

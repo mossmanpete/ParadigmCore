@@ -2,7 +2,7 @@
  * ===========================
  * ParadigmCore: Blind Star
  * @name utils.ts
- * @module src/abci/core
+ * @module src/core/util
  * ===========================
  *
  * @author Henry Harder
@@ -16,7 +16,6 @@
 // ParadigmCore classes
 import { PayloadCipher } from "../../crypto/PayloadCipher";
 import { err, log, warn } from "../../util/log";
-import { bigIntReplacer } from "../../util/static/bigIntUtils";
 import { TxGenerator } from "./TxGenerator";
 
 // Other

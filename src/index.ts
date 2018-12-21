@@ -37,7 +37,6 @@ import { deliverState as dState } from "./state/deliverState";
 import { start as startAPIserver } from "./api/post/HttpServer";
 import { start as startStreamServer } from "./api/stream/WsServer";
 import { start as startMain } from "./core/main";
-// import { startMain, startRebalancer } from "./core/main";
 
 // General utilities and misc.
 import { err, log, logStart, warn } from "./util/log";
@@ -68,10 +67,6 @@ let node;                       // tendermint node child process instance
     // welcome :)
     logStart();
 
-    /*
-      @todo convert to/add function that validates environment variables, and
-      sets defaults as needed
-    */
     // validate environment
     logStart("checking environment...");
     if (!env.npm_package_version) {
@@ -96,7 +91,7 @@ let node;                       // tendermint node child process instance
     } catch (error) {
         err("state", "failed starting tendermint.");
         err("state", "tendermint may not be installed or configured.");
-        err("state", "use `npm i` to setup tendermint and paradigmcore.");
+        err("state", "use `npm i` to configure tendermint and set up paradigmcore.");
         err("start", error.message);
         err("start", msg.general.errors.fatal);
         process.exit(1);

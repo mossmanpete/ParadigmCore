@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  24-September-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 21-December-2018
  *
  * The OrderTracker class stores valid txs submitted within a consensus
  * round, and triggers public broadcast at the end of each round.
@@ -15,6 +15,9 @@
 
 import { EventEmitter } from "events";
 
+/**
+ * Enables the broadcast of valid orders at the end of each block.
+ */
 export class OrderTracker {
 
     private ee: EventEmitter;           // Event emitter instance

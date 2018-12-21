@@ -41,7 +41,6 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
         order = new Order(tx.data);
 
         // Verify order size
-        // @TODO: get max size from state
         if (!verifyOrder(order, state)) {
             warn("mem", "rejected order that exceeds maximum size");
             return Vote.invalid("order exceeds maximum size");
@@ -50,7 +49,6 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
         // Recover poster address
         poster = order.recoverPoster().toLowerCase();
     } catch (err) {
-        // Unknown staker
         warn("mem", msg.abci.errors.format);
         return Vote.invalid(msg.abci.errors.format);
     }

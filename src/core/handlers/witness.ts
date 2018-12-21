@@ -15,7 +15,7 @@
  */
 
  // ParadigmCore classes
-import { err, log, warn } from "../../util/log";
+import { log, warn } from "../../util/log";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities

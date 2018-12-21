@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 21-December-2018
  *
  * The Witness class implements a one-way (read only) peg to Ethereum,
  * and adds a "finality gadget" via a block maturity requirement for events
@@ -27,7 +27,7 @@ import { WebsocketProvider } from "web3/providers";
 import { TxGenerator } from "src/core/util/TxGenerator";
 import { TxBroadcaster } from "../core/util/TxBroadcaster";
 import { default as codes } from "../util/Codes";
-import { err, log, warn } from "../util/log";
+import { err, log } from "../util/log";
 import { messages as msg } from "../util/static/messages";
 
 /**
@@ -155,7 +155,7 @@ export class Witness {
     /**
      * End static methods.
      *
-     * Instance methods and variables below
+     * Instance methods and variables below.
      */
 
     // Rebalancer instance status
@@ -312,19 +312,16 @@ export class Witness {
         let provider: WebsocketProvider;
 
         // Pull provider URL and protocol from instance
-        const protocol = this.web3provider.protocol;
-        const url = this.web3provider.href;
+        const { protocol, href } = this.web3provider;
 
         // Supports WS providers only
         try {
             if (protocol === "ws:" || protocol === "wss:") {
-                provider = new Web3.providers.WebsocketProvider(url);
+                provider = new Web3.providers.WebsocketProvider(href);
             } else {
-                // Invalid provider URI scheme
                 throw new Error("invalid provider URI, must be ws/wss");
             }
         } catch (error) {
-            // Unable to establish provider
             throw new Error(error.message);
         }
 
@@ -427,7 +424,6 @@ export class Witness {
         const event = Witness.genEvtObject(staker, type, amount, block);
 
         // See if this is a historical event that has already matured
-        // @TODO: should be this.currentHeight?
         if ((this.initHeight - block) > this.finalityThreshold) {
             this.updateBalance(event);
             this.execEventTx(event);
@@ -555,7 +551,6 @@ export class Witness {
             delete this.balances[event.staker];
         }
 
-        // Done
         return;
     }
 
@@ -619,7 +614,6 @@ export class Witness {
             err("peg", "failed to send event witness tx");
         }
 
-        // Exit regardless of success or failure
         return;
     }
 
