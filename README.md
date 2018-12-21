@@ -7,12 +7,12 @@ A description of the primary endpoint provided by an OrderStream node can be fou
 
 ParadigmCore (`blind-star`) is built on [Tendermint Core](https://tendermint.com/), which it uses for networking and BFT consensus.
 
-### A Note on Order Storage
+#### Order books and storage
 The OrderStream network design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by the underlying Tendermint consensus protocol. The network and client implementations are specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
 
 We have released one database driver so far, [`OrderStream-SRA`](https://github.com/ParadigmFoundation/OrderStream-SRA). It subscribes to a full or validating OrderStream node's WebSocket endpoint, and derives an order book of valid, executable [0x](https://0x.org) order messages. `OrderStream-SRA` serves this order book through a [0x Standard Relayer API](https://github.com/0xProject/standard-relayer-api) compliant interface. You can preview a live version of this software at [https://sra.zaidan.io/v2/](https://sra.zaidan.io/v2/). 
 
-### Primary Endpoint
+#### Primary endpoint
 By default, valid orders are relayed via WebSocket to all connected parties after block confirmation. Below is the default endpoint (in production, this should be proxied to public or used by local applications/middleware):
 ```
 ws://localhost:4242/
@@ -28,7 +28,7 @@ This means that ___ParadigmCore requires [Node.JS `v10.4` or greater](https://gi
 
 TypeScript support for the `bigint` primitive was released with TSC `v3.2.2`, and the correct compiler version is specified in ParadigmCore's package file, so you won't need to update your global version (if present).
 
-### Clone
+### Clone ParadigmCore
 
 Clone the repository into a clean working directory via HTTP:
 
