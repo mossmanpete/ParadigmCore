@@ -16,9 +16,9 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
 - The finality threshold is an arbitrary maturity that blocks must reach before events within that block can modify the OrderStream’s state.
 - This block maturity (`x`) is agreed upon by validators to establish pseudo-finality for events and blocks on Ethereum. 
 - Staking periods are of fixed length, and based on Ethereum block height.
-- If a stake is made in staking period `i`, the staker will have write access to the network from staking period `i+1` until you remove your stake.
+- If a stake is made in staking period `i`, the staker will have write access to the network from staking period `i+1` until they remove their stake.
 - A bandwidth model is implemented to construct a rate-limit mapping that proportionally allocates network throughput to stakers based on stake size.
-- The `StakeRebalancer` is a class in `ParadigmCore` that is instantiated as a subprocess upon node initialization. It is responsible for listening to Ethereum events via local RPC, and submitting special state-modifying and voting transactions to the ABCI application and other validators at appropriate times (outlined below).
+- The `StakeRebalancer` is a class in `ParadigmCore` that is instantiated as a subprocess upon node initialization. It is responsible for listening to Ethereum events via local Geth/Parity RPC, and submitting special state-modifying and voting transactions to the ABCI application and other validators at appropriate times (outlined below).
 - The state of the network is represented by the following data structure (genesis state shown):
     ```js
     // state.ts - genesis state
@@ -32,6 +32,11 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
         "events":   {},     // stake events awaiting witness confirmation
         "balances": {},     // confirmed raw balances (amount staked)
         "limits":  {},      // computed and current rate-limit mapping 
+        "validators": {},   // information about current and historical validators
+        "lastEvent": {      // information about Ethereum events
+            "add": 0,       // last StakeMade event
+            "remove": 0     // last StakeRemoved event
+         },
         "orderCounter": 0,  // number of orders accepted on the network
         "lastBlockHeight":  0,      // last Tendermint block height
         "lastBlockAppHash": null,   // the hash of the last valid block
