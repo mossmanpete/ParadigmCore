@@ -1,28 +1,20 @@
 # ParadigmCore ([`v0.5.2-alpha`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24))
 
-## Introduction
 ParadigmCore is the WIP reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper,](https://paradigm.market/whitepaper) and the WIP [`docs`](./docs) folder. 
 
 A description of the primary endpoint provided by an OrderStream node can be found at [`./docs/websocket-api.md`](./docs/websocket-api.md). An introduction to the protocol as a whole can be found [here](https://docs.paradigm.market/overview/introduction.html). Additional documentation and tutorials will be published over the coming months.
 
-ParadigmCore (`blind-star`) is built on [Tendermint Core](https://tendermint.com/), which it uses for networking and BFT consensus.
+ParadigmCore is built on [Tendermint](https://tendermint.com/), which it uses for networking and BFT consensus.
 
-#### Order books and storage
-The OrderStream network's design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by it's underlying Tendermint consensus protocol. The network and client implementation is specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple order "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
+### Order books and storage
+The OrderStream network design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by the underlying Tendermint consensus protocol. The network and client implementations are specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
 
-#### Standard relayer API
 We have released one database driver so far, [`OrderStream-SRA`](https://github.com/ParadigmFoundation/OrderStream-SRA). It subscribes to a full or validating OrderStream node's WebSocket endpoint, and derives an order book of valid, executable [0x](https://0x.org) order messages. `OrderStream-SRA` serves this order book through a [0x Standard Relayer API](https://github.com/0xProject/standard-relayer-api) compliant interface. You can preview a live version of this software at [https://sra.zaidan.io/v2/](https://sra.zaidan.io/v2/). 
 
-#### Primary endpoint
-By default, valid orders are relayed via WebSocket to all connected parties after block confirmation. Below is the default endpoint (in production, this should be proxied to public or used by local applications/middleware):
-```
-ws://localhost:4242/
-```
-
-#### Troubleshooting
+### Troubleshooting
 If you encounter issues setting up or running setting up ParadigmCore, feel free to reach out on our chat server: https://chat.paradigm.market/
 
-If you find a bug, inconsistency, or vulnerability please open an [issue](https://github.com/paradigmfoundation/paradigmcore/issues).
+ParadigmCore is under active development, and at this point should not be considered stable. If you find a bug, inconsistency, or vulnerability please open an [issue](https://github.com/paradigmfoundation/paradigmcore/issues).
 
 ## Usage
 
