@@ -1,27 +1,20 @@
-# ParadigmCore ([`v0.5.1-alpha`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24))
+# ParadigmCore [`(v0.5.2-alpha)`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24)
 
-## Introduction
-ParadigmCore is the WIP reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper,](https://paradigm.market/whitepaper) and the WIP [`docs`](./docs) folder. 
+ParadigmCore is the WIP reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper.](https://paradigm.market/whitepaper) An introduction to the protocol as a whole can be found [here](https://docs.paradigm.market/overview/introduction.html). Additional documentation and tutorials will be published over the coming weeks and months.
 
-A description of the primary endpoint provided by an OrderStream node can be found at [`./docs/websocket-api.md`](./docs/websocket-api.md). An introduction to the protocol as a whole can be found [here](https://docs.paradigm.market/overview/introduction.html). Additional documentation and tutorials will be published over the coming months.
+ParadigmCore is built on [Tendermint](https://tendermint.com/), which it uses for networking and BFT consensus.
 
-ParadigmCore (`blind-star`) is built on [Tendermint Core](https://tendermint.com/), which it uses for networking and BFT consensus.
-
-#### Order books and storage
+### Order books and storage
 The OrderStream network design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by the underlying Tendermint consensus protocol. The network and client implementations are specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
 
-We have released one database driver so far, [`OrderStream-SRA`](https://github.com/ParadigmFoundation/OrderStream-SRA). It subscribes to a full or validating OrderStream node's WebSocket endpoint, and derives an order book of valid, executable [0x](https://0x.org) order messages. `OrderStream-SRA` serves this order book through a [0x Standard Relayer API](https://github.com/0xProject/standard-relayer-api) compliant interface. You can preview a live version of this software at [https://sra.zaidan.io/v2/](https://sra.zaidan.io/v2/). 
+We have released one database driver so far, [`OrderStream-SRA`](https://github.com/ParadigmFoundation/OrderStream-SRA). It subscribes to a full or validating OrderStream node's WebSocket endpoint, and derives an order book of valid, executable [0x](https://0x.org) order messages. `OrderStream-SRA` serves this order book through a [0x Standard Relayer API](https://github.com/0xProject/standard-relayer-api) compliant interface. You can preview a live version of this software at [sra.zaidan.io/v2/](https://sra.zaidan.io/v2/). 
 
-#### Primary endpoint
-By default, valid orders are relayed via WebSocket to all connected parties after block confirmation. Below is the default endpoint (in production, this should be proxied to public or used by local applications/middleware):
-```
-ws://localhost:4242/
-```
+### Issues and proposals
+ParadigmCore is under active development, and at this point should not be considered stable. If you find a bug, inconsistency, or vulnerability please open an [issue](https://github.com/paradigmfoundation/paradigmcore/issues).
 
-#### Troubleshooting
-If you encounter issues setting up or running setting up ParadigmCore, feel free to reach out on our chat server: https://chat.paradigm.market/
+If you encounter errors setting up or running setting up ParadigmCore, feel free to reach out on our chat server: https://chat.paradigm.market/
 
-If you find a bug, inconsistency, or vulnerability please open an [issue](https://github.com/paradigmfoundation/paradigmcore/issues).
+ParadigmCore is open source software, and we encourage the suggestion of improvements and enhancements to the protocol. If you have a suggestion or specification, please submit a [Paradigm Improvement Proposal](https://github.com/paradigmfoundation/pips) (PIP). 
 
 ## Usage
 
@@ -29,11 +22,7 @@ If you find a bug, inconsistency, or vulnerability please open an [issue](https:
 
 ParadigmCore uses the [`bigint`](https://github.com/tc39/proposal-bigint) primitive, a stage-three proposal slated for inclusion in the next ECMAScript specification. The spec has been integrated into [mainline v8](https://v8.dev/blog/bigint), and Node.JS [since v10.4](https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V10.md#2018-06-06-version-1040-current-mylesborins).
 
-This means that ___ParadigmCore requires [`node.js v10.4` or greater](https://github.com/nodejs/node/releases).___ To ensure you have a compatible version, you can either run `node -v`, or check that the following _doesn't_ throw:
-```bash
-$ node
-> let n = 1n
-```
+This means that ___ParadigmCore requires [`node.js v10.4` or greater](https://github.com/nodejs/node/releases).___ 
 
 TypeScript support for the `bigint` primitive was released with `tsc v3.2.2`, and the correct compiler version is specified in ParadigmCore's package file, so you won't need to update your global version (if present).
 
@@ -115,7 +104,8 @@ Alternatively, run the compiled startup script directly with:
 node ./dist/index.js
 ```
 
-## Reference 
+## Reference
+A formal documentation site will be launched soon, alongside a developer portal with helpful resources and tutorials for building on Paradigm.
 
 ### Ethereum peg and shared-security model
 See [`./spec/ethereum-peg.md`](./spec/ethereum-peg.md).

@@ -3,6 +3,7 @@
  * ParadigmCore (optional) initialize/setup script
  * 
  * Can perform the following:
+ * - verifies node version
  * - sets required environment variable
  * - download tendermint binary
  * - set up tendermint config and data-store
@@ -26,7 +27,7 @@ const err = m => console.log(`\n\t${c.red.bold(m)}`);
 
 // exit and indicate failure if node is incompatible
 let semVer = process.version.slice(1).split(".").map(i => parseInt(i));
-semVer[0] <= 10 ? versionArr[1] >= 4 ? null : fail("Node.JS v10.4 or greater required.") : null;
+semVer[0] > 10 ? null : semVer[0] === 10 && semVer[1] >= 4 ? null : fail("Node.JS >=10.4 required.");
 
 // exit if paradigmcore home directory environment var not set
 if (
