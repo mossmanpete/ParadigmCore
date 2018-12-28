@@ -1,6 +1,6 @@
 # OrderStream/Ethereum Peg Zone and Finality Gadget
 
-_NOTE: this project is currently a WIP, so details of the implementation are likely to change. I'll strive to keep this doc up to date with changes. Last updated: 24 October 2018._
+_NOTE: this project is currently a WIP, so details of the implementation are likely to change. I'll strive to keep this doc up to date with changes. Last updated: 27 December 2018._
 
 A one-way "peg zone" implementation is necessary for the OrderStream network to: 
 1) Establish "true" finality for Ethereum events that otherwise only have weak (probabilistic) finality guarantee.
@@ -18,7 +18,7 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
 - Staking periods are of fixed length, and based on Ethereum block height.
 - If a stake is made in staking period `i`, the staker will have write access to the network from staking period `i+1` until they remove their stake.
 - A bandwidth model is implemented to construct a rate-limit mapping that proportionally allocates network throughput to stakers based on stake size.
-- The `StakeRebalancer` is a class in `ParadigmCore` that is instantiated as a subprocess upon node initialization. It is responsible for listening to Ethereum events via local Geth/Parity RPC, and submitting special state-modifying and voting transactions to the ABCI application and other validators at appropriate times (outlined below).
+- The `Witness` is a class in `ParadigmCore` that is instantiated as a subprocess upon node initialization. Only validators must run `Witness` instances. It is responsible for listening to Ethereum events via local Ethereum client RPC(Geth/Parity), and submitting special state-modifying and voting transactions to the ABCI application and other validators at appropriate times (outlined below).
 - The state of the network is represented by the following data structure (genesis state shown):
     ```js
     // state.ts - genesis state
@@ -36,9 +36,16 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
         "lastEvent": {      // information about Ethereum events
             "add": 0,       // last StakeMade event
             "remove": 0     // last StakeRemoved event
-         },
-        "orderCounter": 0,  // number of orders accepted on the network
-        "lastBlockHeight":  0,      // last Tendermint block height
+        },
+        "consensusParams": {
+            "finalityThreshold": null,  // required block maturity (x)
+            "periodLength": null,       // in Ethereum blocks
+            "periodLimit": null,        // number of orders per period
+            "maxOrderBytes": null,      // maximum order broadcast size
+            "confirmationThreshold": null   // == 2/3 current validator set 
+        },
+        "orderCounter": 0,      // number of orders accepted on the network
+        "lastBlockHeight":  0,  // last Tendermint block height
         "lastBlockAppHash": null,   // the hash of the last valid block
         "matureEthBlock": null      // latest Ethereum block that has reached "finality"
     }
@@ -71,7 +78,7 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
     {
         // ...
         "balances": {
-            "0x...4e": 451736,  // raw staked balances
+            "0x...4e": 451736,  // raw staked balances (units 1*10^-18)
             "0x...Hj": 1203,
             "0x...71": 624519
             // ...
@@ -88,9 +95,9 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
         "limits": {
             "0x...4e": { // address of staker (poster)
                 // computed proportional order limit per staking period
-                "orderBroadcastLimit":  4372,
+                "orderLimit":  4372,
                 // stream limit is always 1, regardless of stake size
-                "streamBroadcastLimit": 1 
+                "streamLimit": 1 
             }
         }
         // ...
@@ -101,8 +108,8 @@ The implementation of this spec can be found at [`src/async/Witness.ts`](../src/
 These processes are kicked off upon network initialization, and are a crucial part of normal network functionality (validating and broadcasting orders). You can view the implementation of this procedure in [`src/abci`](../src/abci), and [`src/async`](../src/async). These modules are in the process of being refactored.
 1. If a market maker (or agent operating on behalf of one) wishes to use the OS network, they must deposit the appropriate ERC-20 token into the staking contract.
 2. A `StakeMade` or `StakeRemoved` event is emitted by the contract, including the staker's address and the amount staked, as well as the Ethereum block number the transaction was included in (block `n`).
-3. The active `StakeRebalancer` instance on an OrderStream node receives the event, and records the corresponding "finality block" height for that event as `n + x`, where `n` is the block height the event was included in.
-4. Once Ethereum block `n + x` is found, the `StakeRebalancer` executes a local ABCI transaction, submitting the event transaction to the node's local mempool.
+3. The active `Witness` instance on an OrderStream node receives the event, and records the corresponding "finality block" height for that event as `n + x`, where `n` is the block height the event was included in.
+4. Once Ethereum block `n + x` is found, the `Witness` executes a local ABCI transaction, submitting the event transaction to the node's local mempool.
 5. The event data is added to state (in `state.events`), including the 1 vote from the witness that first submitted the event.
 6. As other validator nodes pick up the "finality block" for that event, they submit the event data to the network as well.
 7. As each event witness transaction is recorded, the number of witness confirmations for that event is increased:
