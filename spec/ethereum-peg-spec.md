@@ -132,7 +132,7 @@ These processes are kicked off upon network initialization, and are a crucial pa
     // in deliverTx()
     // pseudocode - for illustrative purposes
 
-    if (state.events[blockNumber][address].conf >= CONF_THRESHOLD) {
+    if (state.events[blockNumber][address].conf >= state.consensusParams.confirmationThreshold) {
         if (state.balances.hasOwnProperty(address)) {
             switch (event.type) {
                 case "StakeMade": {
