@@ -1,8 +1,14 @@
-# ParadigmCore [`(v0.5.2-alpha)`](https://github.com/ParadigmFoundation/ParadigmCore/pull/24)
+
+<h1 align="center">
+  ParadigmCore
+  <a href="https://github.com/ParadigmFoundation/ParadigmCore/pull/24">
+    <code>v0.5.3</code>
+  </a>
+</h1>
 
 ParadigmCore is the WIP reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper.](https://paradigm.market/whitepaper) An introduction to the protocol as a whole can be found [here](https://docs.paradigm.market/overview/introduction.html). Additional documentation and tutorials will be published over the coming weeks and months.
 
-ParadigmCore is built on [Tendermint](https://tendermint.com/), which it uses for networking and BFT consensus.
+ParadigmCore is built on [Tendermint](https://tendermint.com/), which it uses for networking and BFT consensus/state-replication across nodes.
 
 ### Order books and storage
 The OrderStream network design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by the underlying Tendermint consensus protocol. The network and client implementations are specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.

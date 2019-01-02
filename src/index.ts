@@ -78,14 +78,17 @@ let node;                       // tendermint node child process instance
     // tendermint core
     logStart("starting tendermint core...");
     try {
-        let options = {
+        // todo: define options object
+        let options: any  = {
             rpc: {
                 laddr: `tcp://${env.ABCI_HOST}:${env.ABCI_RPC_PORT}`,
             },
-            p2p: {
-                seeds: env.SEEDS !== "" ? env.SEEDS : undefined
-            }
         };
+        if (env.SEEDS !== "" && env.SEEDS !== undefined) {
+            options.p2p = {
+                seeds: env.SEEDS
+            };
+        }
 
         node = tendermint.node(env.TM_HOME, options);
     } catch (error) {
