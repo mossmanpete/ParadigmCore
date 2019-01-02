@@ -114,7 +114,7 @@ node ./dist/index.js
 A formal documentation site will be launched soon, alongside a developer portal with helpful resources and tutorials for building on Paradigm.
 
 ### Ethereum peg and shared-security model
-See [`./spec/ethereum-peg.md`](./spec/ethereum-peg.md).
+See [`./spec/ethereum-peg.md`](./spec/ethereum-peg-spec.md).
 
 ### Websocket API (valid order event stream)
 See [`./docs/websocket-api.md`](./docs/websocket-api.md).
