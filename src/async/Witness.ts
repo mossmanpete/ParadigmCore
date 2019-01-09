@@ -20,6 +20,8 @@
 import * as _ from "lodash";
 import { URL } from "url";
 import Web3 = require("web3");
+import TruffleContract = require('truffle-contract');
+import ParadigmStakeInfo = require('../util/static/ParadigmStake.json');
 import Contract from "web3/eth/contract";
 import { WebsocketProvider } from "web3/providers";
 
@@ -179,7 +181,7 @@ export class Witness {
     private periodEnd: number;      // Current period ending height
 
     // Staking contract configuration
-    private stakeContract: Contract;    // Staking contract instance
+    private stakeContract: any;    // Staking contract instance
     private stakeABI: object[];         // Staking contract ABI
     private stakeAddress: string;       // Staking contract address
 
@@ -255,8 +257,9 @@ export class Witness {
 
         // Create staking contract instance
         try {
-            this.stakeContract = new this.web3.eth.Contract(
-                this.stakeABI, this.stakeAddress);
+            const ParadigmStake = TruffleContract(ParadigmStakeInfo);
+            ParadigmStake.setProvider(this.web3.currentProvider);
+            this.stakeContract = await ParadigmStake.deployed();
         } catch (_) {
             return codes.CONTRACT; // Unable to initialize staking contract
         }
@@ -381,12 +384,12 @@ export class Witness {
     private subscribe(from: number = 0): number {
         try {
             // Subscribe to 'stakeMade' events
-            this.stakeContract.events.StakeMade({
+            this.stakeContract.StakeMade({
                 fromBlock: from,
             }, this.handleStake);
 
             // Subscribe to 'stakeRemoved' events
-            this.stakeContract.events.StakeRemoved({
+            this.stakeContract.StakeRemoved({
                 fromBlock: from,
             }, this.handleStake);
 

@@ -43,6 +43,7 @@
     "progress": "^2.0.1",
     "ripemd160": "^2.0.2",
     "tendermint": "^3.2.1",
+    "truffle-contract": "^4.0.0-next.0",
     "typescript": "^3.2.2",
     "unzip": "^0.1.11",
     "web3": "^1.0.0-beta.36",
