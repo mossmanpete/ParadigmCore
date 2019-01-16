@@ -260,7 +260,8 @@ export class Witness {
             const ParadigmStake = TruffleContract(ParadigmStakeInfo);
             ParadigmStake.setProvider(this.web3.currentProvider);
             this.stakeContract = await ParadigmStake.deployed();
-        } catch (_) {
+        } catch (error) {
+            err('peg', error.message);
             return codes.CONTRACT; // Unable to initialize staking contract
         }
 
