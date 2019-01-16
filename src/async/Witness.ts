@@ -21,7 +21,7 @@ import * as _ from "lodash";
 import { URL } from "url";
 import Web3 = require("web3");
 import TruffleContract = require('truffle-contract');
-import ParadigmStakeInfo = require('../util/static/ParadigmStake.json');
+import ParadigmStakeInfo = require('paradigm-contracts/build/contracts/ParadigmStake.json');
 import Contract from "web3/eth/contract";
 import { WebsocketProvider } from "web3/providers";
 
