@@ -18,11 +18,10 @@
 
 // Third party and stdlib imports
 import * as _ from "lodash";
+import ParadigmStakeInfo = require("paradigm-contracts/build/contracts/ParadigmStake.json");
+import TruffleContract = require("truffle-contract");
 import { URL } from "url";
 import Web3 = require("web3");
-import TruffleContract = require('truffle-contract');
-import ParadigmStakeInfo = require('paradigm-contracts/build/contracts/ParadigmStake.json');
-import Contract from "web3/eth/contract";
 import { WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
@@ -261,7 +260,7 @@ export class Witness {
             ParadigmStake.setProvider(this.web3.currentProvider);
             this.stakeContract = await ParadigmStake.deployed();
         } catch (error) {
-            err('peg', error.message);
+            err("peg", error.message);
             return codes.CONTRACT; // Unable to initialize staking contract
         }
 
