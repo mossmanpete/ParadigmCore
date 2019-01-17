@@ -1,6 +1,6 @@
 # Specification for Dynamic Validator Updates
 
-Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal<sup>[1](#1)</sup> `witness` transaction type, and accompanying changes in the core state machine. 
+Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal<sup>[[1]](#1)</sup> `witness` transaction type, and accompanying changes in the core state machine. 
 
 Combined with the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the on-chain registry.
 
@@ -20,7 +20,7 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 1. Integer amount of staked tokens associated with the validator listing event
 1. The tendermint `ed25519` public key included with validator listing event
 
-`RegistryUpdate`<sup>[2](#2)</sup> events emitted from the `ValidatorRegistry` contract contain the following parameters necessary to effect state change on the OrderStream network.
+`RegistryUpdate`<sup>[[2]](#2)</sup> events emitted from the `ValidatorRegistry` contract contain the following parameters necessary to effect state change on the OrderStream network.
 
 |Name|Solidity type|Encoding target|Description|
 |-|-|-|-|
