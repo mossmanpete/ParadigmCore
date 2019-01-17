@@ -37,9 +37,11 @@ The block height of the event is also associated with the above data. The follow
 
 ## Formal Specification
 
-This section (more) formally defines the `ValidatorUpdate` transaction type, and the process associated with dynamic validator set changes on the OrderStream network. For the purposes of this specification, the inner workings of the `ValidatorRegistry` contract – and the rest of the Paradigm contract system – is treated as a higher-level abstraction.
+This section (more) formally defines the `ValidatorUpdate` transaction type, and the processes associated with the implementation of dynamic validator set changes on the OrderStream network. For the purposes of this specification, the inner workings of the `ValidatorRegistry` contract – and the rest of the Paradigm contract system – is treated as a higher-level abstraction.
 
 This section outlines one of several potential triggers and effects, but remains generally accurate for all cases.
+
+The process outlined below is specific to the core state machine, and omits several dependant steps for the sake of brevity and clarity.
 
 1. A new validator listing is accepted into the `ValidatorRegistry` contract
 1. The `RegistryUpdate` event is emitted in the same block as the listing is accepted
@@ -58,11 +60,13 @@ This section outlines one of several potential triggers and effects, but remains
     // snippet - actual implementation will differ
 
     function endBlock(state: State): ValidatorUpdate[] {
+
+        // ... steps omitted
         
         let totalBalance:       bigint;             // sum of validator staked balances
         let validatorUpdates:   ValidatorUpdate[];  // validator updates to effect 
         
-        // ... several steps omitted
+        // ... steps omitted
 
         for (let i = 0; i <= state.validators.length; i++) {
             
