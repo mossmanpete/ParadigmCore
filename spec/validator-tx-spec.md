@@ -1,8 +1,8 @@
 # Specification for Dynamic Validator Updates
 
-**Update**: my current thinking is to encompass a `subject` parameter into the existing `witness` transaction type, instead of creating a entirely separate transaction type for validator update events. The reasoning is that from the perspective of the state machine, the poster staking events and validator update events can be treated the same. In reality they are both simply events from the Ethereum chain that trigger a deterministic modification to the OrderStream's state. The logic for attestations referring to different `witness.subject`s will be integrated into `deliverTx()`. This will be reflected in another version of this spec.  
+Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal† `witness` transaction type, and accompanying changes in the core state machine. 
 
-Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal† `witness` transaction type, and accompanying changes in the core state machine. Combined with the `ValidatorRegistry` contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the `ValidatorRegistry`.
+Combined with the `ValidatorRegistry` contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract.
 
 *† The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
 
@@ -26,9 +26,9 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 
 |Name|Solidity type|Encoding target|Description|
 |-|-|-|-|
-|`tendermintPublicKey`|`string`/`bytes32`|base64 via UTF8|Tendermint `ed25519` validator public key|
+|`tendermintPublicKey`|`string`|base64 via UTF8|Tendermint `ed25519` validator public key|
 |`owner`|`address`|hex via UTF8| Ethereum address of validator applicant|
-|`stake`|`uint` (?)|dec via UTF8 (?)| Slashable DIGM amount associated with listing
+|`stake`|`uint`|dec via UTF8| Slashable DIGM amount associated with listing
 
 The block height of the event is also associated with the above data. The following parameters are deterministically computed by the state machine upon receipt and acceptance of an event (according to the [peg specification](./ethereum-peg-spec.md)).
 
@@ -58,11 +58,7 @@ The process outlined below is specific to the core state machine, and omits seve
     1. Pruning confirmed `witness` events from `state.events` (already [implemented here](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/util/utils.ts#L234))
     1. Some relevant logic outlining the modification to the `witness` data structure ([see current implementation](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/handlers/witness.ts)) for more detail):
     ```ts
-    /* 
-      snippet - for illustrative purposes, logic omitted in some cases
-
-      This example is less finalized than the others.
-    */
+    // snippet - for illustrative purposes
 
     function applyBalanceUpdate(tx: SignedWitnessTx, state: State, target: string): void {
 
