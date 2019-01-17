@@ -2,7 +2,7 @@
 
 Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal† `witness` transaction type, and accompanying changes in the core state machine. 
 
-Combined with the `ValidatorRegistry` contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract.
+Combined with the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the on-chain registry.
 
 *† The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
 
