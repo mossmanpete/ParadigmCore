@@ -4,8 +4,6 @@ Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec
 
 Combined with the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the on-chain registry.
 
-*† The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
-
 ## Overview
 At a high level, this transaction type is created by validators running `Witness` components who react to and report events from the `ValidatorRegistry` contract. The events are emitted under the following circumstances.
 
@@ -36,8 +34,6 @@ The block height of the event is also associated with the above data. The follow
 1. Vote power of new validator is computed based on in-state stake balances. 
    - A similar function used for [bandwidth model can be found here](https://github.com/ParadigmFoundation/ParadigmCore/blob/dev/src/core/util/utils.ts#L115).
 
-*†† The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
-
 ## Formal Specification
 
 This section (more) formally defines the changes to the `witness` transaction type, and the processes associated with the implementation of dynamic validator set changes on the OrderStream network. For the purposes of this specification, the inner workings of the `ValidatorRegistry` contract – and the rest of the Paradigm contract system – is treated as a higher-level abstraction.
@@ -54,7 +50,7 @@ The process outlined below is specific to the core state machine, and omits seve
    1. Each validator submits their witness account transaction††† to as many validators on the network as they are aware of.
 1. Upon receipt of the witness††† attestations, the existing state machine logic in ParadigmCore deterministically handles the following process(es) according to the peg specification:
     1. Waiting for >=2/3 of active validators to submit attestations to the `RegistryUpdate` event in question
-    1. Transitioning the event from the pending `state.events` object to the `state.validators`†††† object upon confirmation of the event
+    1. Transitioning the event from the pending `state.events` object to the `state.validators` object upon confirmation of the event
     1. Pruning confirmed `witness` events from `state.events` (already [implemented here](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/util/utils.ts#L234))
     1. Some relevant logic outlining the modification to the `witness` data structure ([see current implementation](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/handlers/witness.ts)) for more detail):
     ```ts
@@ -131,7 +127,7 @@ The process outlined below is specific to the core state machine, and omits seve
         - The new logic for validator balance tracking to use the same functions and state transition logic.
 
 1. At the end of each block, during the `EndBlock` execution, the state machine performs the following:
-    1. Iterate and sum staked (slashable) DIGM balances over all active validators in `state.validators`††††.
+    1. Iterate and sum staked (slashable) DIGM balances over all active validators in `state.validators`.
     1. Compute the proportional vote power for each validator.
     1. Example implementation of these steps:
     ```ts
@@ -185,12 +181,14 @@ The process outlined below is specific to the core state machine, and omits seve
     ```
 1. After the previous step is completed, and that Tendermint block passes `commit()`, the new validator will be able to join the network and begin proposing and voting on blocks.
 
-*††† The decision of weather to a) modify the existing `witness` transaction type to support `ValidatorUpdate`s or b) create a new transaction type has not been made yet. This specification (and it's terminology) will be updated when that decision is made.*
-
-*†††† The decision of whether to a) modify the existing `state.balances` object to store validator balances or b) incorporate validator balances into the `state.validators` data structure has not yet been made. This spec will be updated upon a decision being made.*
-
-## Final Note(s)
+## Final Notes
 
 While drafting this I realize it will be necessary to restructure the `state` object to contain distinct `state.validators` (already exists) and `state.posters` objects to track balances, rather than a `state.balances` object.
 
 Implementing this spec will also require significantly refactoring the `state.validators` object, and the `endBlock()`, `beginBlock()`, `deliverWitness()`, and `checkWitness()` functions. The `Witness` class will also need to be modified to support the updated `witness` transaction type.
+
+*† The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
+
+*†† The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
+
+
