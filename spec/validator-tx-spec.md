@@ -33,7 +33,7 @@ The block height of the event is also associated with the above data. The follow
 1. Tendermint `NODE_ID` of new validator [is derived from `tendermintPublicAddress`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/util/static/valFunctions.ts#L23).
 1. Vote power of new validator is computed based on in-state stake balances. A similar function used for [bandwidth model can be found here](https://github.com/ParadigmFoundation/ParadigmCore/blob/dev/src/core/util/utils.ts#L115).
 
-*†† The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final, except for those already implemented in ParadigmCore.*
+*†† The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
 
 ## Formal Specification
 
