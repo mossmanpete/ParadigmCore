@@ -1,6 +1,6 @@
 # `ValidatorUpdate` Transaction Specification (WIP)
 
-**Update**: my current thinking is to encompass a `subject` parameter into the existing `witness` transaction type, instead of creating a entirely separate transaction type for validator update events. The reasoning is that from the perspective of the state machine, the poster staking events and validator update events can be treated the same. In reality they are both simply events from the Ethereum chain that trigger a deterministic modification to the OrderStream's state. The logic for attestations refering to different `witness.subject`s will be integrated into `deliverTx(). This will be reflected in another version of this spec.  
+**Update**: my current thinking is to encompass a `subject` parameter into the existing `witness` transaction type, instead of creating a entirely separate transaction type for validator update events. The reasoning is that from the perspective of the state machine, the poster staking events and validator update events can be treated the same. In reality they are both simply events from the Ethereum chain that trigger a deterministic modification to the OrderStream's state. The logic for attestations referring to different `witness.subject`s will be integrated into `deliverTx()`. This will be reflected in another version of this spec.  
 
 Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines the internal† `validator` transaction type using the same `Witness` model. 
 
@@ -26,13 +26,13 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 
 |Name|Solidity type|Encoding target|Description|
 |-|-|-|-|
-|`tendermintPublicAddress`|`string`/`bytes32`|base64 via UTF8|Tendermint `ed25519` validator public key|
+|`tendermintPublicKey`|`string`/`bytes32`|base64 via UTF8|Tendermint `ed25519` validator public key|
 |`owner`|`address`|hex via UTF8| Ethereum address of validator applicant|
 |`stake`|`uint` (?)|dec via UTF8 (?)| Slashable DIGM amount associated with listing
 
 The block height of the event is also associated with the above data. The following parameters are deterministically computed by the state machine upon receipt and acceptance of an event (according to the [peg specification](./ethereum-peg-spec.md)).
 
-1. Tendermint `NODE_ID` of new validator [is derived from `tendermintPublicAddress`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/util/static/valFunctions.ts#L23).
+1. Tendermint `NODE_ID` of new validator [is derived from `tendermintPublicKey`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/util/static/valFunctions.ts#L23).
 1. Vote power of new validator is computed based on in-state stake balances. A similar function used for [bandwidth model can be found here](https://github.com/ParadigmFoundation/ParadigmCore/blob/dev/src/core/util/utils.ts#L115).
 
 *†† The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
