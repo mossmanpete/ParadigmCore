@@ -24,7 +24,7 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 
 |Name|Solidity type|Encoding target|Description|
 |-|-|-|-|
-|`tendermintPublicAddress`|`string`|base64 via UTF8|Tendermint `ed25519` validator public key|
+|`tendermintPublicAddress`|`string`/`bytes32`|base64 via UTF8|Tendermint `ed25519` validator public key|
 |`owner`|`address`|hex via UTF8| Ethereum address of validator applicant|
 |`stake`|`uint` (?)|dec via UTF8 (?)| Slashable amount associated with listing
 
