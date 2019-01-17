@@ -71,19 +71,19 @@ describe("Function tests:", () => {
 
         test("throws with wrong input type", () => {
             // String input
-            expect(() => { pubToAddr("hi"); }).toThrow("Bad input type.");
+            expect(() => { pubToAddr("hi"); }).toThrow("bad input type");
 
             // Number input
-            expect(() => { pubToAddr(5); }).toThrow("Bad input type.");
+            expect(() => { pubToAddr(5); }).toThrow("bad input type");
 
             // Boolean input
-            expect(() => { pubToAddr(true); }).toThrow("Bad input type.");
+            expect(() => { pubToAddr(true); }).toThrow("bad input type");
 
             // Array input
-            expect(() => { pubToAddr([1,2,3]); }).toThrow("Bad input type.");
+            expect(() => { pubToAddr([1,2,3]); }).toThrow("bad input type");
 
             // Object literal input
-            expect(() => { pubToAddr({1:2}); }).toThrow("Bad input type.");
+            expect(() => { pubToAddr({1:2}); }).toThrow("bad input type");
 
             // Valid input (sanity check)
             expect(() => { pubToAddr(pub); }).not.toThrow();
@@ -93,17 +93,17 @@ describe("Function tests:", () => {
             // Private key input
             expect(() => {
                 pubToAddr(priv);
-            }).toThrow("Expected input to be 32 bytes.");
+            }).toThrow("expected input to be 32 bytes");
 
             // Input buffer <32 bytes
             expect(() => {
                 pubToAddr(Buffer.allocUnsafe(31));
-            }).toThrow("Expected input to be 32 bytes.");
+            }).toThrow("expected input to be 32 bytes");
 
             // Input buffer >32 bytes
             expect(() => {
                 pubToAddr(Buffer.allocUnsafe(64));
-            }).toThrow("Expected input to be 32 bytes.");
+            }).toThrow("expected input to be 32 bytes");
 
             // Sanity check
             expect(() => { pubToAddr(pub); }).not.toThrow();
@@ -118,19 +118,19 @@ describe("Function tests:", () => {
 
         test("throws with wrong input type", () => {
             // String input
-            expect(() => { privToPub("hi"); }).toThrow("Bad input type.");
+            expect(() => { privToPub("hi"); }).toThrow("bad input type");
 
             // Number input
-            expect(() => { privToPub(5); }).toThrow("Bad input type.");
+            expect(() => { privToPub(5); }).toThrow("bad input type");
 
             // Boolean input
-            expect(() => { privToPub(true); }).toThrow("Bad input type.");
+            expect(() => { privToPub(true); }).toThrow("bad input type");
 
             // Array input
-            expect(() => { privToPub([1,2,3]); }).toThrow("Bad input type.");
+            expect(() => { privToPub([1,2,3]); }).toThrow("bad input type");
 
             // Object literal input
-            expect(() => { privToPub({1:2}); }).toThrow("Bad input type.");
+            expect(() => { privToPub({1:2}); }).toThrow("bad input type");
 
             // Valid input (sanity check)
             expect(() => { privToPub(priv); }).not.toThrow();
@@ -140,17 +140,17 @@ describe("Function tests:", () => {
             // Public key input
             expect(() => {
                 privToPub(pub);
-            }).toThrow("Expected input to be 64 bytes.");
+            }).toThrow("expected input to be 64 bytes");
 
             // Input random buffer <64 bytes
             expect(() => {
                 privToPub(Buffer.allocUnsafe(60));
-            }).toThrow("Expected input to be 64 bytes.");
+            }).toThrow("expected input to be 64 bytes");
 
             // Input random buffer >64 bytes
             expect(() => {
                 privToPub(Buffer.allocUnsafe(128));
-            }).toThrow("Expected input to be 64 bytes.");
+            }).toThrow("expected input to be 64 bytes");
 
             // Sanity check
             expect(() => { privToPub(priv); }).not.toThrow();
