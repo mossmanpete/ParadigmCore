@@ -1,6 +1,6 @@
 # Specification for Dynamic Validator Updates
 
-Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal† `witness` transaction type, and accompanying changes in the core state machine. 
+Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal<sup>1</sup> `witness` transaction type, and accompanying changes in the core state machine. 
 
 Combined with the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, the implementation of this specification will support dynamic changes to the active OrderStream validator set based on the state of the on-chain registry.
 
@@ -20,7 +20,7 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 1. Integer amount of staked tokens associated with the validator listing event
 1. The tendermint `ed25519` public key included with validator listing event
 
-`RegistryUpdate`†† events emitted from the `ValidatorRegistry` contract contain the following parameters necessary to effect state change on the OrderStream network.
+`RegistryUpdate`<sup>2</sup> events emitted from the `ValidatorRegistry` contract contain the following parameters necessary to effect state change on the OrderStream network.
 
 |Name|Solidity type|Encoding target|Description|
 |-|-|-|-|
@@ -186,8 +186,8 @@ While drafting this I realize it will be necessary to restructure the `state` ob
 
 Implementing this spec will also require significantly refactoring the `state.validators` object, and the `endBlock()`, `beginBlock()`, `deliverWitness()`, and `checkWitness()` functions. The `Witness` class will also need to be modified to support the updated `witness` transaction type.
 
-*† The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
+*<sup>1</sup> The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
 
-*†† The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
+*<sup>2</sup> The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
 
 
