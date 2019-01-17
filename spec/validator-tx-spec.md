@@ -56,7 +56,7 @@ The process outlined below is specific to the core state machine, and omits seve
     ```ts
     // snippet - for illustrative purposes
 
-    function applyBalanceUpdate(tx: SignedWitnessTx, state: State, target: string): void {
+    function applyBalanceUpdate(tx: SignedWitnessTx, state: State): void {
 
         // return immediately if event is not confirmed
         if (state.events[tx.data.block].conf < calcByzantineSize(state)) {
