@@ -1,6 +1,6 @@
 # `ValidatorUpdate` Transaction Specification (WIP)
 
-Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake on the `PosterStake` Ethereum contract for write access to the network, this specification outlines the internal† `validator` transaction type using the same `Witness` model. 
+Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines the internal† `validator` transaction type using the same `Witness` model. 
 
 *† "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
 
@@ -24,9 +24,9 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 
 |Name|Solidity type|Encoding target|Description|
 |-|-|-|-|
-|`tendermintPublicAddress`|`string`|base64|Tendermint `ed25519` public key|
+|`tendermintPublicAddress`|`string`|base64 via UTF8|Tendermint `ed25519` validator public key|
 |`owner`|`address`|hex via UTF8| Ethereum address of validator applicant|
-|`stake`|`uint`|dec via UTF8| Slashable amount associated with listing
+|`stake`|`uint` (?)|dec via UTF8 (?)| Slashable amount associated with listing
 
 The block height of the event is also associated with the above data. The following parameters are computed by the state machine upon receipt and acceptance of an event (according to the [peg specification](./ethereum-peg-spec.md)).
 
