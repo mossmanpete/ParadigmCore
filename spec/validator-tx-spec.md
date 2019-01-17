@@ -58,34 +58,6 @@ The process outlined below is specific to the core state machine, and omits seve
     1. Pruning confirmed `witness` events from `state.events` (already [implemented here](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/util/utils.ts#L234))
     1. Some relevant logic outlining the modification to the `witness` data structure ([see current implementation](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/handlers/witness.ts)) for more detail):
     ```ts
-    // snippet - for illustrative purposes
-
-    function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
-
-        // ... omitted
-
-        switch (tx.data.subject) {
-            case "poster": {
-                // logic for poster stake events (existing)
-                updatePosterBalance(state, tx);
-                break;
-            }
-
-            case "validator": {
-                // logic for validator stake events (new)
-                updateValidatorBalance(state, tx);
-                break;
-            }
-        }
-
-        // ... omitted
-    }
-    ```
-    - An implementation such as above will allow:
-      - The existing logic for tracking poster balance to remain unchanged
-      - The new logic for validator balance tracking to use the same functions and state transition logic.
-    - The difference will be the action taken upon confirmation of an event:
-    ```ts
     /* 
       snippet - for illustrative purposes, logic omitted in some cases
 
@@ -158,6 +130,10 @@ The process outlined below is specific to the core state machine, and omits seve
         return;
     }
     ```
+    - An implementation such as the one above will allow:
+        - The existing logic for tracking poster balance to remain unchanged
+        - The new logic for validator balance tracking to use the same functions and state transition logic.
+
 1. At the end of each block, during the `EndBlock` execution, the state machine performs the following:
     1. Iterate and sum staked (slashable) DIGM balances over all active validators in `state.validators`††††.
     1. Compute the proportional vote power for each validator.
@@ -212,11 +188,10 @@ The process outlined below is specific to the core state machine, and omits seve
     }
     ```
 1. After the previous step is completed, and that Tendermint block passes `commit()`, the new validator will be able to join the network and begin proposing and voting on blocks.
-1. _... to be expanded_
 
 *††† The decision of weather to a) modify the existing `witness` transaction type to support `ValidatorUpdate`s or b) create a new transaction type has not been made yet. This specification (and it's terminology) will be updated when that decision is made.*
 
-*†††† The decision of wheather to a) modify the existing `state.balances` object to store validator balances or b) incorporate validator balances into the `state.validators` data structure has not yet been made. This spec will be updated upon a decision being made.*
+*†††† The decision of whether to a) modify the existing `state.balances` object to store validator balances or b) incorporate validator balances into the `state.validators` data structure has not yet been made. This spec will be updated upon a decision being made.*
 
 ## Final Note(s)
 
