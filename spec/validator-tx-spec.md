@@ -180,11 +180,13 @@ The process outlined below is specific to the core state machine, and omits seve
     ```
 1. After the previous step is completed, and that Tendermint block passes `commit()`, the new validator will be able to join the network and begin proposing and voting on blocks.
 
-## Final Notes
+## Final Thoughts
 
-While drafting this I realize it will be necessary to restructure the `state` object to contain distinct `state.validators` (already exists) and `state.posters` objects to track balances, rather than a `state.balances` object.
+- While drafting this I realize it will be necessary to restructure the `state` object to contain distinct `state.validators` (already exists) and `state.posters` objects to track balances, rather than a `state.balances` object.
 
-Implementing this spec will also require significantly refactoring the `state.validators` object, and the `endBlock()`, `beginBlock()`, `deliverWitness()`, and `checkWitness()` functions. The `Witness` class will also need to be modified to support the updated `witness` transaction type.
+- Implementing this spec will also require significantly refactoring the `state.validators` object, and the `endBlock()`, `beginBlock()`, `deliverWitness()`, and `checkWitness()` functions. The `Witness` class will also need to be modified to support the updated `witness` transaction type.
+
+## Footnotes
 
 *<sup>1</sup> The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
 
