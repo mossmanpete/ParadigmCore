@@ -68,7 +68,7 @@ The process outlined below is specific to the core state machine, and omits seve
         
         // ... steps omitted
 
-        for (let i = 0; i <= state.validators.length; i++) {
+        for (let i = 0; i < state.validators.length; i++) {
             
             // current validator object and key
             const validator: ValidatorInfo = state.validators[i];
