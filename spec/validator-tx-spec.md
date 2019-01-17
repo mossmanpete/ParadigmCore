@@ -26,16 +26,18 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 |-|-|-|-|
 |`tendermintPublicAddress`|`string`/`bytes32`|base64 via UTF8|Tendermint `ed25519` validator public key|
 |`owner`|`address`|hex via UTF8| Ethereum address of validator applicant|
-|`stake`|`uint` (?)|dec via UTF8 (?)| Slashable amount associated with listing
+|`stake`|`uint` (?)|dec via UTF8 (?)| Slashable DIGM amount associated with listing
 
 The block height of the event is also associated with the above data. The following parameters are deterministically computed by the state machine upon receipt and acceptance of an event (according to the [peg specification](./ethereum-peg-spec.md)).
 
-2. Tendermint `NODE_ID` of new validator (derived from `tendermintPublicAddress`)
-3. Vote power of new validator (computed based on in-state stake balances)
+1. Tendermint `NODE_ID` of new validator [is derived from `tendermintPublicAddress`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/util/static/valFunctions.ts#L23)
+1. Vote power of new validator is computed based on in-state stake balances. A similar function used for [bandwidth model can be found here](https://github.com/ParadigmFoundation/ParadigmCore/blob/dev/src/core/util/utils.ts#L115).
 
-*†† the name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) describe that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
+*†† the name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final, except for those already implemented in ParadigmCore.*
 
 ## Formal Specification
 
-WIP
+This section (more) formally defines the `ValidatorUpdate` transaction type, and the process associated with dynamic validator set changes on the OrderStream network. For the purposes of this specification, the inner workings of the `ValidatorRegistry` contract – and the rest of the Paradigm contract system – is treated as a higher-level abstraction. 
+
+1.
 
