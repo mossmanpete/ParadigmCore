@@ -22,11 +22,11 @@ The state transition applied by a `ValidatorUpdate` transaction depends on the f
 
 `RegistryUpdate`<sup>[[2]](#2)</sup> events emitted from the `ValidatorRegistry` contract contain the following parameters necessary to effect state change on the OrderStream network.
 
-|Name|Solidity type|Encoding target|Description|
+|Name|Solidity type|JS type|Description|
 |-|-|-|-|
-|`tendermintPublicKey`|`string`|base64 via UTF8|Tendermint `ed25519` validator public key|
-|`owner`|`address`|hex via UTF8| Ethereum address of validator applicant|
-|`stake`|`uint`|dec via UTF8| Slashable DIGM amount associated with listing
+|`tendermintPublicKey`|`string`|`Buffer`|Tendermint `ed25519` validator public key|
+|`owner`|`address`|`string`| Ethereum address of validator applicant|
+|`stake`|`uint`|`bigint`| Slashable staked balance associated with listing|
 
 The block height of the event is also associated with the above data. The following parameters are deterministically computed by the state machine upon receipt and acceptance of an event (according to the [peg specification](./ethereum-peg-spec.md)).
 
