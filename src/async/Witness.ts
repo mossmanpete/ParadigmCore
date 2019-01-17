@@ -18,13 +18,13 @@
 
 // Third party and stdlib imports
 import * as _ from "lodash";
-import ParadigmStakeInfo = require("paradigm-contracts/build/contracts/ParadigmStake.json");
-import TruffleContract = require("truffle-contract");
+import * as TruffleContract from "truffle-contract";
 import { URL } from "url";
 import Web3 = require("web3");
 import { WebsocketProvider } from "web3/providers";
 
 // ParadigmCore modules/classes
+import ParadigmStakeInfo = require("paradigm-contracts/build/contracts/ParadigmStake.json");
 import { TxGenerator } from "src/core/util/TxGenerator";
 import { TxBroadcaster } from "../core/util/TxBroadcaster";
 import { default as codes } from "../util/Codes";
@@ -49,8 +49,6 @@ export class Witness {
      *  - options.periodLimit       {number} max transactions per period
      *  - options.periodLength      {number} staking period length (ETH blocks)
      *  - options.finalityThreshold {number} required block maturity
-     *  - options.stakeABI          {array} JSON staking contract ABI
-     *  - options.stakeAddress      {string} deployed staking contract address
      *  - options.broadcaster       {TxBroadcaster} broadcaster instance
      *  - options.txGenerator       {TxGenerator} tx generator/signer
      */
@@ -181,8 +179,6 @@ export class Witness {
 
     // Staking contract configuration
     private stakeContract: any;    // Staking contract instance
-    private stakeABI: object[];         // Staking contract ABI
-    private stakeAddress: string;       // Staking contract address
 
     // Tendermint ABCI utility classes
     private broadcaster: TxBroadcaster; // ABCI Tx broadcaster and queue
@@ -217,10 +213,6 @@ export class Witness {
 
         // Finality threshold
         this.finalityThreshold = opts.finalityThreshold;
-
-        // Staking contract parameters
-        this.stakeABI = opts.stakeABI;
-        this.stakeAddress = opts.stakeAddress;
 
         // Mapping objects
         this.events = {};
