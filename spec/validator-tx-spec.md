@@ -83,11 +83,7 @@ The process outlined below is specific to the core state machine, and omits seve
             let power: bigint;
 
             // set to 0 power if removed, proportional otherwise
-            if (isRemoved) {
-                power = 0n;
-            } else {
-                power = validator.balance / totalBalance;
-            }
+            power = isRemoved ? 0n : validator.balance / totalBalance;
 
             // add validator update to updates array
             validatorUpdates.push({pubKey, power});
