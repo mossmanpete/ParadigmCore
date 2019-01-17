@@ -103,3 +103,9 @@ The process outlined below is specific to the core state machine, and omits seve
 *††† The decision of weather to a) modify the existing `witness` transaction type to support `ValidatorUpdate`s or b) create a new transaction type has not been made yet. This specification (and it's terminology) will be updated when that decision is made.*
 
 *†††† The decision of wheather to a) modify the existing `state.balances` object to store validator balances or b) incorporate validator balances into the `state.validators` data structure has not yet been made. This spec will be updated upon a decision being made.*
+
+## Final Note(s)
+
+While drafting this I realize it will be necessary to restructure the `state` object to contain distinct `state.validators` (already exists) and `state.posters` objects to track balances, rather than a `state.balances` object.
+
+Implementing this spec will also require significantly refactoring the `state.validators` object, and the `endBlock()`, `beginBlock()`, `deliverWitness()`, and `checkWitness()` functions. The `Witness` class will also need to be modified to support the updated `witness` transaction type.
