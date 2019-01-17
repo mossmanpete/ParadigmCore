@@ -125,7 +125,6 @@ The process outlined below is specific to the core state machine, and omits seve
     - An implementation such as the one above will allow:
         - The existing logic for tracking poster balance to remain unchanged
         - The new logic for validator balance tracking to use the same functions and state transition logic.
-
 1. At the end of each block, during the `EndBlock` execution, the state machine performs the following:
     1. Iterate and sum staked (slashable) DIGM balances over all active validators in `state.validators`.
     1. Compute the proportional vote power for each validator.
