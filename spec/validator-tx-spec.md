@@ -1,5 +1,7 @@
 # `ValidatorUpdate` Transaction Specification (WIP)
 
+**Update**: my current thinking is to encompass a `subject` parameter into the existing `witness` transaction type, instead of creating a entirely separate transaction type for validator update events. The reasoning is that from the perspective of the state machine, the poster staking events and validator update events can be treated the same. In reality they are both simply events from the Ethereum chain that trigger a deterministic modification to the OrderStream's state. The logic for attestations refering to different `witness.subject`s will be integrated into `deliverTx(). 
+
 Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines the internal† `validator` transaction type using the same `Witness` model. 
 
 *† The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
