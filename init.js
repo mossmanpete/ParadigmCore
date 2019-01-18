@@ -80,7 +80,6 @@ const reqVars = [
     "ABCI_HOST",
     "ABCI_RPC_PORT",
     "ABCI_PORT",
-    "STAKE_CONTRACT_ADDR",
     "PERIOD_LENGTH",
     "PERIOD_LIMIT",
     "FINALITY_THRESHOLD",
