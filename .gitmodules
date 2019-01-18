@@ -1,6 +1,0 @@
-[submodule "lib/js-abci"]
-	path = lib/js-abci
-	url = git://github.com/marypreethi12/js-abci
-[submodule "lib/tendermint"]
-	path = lib/tendermint
-	url = git://github.com/hrharder/js-tendermint
