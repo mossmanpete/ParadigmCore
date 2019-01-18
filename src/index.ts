@@ -42,9 +42,6 @@ import { start as startMain } from "./core/main";
 import { err, log, logStart, warn } from "./util/log";
 import { messages as msg } from "./util/static/messages";
 
-// Staking contract ABI
-import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
-
 // "Globals"
 let witness: Witness;           // implements peg-zone and Ethereum SSM
 let emitter: EventEmitter;      // emitter to track order/stream events
@@ -191,8 +188,6 @@ let node;                       // tendermint node child process instance
 
             // web3 provider url and contract config
             provider: env.WEB3_PROVIDER,
-            stakeABI: STAKE_CONTRACT_ABI,
-            stakeAddress: env.STAKE_CONTRACT_ADDR,
 
             // consensus params
             finalityThreshold: parseInt(env.FINALITY_THRESHOLD, 10),
