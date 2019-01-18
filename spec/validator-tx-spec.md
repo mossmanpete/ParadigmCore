@@ -47,8 +47,8 @@ The process outlined below is specific to the core state machine, and omits seve
 1. OrderStream validators observe the event and:
    1. Wait for the maturity block associated with the event (see peg spec for details)
    1. Construct and sign `witness` attestation transactions, "voting" for its validity
-   1. Each validator submits their witness account transaction††† to as many validators on the network as they are aware of.
-1. Upon receipt of the witness††† attestations, the existing state machine logic in ParadigmCore deterministically handles the following process(es) according to the peg specification:
+   1. Each validator submits their witness account transaction to as many validators on the network as they are aware of.
+1. Upon receipt of the witness attestations, the existing state machine logic in ParadigmCore deterministically handles the following process(es) according to the peg specification:
     1. Waiting for >=2/3 of active validators to submit attestations to the `RegistryUpdate` event in question
     1. Transitioning the event from the pending `state.events` object to the `state.validators` object upon confirmation of the event
     1. Pruning confirmed `witness` events from `state.events` (already [implemented here](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/src/core/util/utils.ts#L234))
@@ -188,8 +188,8 @@ The process outlined below is specific to the core state machine, and omits seve
 
 ## Footnotes
 
-*<a name="1">1</a> The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.*
+<a name="1">1</a> The word "internal" in this context means it is a transaction type that will never originate from a non-validator node, unlike `order` and `stream` transactions which can originate from end users. Like all OrderStream transaction types, `ValidatorUpdate` transactions must be signed by validators.
 
-*<a name="2">2</a> The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.*
+<a name="2">2</a> The name `RegistryUpdate` __does not__ reflect the current implementation of the events in the [`ValidatorRegistry`](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/contracts/ValidatorRegistry.sol) contract, but is used here to a) demonstrate that separate `ValidatorAdded` and `ValidatorRemoved` events are redundant, and b) to avoid confusion with the OrderStream `ValidatorUpdate` transaction type. No names discussed in this specification are final.
 
 
