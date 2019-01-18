@@ -1,6 +1,6 @@
 {
   "name": "paradigmcore",
-  "version": "0.5.3",
+  "version": "0.6.0",
   "description": "TypeScript implementation of the OrderStream Network.",
   "main": "./dist/index.js",
   "scripts": {
