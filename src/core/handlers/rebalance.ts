@@ -109,10 +109,11 @@ export function deliverRebalance(
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
                 // Limits from proposal
+                // @TODO ensure to change structure in Witness class
                 const propLimits = proposal.limits;
 
                 // Compute limits from in-state balances
-                const localLimits = genLimits(state.balances, state.round.limit);
+                const localLimits = genLimits(state.posters, state.round.limit);
 
                 // TODO: add condition around period length
                 if (isEqual(propLimits, localLimits)) {
@@ -123,7 +124,7 @@ export function deliverRebalance(
                     state.round.number += 1;
                     state.round.startsAt = proposal.round.startsAt;
                     state.round.endsAt = proposal.round.endsAt;
-                    state.limits = proposal.limits;
+                    applyNewLimits(state.posters, proposal.limits);
                     // End state modification
 
                     // Vote to accept

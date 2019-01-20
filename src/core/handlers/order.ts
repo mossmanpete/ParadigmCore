@@ -55,8 +55,8 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
 
     // Does poster have a staked balance?
     if (
-        state.limits.hasOwnProperty(poster) &&
-        state.limits[poster].orderLimit > 0
+        state.posters.hasOwnProperty(poster) &&
+        state.posters[poster].orderLimit > 0n
     ) {
         log("mem", msg.abci.messages.mempool);
         return Vote.valid(`(unconfirmed) orderID: ${Hasher.hashOrder(order)}`);
@@ -89,16 +89,16 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, O
 
     // Verify poster balance and modify state
     if (
-        state.limits.hasOwnProperty(poster) &&
-        state.limits[poster].orderLimit > 0
+        state.posters.hasOwnProperty(poster) &&
+        state.posters[poster].orderLimit > 0n
     ) {
         // Hash order to generate orderID
         const orderCopy = order.toJSON();
         orderCopy.id = Hasher.hashOrder(order);
 
         // Begin state modification
-        state.limits[poster].orderLimit -= 1;
-        state.orderCounter += 1;
+        state.posters[poster].orderLimit -= 1n;
+        state.orderCounter += 1n;
         // End state modification
 
         // Add order to block's broadcast queue

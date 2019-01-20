@@ -33,7 +33,7 @@ import { checkWitness, deliverWitness } from "./handlers/witness";
 import { err, log, warn } from "../util/log";
 import { bigIntReplacer } from "../util/static/bigIntUtils";
 import { messages as templates } from "../util/static/messages";
-import { pubToAddr } from "../util/static/valFunctions";
+import { pubToAddr } from "./util/valFunctions";
 import { computeConf, decodeTx, preVerifyTx, syncStates } from "./util/utils";
 
 // Custom types
@@ -147,17 +147,22 @@ function initChainWrapper(
     return (request) => {
         // add genesis validators to in-state validator list
         request.validators.forEach((validator) => {
-            // Generate hexadecimal address from public key
-            let pubKey: Buffer = validator.pubKey.data;
-            let addrHex: string = pubToAddr(pubKey).toString("hex");
+            // Generate hexadecimal nodeID from public key
+            const pubKey: Buffer = validator.pubKey.data;
+            const nodeId: string = pubToAddr(pubKey).toString("hex");
+            const power: bigint = BigInt(validator.power);
 
             // Create entry if validator has not voted yet
-            if (!(deliverState.validators.hasOwnProperty(addrHex))) {
-                deliverState.validators[addrHex] = {
+            if (!(deliverState.validators.hasOwnProperty(nodeId))) {
+                deliverState.validators[nodeId] = {
+                    balance: BigInt(-1),
+                    power,
+                    publicKey: pubKey.toString("base64"),
+                    ethAccount: null,
                     lastProposed: null,
                     lastVoted: null,
-                    totalVotes: 0,
-                    votePower: null,
+                    totalVotes: BigInt(0),
+                    genesis: true,
                 };
             }
         });
@@ -179,6 +184,8 @@ function initChainWrapper(
     };
 }
 
+const debug = m => console.log(`\n\n${m}\n\n`);
+
 /**
  * Called at the beginning of each new block. Updates proposer and block height.
  *
@@ -188,7 +195,8 @@ function beginBlockWrapper(state: State): (r) => any {
     console.log(`\n... (begin) state: ${JSON.stringify(state, bigIntReplacer)}\n`);
     return (request) => {
         // Parse height and proposer from header
-        const currHeight: number = request.header.height.low; // @TODO: consider
+        const currHeight: bigint = BigInt(request.header.height);
+        console.log("current height = ", currHeight);
         const currProposer: string = request.header.proposerAddress.toString("hex");
 
         // Store array of last votes
@@ -198,30 +206,41 @@ function beginBlockWrapper(state: State): (r) => any {
         if (lastVotes !== undefined && lastVotes.length > 0) {
             // Iterate over votes array (supplied by Tendermint)
             lastVotes.forEach((vote: any) => {
-                const valHex = vote.validator.address.toString("hex");
-                const valPower = vote.validator.power.low;  // @TODO re-examine
+                const nodeId = vote.validator.address.toString("hex");
+                const power = BigInt(vote.validator.power);
 
                 // Create entry if validator has not voted yet
-                if (!(state.validators.hasOwnProperty(valHex))) {
-                    state.validators[valHex] = {
-                        lastProposed: null,
+                if (!(state.validators.hasOwnProperty(nodeId))) {
+                    state.validators[nodeId] = {
+                        balance: BigInt(0), // @TODO re-examine
+                        power,
+                        publicKey: "probably shouldn't be reading this",
+                        ethAccount: "not implemented",
                         lastVoted: null,
-                        totalVotes: 0,
-                        votePower: null,
+                        lastProposed: null,
+                        totalVotes: BigInt(0),
+                        genesis: false,
                     };
                 }
 
                 // Update vote and height trackers
-                state.validators[valHex].totalVotes += 1;
-                state.validators[valHex].lastVoted = (currHeight - 1);
+                state.validators[nodeId].totalVotes += 1n;
+                state.validators[nodeId].lastVoted = (currHeight - 1n);
 
                 // Record if they are proposer this round
-                if (valHex === currProposer) {
-                    state.validators[valHex].lastProposed = currHeight;
+                if (nodeId === currProposer) {
+                    state.validators[nodeId].lastProposed = currHeight;
+                    console.log("\n" + nodeId + " is proposing\n");
                 }
 
                 // Update (or re-record) validator vote power
-                state.validators[valHex].votePower = valPower;
+                state.validators[nodeId].power = power;
+
+                // TEMPORARY
+                // @TODO remove
+                if (state.validators[nodeId].genesis) {
+                    state.validators[nodeId].ethAccount = "updated from gen dude";
+                }
             });
         }
 
@@ -236,6 +255,8 @@ function beginBlockWrapper(state: State): (r) => any {
             "state",
             `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
         );
+
+        console.log(JSON.stringify(state, bigIntReplacer));
         return {};
     };
 }
@@ -367,6 +388,14 @@ function deliverTxWrapper(
     };
 }
 
+function endBlockWrapper(state: State): (r) => ResponseEndBlock {
+    return (h) => {
+        // get current height and log
+        const height = BigInt(h);
+        console.log(`Congrats, you made it to the end of block ${height}`);
+    };
+}
+
 /**
  * Persist application state, synchronize commit and deliver states, and
  * trigger the broadcast of valid orders in that block.
@@ -379,8 +408,8 @@ function commitWrapper(
     tracker: OrderTracker,
     msg: MasterLogTemplates,
     witness: Witness
-): (r) => string {
-    return (request) => {
+): () => string {
+    return () => {
         // store string encoded state hash
         let stateHash: string = "";
 
@@ -416,7 +445,7 @@ function commitWrapper(
             }
 
             // Increase last block height
-            deliverState.lastBlockHeight += 1;
+            deliverState.lastBlockHeight += 1n;
 
             // Generate new state hash and update
             stateHash = Hasher.hashState(deliverState);

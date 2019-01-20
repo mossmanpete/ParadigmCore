@@ -15,7 +15,7 @@
 /**
  * Outer level datastructure representing the state of the network, including
  * poster staked balances, poster rate limit, validator set, etc.
- */
+ * /
 interface State {
     round:              RoundInfo;
     events:             Events;
@@ -27,6 +27,49 @@ interface State {
     orderCounter:       number;
     lastBlockHeight:    number;
     lastBlockAppHash:   string;
+}*/
+
+interface State {
+    round:              RoundInfo;
+    events:             Events;
+    posters:            PosterInfo;
+    validators:         ValidatorInfo;
+    lastEvent:          EventInfo;
+    consensusParams:    ConsensusParams;
+    orderCounter:       bigint;
+    lastBlockHeight:    bigint;
+    lastBlockAppHash:   string;
+}
+
+interface PosterInfo {
+    [key: string]: Poster
+}
+
+interface Poster {
+    balance:        bigint;
+    orderLimit:     bigint;
+    streamLimit:    bigint;
+}
+
+/**
+ * key is nodeID
+ */
+interface ValidatorInfo {
+    [key: string]: Validator;
+}
+
+/**
+ * new validator state object
+ */
+interface Validator {
+    balance:        bigint; // balance in registry contract
+    power:          bigint; // vote power on tendermint chain
+    publicKey:      string; // should be string?
+    ethAccount:     string; // should be string?
+    lastVoted:      bigint;
+    lastProposed:   bigint;
+    totalVotes:     bigint;
+    genesis?:       boolean; // true if val was in genesis.json
 }
 
 /**
@@ -86,10 +129,10 @@ interface StakeEvent {
  * The `state.balances` mapping contains the most updated and final balances of
  * stakers. The mapping is generated from events within `state.events` once each
  * event recieves sufficient witness confirmations.
- */
+ * /
 interface Balances {
     [key: string]:  bigint;
-}
+}*/
 
 /**
  * Rate limits are computed according to a bandwidth model based on each stakers
@@ -124,23 +167,23 @@ interface EventInfo {
  * Representation of the validator set in-state includes historical validators,
  * including validators that have been kicked off the network. The active
  * validator set is a computable sub-set of `state.validators`.
- */
+ * /
 interface Validators {
     [key: string]:  ValidatorInfo;
-}
+}*/
 
 /**
  * For each validator, parameters regarding their historical activity is stored.
  * This allows interested parties to derive the active validator set, and audit
  * the historical actions of active and former validators.
- */
+ * /
 interface ValidatorInfo {
     lastProposed:   number;
     lastVoted:      number;
     totalVotes:     number;
     votePower:      number;
     active?:        boolean;    // @TODO: implement in state-machine
-}
+}*/
 
 /**
  * Parameters required for validators within a network to reach consensus on

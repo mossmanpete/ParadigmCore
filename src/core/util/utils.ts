@@ -107,25 +107,25 @@ export function verifyOrder(order: any, state: State): boolean {
 
 /**
  * Generates a rate-limit mapping based on staked balances and the total order
- * limit per staking period.
+ * limit per staking period, from in-state object.
  *
- * @param bals  {object} current in-state staked balances
+ * @param posters   {object} current in-state poster balances/limits
  * @param limit     {number} the total number of orders accepted in the period
  */
-export function genLimits(bals: Balances, limit: number): Limits {
+export function genLimits(posters: PosterInfo, limit: number): Limits {
     let total: bigint = BigInt(0);      // Total amount currently staked
     const output: Limits = {};          // Generated output mapping
 
     // Calculate total balance currently staked
-    Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
-            total += bals[k];
+    Object.keys(posters).forEach((k, v) => {
+        if (posters.hasOwnProperty(k)) {
+            total += posters[k].balance;
         }
     });
 
     // Compute the rate-limits for each staker based on stake size
-    Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
+    Object.keys(posters).forEach((k, v) => {
+        if (posters.hasOwnProperty(k)) {
             // Compute proportional order limit
             const bal = parseInt(bals[k].toString(), 10);
             const tot = parseInt(total.toString(), 10);

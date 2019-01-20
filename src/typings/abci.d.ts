@@ -21,3 +21,18 @@ interface ParadigmCoreOptions {
     periodLimit:        number;
     paradigm:           any;
 }
+
+interface ResponseEndBlock {
+    validatorUpdates:   ValidatorUpdate[];
+}
+
+interface ValidatorUpdate {
+    pubKey: PubKey;
+    power: number;
+}
+
+interface PubKey {
+    type: string;
+    data: Buffer;
+}
+
