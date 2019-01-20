@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 19-January-2018
  *
  * ParadigmCore primary state machine, and implementation of Tendermint handler
  * functions and state transition logic.

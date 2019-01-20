@@ -1,3 +1,7 @@
+---
+title: Stream API
+---
+
 # OrderStream WebSocket API
 The most fundamental piece of the OrderStream network is the event-based order book. The primary way to subscribe to this event stream is via a node's WebSocket endpoint:
 ```

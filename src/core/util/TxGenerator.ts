@@ -220,7 +220,6 @@ export class TxGenerator {
                 isValid = false;
             }
         } catch (err) {
-            console.log("verify err: " + err);
             return false;
         }
 

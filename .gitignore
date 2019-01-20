@@ -3,10 +3,8 @@
 .vscode
 .DS_Store
 
-/lib/tendermint/bin/tendermint
-/lib/tendermint/config
-/lib/tendermint/data
+node_modules
+dist
 
-/node_modules
-
-/dist
+# lib/js-abci
+# ib/tendermint

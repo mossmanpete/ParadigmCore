@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 20-December-2018
+ * @date (modified) 19-January-2018
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
  */
@@ -41,9 +41,6 @@ import { start as startMain } from "./core/main";
 // General utilities and misc.
 import { err, log, logStart, warn } from "./util/log";
 import { messages as msg } from "./util/static/messages";
-
-// Staking contract ABI
-import { STAKE_CONTRACT_ABI } from "./util/static/contractABI";
 
 // "Globals"
 let witness: Witness;           // implements peg-zone and Ethereum SSM
@@ -191,8 +188,6 @@ let node;                       // tendermint node child process instance
 
             // web3 provider url and contract config
             provider: env.WEB3_PROVIDER,
-            stakeABI: STAKE_CONTRACT_ABI,
-            stakeAddress: env.STAKE_CONTRACT_ADDR,
 
             // consensus params
             finalityThreshold: parseInt(env.FINALITY_THRESHOLD, 10),
