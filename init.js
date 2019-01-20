@@ -172,8 +172,8 @@ function fail(msg, error, missing) {
     process.exit(1);
 } 
 
-// main function, triggered below
-function main() {
+// main function
+(function () {
     process.version.slice(1).split(".").map(i => parseInt(i))[0] > 10 ?
     null : semVer[0] === 10 && semVer[1] >= 4 ? 
     null : fail("Node.JS >=10.4 required.");
@@ -231,6 +231,4 @@ function main() {
         validateKeys();
         validateEnvironment();
     }
-}
-
-main();
+})();
