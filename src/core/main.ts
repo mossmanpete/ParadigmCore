@@ -37,7 +37,7 @@ import { pubToAddr } from "./util/valFunctions";
 import { computeConf, decodeTx, preVerifyTx, syncStates } from "./util/utils";
 
 // Custom types
-import { ParadigmCoreOptions } from "../typings/abci";
+import { ParadigmCoreOptions, ResponseEndBlock } from "../typings/abci";
 
 /**
  * Initialize and start the ABCI application.
@@ -93,6 +93,7 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
             deliverTx: deliverTxWrapper(dState, templates, tracker, generator, Order),
             info: infoWrapper(cState, version),
             initChain: initChainWrapper(dState, cState, consensusParams),
+            endBlock: endBlockWrapper(dState)
         };
 
         // Start ABCI server (connection to Tendermint core)
@@ -184,8 +185,6 @@ function initChainWrapper(
     };
 }
 
-const debug = m => console.log(`\n\n${m}\n\n`);
-
 /**
  * Called at the beginning of each new block. Updates proposer and block height.
  *
@@ -196,7 +195,6 @@ function beginBlockWrapper(state: State): (r) => any {
     return (request) => {
         // Parse height and proposer from header
         const currHeight: bigint = BigInt(request.header.height);
-        console.log("current height = ", currHeight);
         const currProposer: string = request.header.proposerAddress.toString("hex");
 
         // Store array of last votes
@@ -230,7 +228,6 @@ function beginBlockWrapper(state: State): (r) => any {
                 // Record if they are proposer this round
                 if (nodeId === currProposer) {
                     state.validators[nodeId].lastProposed = currHeight;
-                    console.log("\n" + nodeId + " is proposing\n");
                 }
 
                 // Update (or re-record) validator vote power
@@ -256,7 +253,7 @@ function beginBlockWrapper(state: State): (r) => any {
             `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
         );
 
-        console.log(JSON.stringify(state, bigIntReplacer));
+        console.log("... end of beginBlock: " + JSON.stringify(state, bigIntReplacer));
         return {};
     };
 }
@@ -389,10 +386,14 @@ function deliverTxWrapper(
 }
 
 function endBlockWrapper(state: State): (r) => ResponseEndBlock {
-    return (h) => {
+    return (r) => {
         // get current height and log
-        const height = BigInt(h);
-        console.log(`Congrats, you made it to the end of block ${height}`);
+        // console.log("\ngonna try to convert object ot bigint\n");
+        // const height = BigInt(h);
+        console.log(`\n Congrats, you made it to the end of block ${r.height}\n`);
+        return {
+            validatorUpdates: []
+        };
     };
 }
 
@@ -462,7 +463,7 @@ function commitWrapper(
                 `committing new state with hash: ...${stateHash.slice(-8)}`
             );
         } catch (error) {
-            err("state", msg.abci.errors.broadcast);
+            err("state", `${msg.abci.errors.broadcast}: ${error.message}`);
         }
 
         // Return state's hash to be included in next block header

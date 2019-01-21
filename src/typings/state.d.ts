@@ -47,8 +47,8 @@ interface PosterInfo {
 
 interface Poster {
     balance:        bigint;
-    orderLimit:     bigint;
-    streamLimit:    bigint;
+    orderLimit:     number;
+    streamLimit:    number;
 }
 
 /**
@@ -91,7 +91,7 @@ interface RoundInfo {
  * the `state.balances` mapping.
  */
 interface Events {
-    [key: string]:  BlockEventObject;
+    [block: string]:  BlockEventObject;
 }
 
 /**
@@ -100,39 +100,42 @@ interface Events {
  * triggered the event, containing parameters of the event.
  */
 interface BlockEventObject {
-    [key: string]:  StakeEvent;
+    [id: string]:  WitnessEvent;
 }
 
 /**
  * A `RawStakeEvent` is simply an event object that has not been added to the 
  * in-state `state.events` mapping.
- */
+ * /
 interface RawStakeEvent {
     type:   string;
     staker: string;
     amount: bigint;
     block:  number;
-}
+}*/
 
 /**
  * `StakeEvents` are (currently) the only Ethereum event type implemented. The
  * data within `StakeEvents` is the information contained with the event emitted
  * by the Ethereum `PosterStaking` contract.
  */
-interface StakeEvent {
-    amount: bigint;
-    conf:   number;
-    type:   string;
+interface WitnessEvent {
+    subject:    string;
+    type:       string;
+    amount:     bigint;
+    address:    string;
+    publicKey:  string;
+    conf:       number;
 }
 
 /**
  * The `state.balances` mapping contains the most updated and final balances of
  * stakers. The mapping is generated from events within `state.events` once each
  * event recieves sufficient witness confirmations.
- * /
-interface Balances {
+ */
+interface PosterBalances {
     [key: string]:  bigint;
-}*/
+}
 
 /**
  * Rate limits are computed according to a bandwidth model based on each stakers

@@ -97,7 +97,7 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, O
         orderCopy.id = Hasher.hashOrder(order);
 
         // Begin state modification
-        state.posters[poster].orderLimit -= 1n;
+        state.posters[poster].orderLimit -= 1;
         state.orderCounter += 1n;
         // End state modification
 

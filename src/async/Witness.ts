@@ -30,6 +30,7 @@ import { TxBroadcaster } from "../core/util/TxBroadcaster";
 import { default as codes } from "../util/Codes";
 import { err, log } from "../util/log";
 import { messages as msg } from "../util/static/messages";
+import { createWitnessEventObject } from "../core/util/utils";
 
 /**
  * A Witness supports a one way peg-zone between Ethereum and the OrderStream to
@@ -82,7 +83,7 @@ export class Witness {
      * @param bals      {Balances} current address:balance mapping
      * @param limit     {number} total number of orders accepted per period
      */
-    public static genLimits(bals: Balances, limit: number): Limits {
+    public static genLimits(bals: PosterBalances, limit: number): Limits {
         let total: bigint = BigInt(0);      // Total amount currently staked
         const output: Limits = {};          // Generated output mapping
 
@@ -97,14 +98,12 @@ export class Witness {
         Object.keys(bals).forEach((k, v) => {
             if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
                 // Compute proportional order limit
-                const bal = parseInt(bals[k].toString(), 10);
-                const tot = parseInt(total.toString(), 10);
-                const lim = (bal / tot) * limit;
+                const lim = (bals[k] / total) * BigInt(limit);
 
                 // Create limit object for each address
                 output[k] = {
                     // orderLimit is proportional to stake size
-                    orderLimit: Math.floor(lim),
+                    orderLimit: parseInt(lim.toString(), 10),
 
                     // streamLimit is always 1, regardless of stake size
                     streamLimit: 1,
@@ -114,41 +113,6 @@ export class Witness {
 
         // Return constructed output mapping.
         return output;
-    }
-
-    /**
-     * Use to generate a WitnessTx event object.
-     *
-     * @param staker    {string}    address of staking party
-     * @param rType     {string}    stake type (`stakemade` or `stakeremoved`)
-     * @param amount    {bigint}    amount staked in event
-     * @param block     {number}    Ethereum block the event was recorded in.
-     */
-    public static genEvtObject(
-        staker: string,
-        rType: string,
-        amount: bigint,
-        block: number
-    ): RawStakeEvent {
-        let type: string; // Parsed event type
-
-        // Detect event type
-        switch (rType) {
-            case "stakemade": {
-                type = "add";
-                break;
-            }
-            case "stakeremoved": {
-                type = "remove";
-                break;
-            }
-            default: {
-                throw new Error("invalid event type");
-            }
-        }
-
-        // Construct and return event object
-        return { staker, type, amount, block };
     }
 
     /**
@@ -186,7 +150,7 @@ export class Witness {
 
     // Event, balance and limit mappings (out-of-state)
     private events: any;        // Events pending maturity threshold
-    private balances: Balances; // The address:stake_amount mapping
+    private posterBalances: PosterBalances; // The address:stake_amount mapping
 
     /**
      * PRIVATE constructor. Do not use. Create new rebalancers with
@@ -216,7 +180,7 @@ export class Witness {
 
         // Mapping objects
         this.events = {};
-        this.balances = {};
+        this.posterBalances = {};
 
         // Set rebalancer instance status
         this.initialized = false;
@@ -375,17 +339,27 @@ export class Witness {
      */
     private subscribe(from: number = 0): number {
         try {
-            // Subscribe to 'stakeMade' events
+            // subscribe to 'StakeMade' events
             this.stakeContract.StakeMade({
                 fromBlock: from,
             }, this.handleStake);
 
-            // Subscribe to 'stakeRemoved' events
+            // subscribe to 'StakeRemoved' events
             this.stakeContract.StakeRemoved({
                 fromBlock: from,
             }, this.handleStake);
 
-            // Subscribe to new blocks
+            // subscribe to 'ValidatorAdded' events
+            // this.validatorRegistry.ValidatorAdded({
+            //     fromBlock: from,
+            // }, this.handleValidator);
+
+            // subscribe to 'ValidatorRemoved' events
+            // this.validatorRegistry.ValidatorRemoved({
+            //    fromBlock: from,
+            // }, this.handleValidator);
+
+            // subscribe to new blocks
             this.web3.eth.subscribe("newBlockHeaders", this.handleBlock);
         } catch (error) {
             // Unable to subscribe to events
@@ -408,20 +382,46 @@ export class Witness {
             err("peg", msg.rebalancer.errors.badStakeEvent);
             return;
         }
+        // event type
+        const eventType = res.event.toLowerCase();
 
         // Pull event parameters
-        const staker = res.returnValues.staker.toLowerCase();
-        const type = res.event.toLowerCase();
-        const amount = BigInt(res.returnValues.amount);
+        const address = res.returnValues.staker.toLowerCase();
+        const amount = res.returnValues.amount;
         const block = res.blockNumber;
 
+        // will store witness event object
+        let witnessEvent: WitnessData;
+
         // Generate event object
-        const event = Witness.genEvtObject(staker, type, amount, block);
+        switch (eventType) {
+            case "stakemade": {
+                witnessEvent = createWitnessEventObject(
+                    "poster",
+                    "add",
+                    amount,
+                    block,
+                    address
+                );
+                break;
+            }
+            case "stakeremoved": {
+                witnessEvent = createWitnessEventObject(
+                    "poster",
+                    "remove",
+                    amount,
+                    block,
+                    address
+                );
+                break;
+            }
+            default: { return; }
+        }
 
         // See if this is a historical event that has already matured
         if ((this.initHeight - block) > this.finalityThreshold) {
-            this.updateBalance(event);
-            this.execEventTx(event);
+            this.updateBalance(witnessEvent);
+            this.execEventTx(witnessEvent);
             return;
         }
 
@@ -431,8 +431,62 @@ export class Witness {
         }
 
         // Add event to confirmation queue
-        this.events[block][staker] = event;
+        this.events[block][witnessEvent.id] = witnessEvent;
         return;
+    }
+
+    private handleValidator = (error: any, res: any) => {
+        if (error !== null) {
+            err("peg", "received bad validator event");
+            return;
+        }
+
+        // unpack necessary values
+        // todo: ensure this matches ValidatorRegistry contract data
+        const block = res.blockNumber;
+        const address = res.returnValues.owner.toLowerCase();
+        const publicKey = res.returnValues.tendermintPublicKey;
+
+        // will store generated witness event object
+        let witnessEvent: WitnessData;
+
+        // handle validator added vs validator removed
+        switch (res.event.toLowerCase()) {
+            case "validatoradded": {
+                const amount = res.returnValues.stake;
+                witnessEvent = createWitnessEventObject(
+                    "validator",
+                    "add",
+                    amount,
+                    block,
+                    address,
+                    publicKey
+                );
+                break;
+            }
+            case "validatorremoved": {
+                // TODO: should be -1 (special case) or just 0? or null?
+                const amount = "-1";
+                witnessEvent = createWitnessEventObject(
+                    "validator",
+                    "remove",
+                    amount,
+                    block,
+                    address,
+                    publicKey
+                );
+                break;
+            }
+            default: {
+                err("peg", "received unknown validator event type");
+                return;
+            }
+        }
+
+        // apply event if it is historical (already matured)
+        if ((this.initHeight - block) > this.finalityThreshold) {
+
+        }
     }
 
     /**
@@ -513,39 +567,48 @@ export class Witness {
      *
      * @param event   {StakeEvent}    event object
      */
-    private updateBalance(event: RawStakeEvent): void {
+    private updateBalance(event: WitnessData): void {
+        // only apply balance update for events with subject 'poster'
+        if (event.subject !== "poster") {
+            return;
+        }
+        
         // If no stake is present, set balance to stake amount
-        if (!this.balances.hasOwnProperty(event.staker)) {
-            this.balances[event.staker] = event.amount;
+        const amount: bigint = BigInt(event.amount);
+        const { address, type } = event;
+
+        if (!this.posterBalances.hasOwnProperty(event.address)) {
+            this.posterBalances[event.address] = amount;
             return;
         }
 
-        // Update balance based on stake event
-        switch (event.type) {
-            // Staker adding to their balance
+        // update balance based on stake event
+        switch (type) {
+            // poster adding to their balance
             case "add": {
-                this.balances[event.staker] += event.amount;
+                this.posterBalances[address] += amount;
                 break;
             }
 
-            // Staker removing from their balance
+            // poster removing from their balance
             case "remove": {
-                this.balances[event.staker] -= event.amount;
+                this.posterBalances[address] -= amount;
                 break;
             }
 
-            // Safety - shouldn't be reached
+            // safety - shouldn't be reached
             default: {
                 err("peg", "received unknown event type");
                 return;
             }
         }
 
-        // Remove balance entry if it is now 0
-        if (this.balances[event.staker] === BigInt(0)) {
-            delete this.balances[event.staker];
+        // remove balance entry if it is now 0
+        if (this.posterBalances[address] === BigInt(0)) {
+            delete this.posterBalances[address];
         }
 
+        // done
         return;
     }
 
@@ -565,7 +628,7 @@ export class Witness {
             map = {};
         } else {
             // Generate a mapping based on balances otherwise
-            map = Witness.genLimits(this.balances, this.periodLimit);
+            map = Witness.genLimits(this.posterBalances, this.periodLimit);
         }
 
         // Create and sign transaction object
@@ -591,14 +654,18 @@ export class Witness {
      *
      * @param event     {object}    event object
      */
-    private execEventTx(event: RawStakeEvent): void {
+    private execEventTx(event: WitnessData): void {
         // Create and sign transaction object
+        const { subject, type, amount, block, address, publicKey, id } = event;
         const tx = this.txGenerator.create({
             data: {
-                amount: event.amount,
-                block: event.block,
-                staker: event.staker,
-                type: event.type,
+                subject,
+                type,
+                amount,
+                block,
+                address,
+                publicKey,
+                id
             },
             type: "witness",
         });
@@ -622,6 +689,8 @@ export class Witness {
         // send transaction via broadcaster instance
         this.broadcaster.send(tx).catch((error) => {
             err("peg", `failed to send local abci tx: ${error.message}`);
+            console.log("bye");
+            process.exit(0);
         });
 
         // Will return OK unless ABCI is disconnected

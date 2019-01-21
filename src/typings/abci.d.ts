@@ -23,7 +23,7 @@ interface ParadigmCoreOptions {
 }
 
 interface ResponseEndBlock {
-    validatorUpdates:   ValidatorUpdate[];
+    validatorUpdates?:   ValidatorUpdate[];
 }
 
 interface ValidatorUpdate {
@@ -34,5 +34,15 @@ interface ValidatorUpdate {
 interface PubKey {
     type: string;
     data: Buffer;
+}
+
+interface ParsedWitnessData {
+    subject:    string;
+    type:       string;
+    amount:     bigint;
+    block:      number;
+    address:    string;
+    publicKey:  string | null;
+    id?:        string;
 }
 

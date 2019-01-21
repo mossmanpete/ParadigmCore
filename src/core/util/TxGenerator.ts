@@ -67,10 +67,11 @@ export class TxGenerator {
             case "witness": {
                 const txData = rawTx.data as WitnessData;
                 if (
-                    Object.keys(txData).length !== 4 ||
+                    Object.keys(txData).length !== 7 ||
                     typeof(txData.block) !== "number" ||
-                    typeof(txData.staker) !== "string"
+                    typeof(txData.address) !== "string"
                 ) {
+                    console.log("\n\n (txgenerator): bad witness event data\n");
                     return false;
                 } else {
                     return true;

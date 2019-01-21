@@ -54,12 +54,11 @@ export class Hasher {
   public static hashState(state: State): string {
     let stateHash: string;
     const hashPrep: object = {
-      balances: JSON.stringify(state.balances, bigIntReplacer),
+      posters: JSON.stringify(state.posters, bigIntReplacer),
       endHeight: state.round.endsAt,
       events: JSON.stringify(state.events, bigIntReplacer),
-      lastHeight: state.lastBlockHeight,
-      limits: JSON.stringify(state.limits),
-      ordernum: state.orderCounter,
+      lastHeight: parseInt(state.lastBlockHeight.toString(), 10),
+      ordernum: parseInt(state.orderCounter.toString(), 10),
       roundNumber: state.round.number,
       startHeight: state.round.startsAt,
       lastHash: state.lastBlockAppHash
