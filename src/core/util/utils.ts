@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
@@ -24,7 +24,6 @@ import { ParsedWitnessData } from "src/typings/abci";
 // Other
 import { cloneDeep, isInteger } from "lodash";
 import { createHash } from "crypto";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from "constants";
 
 /**
  * Verify validator signature, and confirm transaction originated from an
@@ -269,44 +268,9 @@ export function updateMappings(
     }
 }
 
-/**
- * Checks if a stake event is structurally valid. Considered
- * state-less verification (validity does not depend on state).
- *
- * @param data  {object}    the stake event to validate
- * /
-export function isValidStakeEvent(data: any, state: State): boolean {
-    // TODO: add info about proposer to validation condition
-    if (
-        !(data.hasOwnProperty("staker") &&
-        data.hasOwnProperty("type") &&
-        data.hasOwnProperty("block") &&
-        data.hasOwnProperty("amount") &&
-        Object.keys(data).length === 4)
-    ) {
-        return false;
-    } else if (
-        typeof(data.staker) !== "string" ||
-        typeof(data.type) !== "string" ||
-        typeof(data.block) !== "number" ||
-        typeof(data.amount) !== "string" ||
-        data.amount.slice(-1) !== "n"
-    ) {
-        return false;
-    } else if (!(data.type === "add" || data.type === "remove")) {
-        return false;
-    } else if (data.block <= state.lastEvent[data.type]) {
-        return false;
-    } else {
-        return true;
-    }
-}*/
-
 export function parseWitness(data: WitnessData): ParsedWitnessData {
     // raw vals
     const { subject, type, block, amount, publicKey, address, id } = data;
-
-    console.log("in parsedWitness (raw event data): " + data);
 
     // parsed vals
     let intAmount, parsedAddress, parsedPublicKey;
@@ -328,7 +292,6 @@ export function parseWitness(data: WitnessData): ParsedWitnessData {
 
     // ensure amount is a bigint
     // TODO: figure out this check
-    console.log("in parseWitness: " + amount);
     intAmount = BigInt(amount);
     // if (amount.slice(-1) === "n") {
     //     intAmount = BigInt(amount.slice(0, -1));

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  14-November-2018
- * @date (modified) 20-December-2018
+ * @date (modified) 21-January-2019
  *
  * Type definitions for ParadigmCore's state.
  */

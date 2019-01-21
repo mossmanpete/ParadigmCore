@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  08-November-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * A class that allows for the generation of signed ABCI transaction, and
  * provides methods for verifying transaction signatures.

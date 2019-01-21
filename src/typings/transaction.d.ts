@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-November-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 21-January-2019
  *
  * Type definitions for OrderStream transaction types.
  */

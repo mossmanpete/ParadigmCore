@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  03-December-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 21-January-2019
  *
  * Utility and conversion functions for validator keys and addresses.
  */

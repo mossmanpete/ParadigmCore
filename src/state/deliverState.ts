@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  22-October-2018
- * @date (modified) 20-December-2018
+ * @date (modified) 21-January-2019
  *
  * Object representing the initial and pre-commit state of the network.
  */

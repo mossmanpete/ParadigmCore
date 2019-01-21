@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * Handler functions for verifying ABCI event Witness transactions,
  * originating from validator nodes. Implements state transition logic as
@@ -21,7 +21,6 @@ import { Vote } from "../util/Vote";
 // ParadigmCore utilities
 import { parseWitness, updateMappings, createWitnessEventHash } from "../util/utils";
 import { ParsedWitnessData } from "../../typings/abci";
-import { bigIntReplacer } from "../../util/static/bigIntUtils";
 
 /**
  * Performs mempool verification of Ethereum StakeEvent transactions.

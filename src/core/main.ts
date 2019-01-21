@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * ParadigmCore primary state machine, and implementation of Tendermint handler
  * functions and state transition logic.
@@ -191,7 +191,9 @@ function initChainWrapper(
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 function beginBlockWrapper(state: State): (r) => any {
-    console.log(`\n... (begin) state: ${JSON.stringify(state, bigIntReplacer)}\n`);
+    // TODO: remove this log
+    // console.log(`\n... (begin) state: ${JSON.stringify(state, bigIntReplacer)}\n`);
+
     return (request) => {
         // Parse height and proposer from header
         const currHeight: bigint = BigInt(request.header.height);
@@ -387,9 +389,7 @@ function deliverTxWrapper(
 
 function endBlockWrapper(state: State): (r) => ResponseEndBlock {
     return (r) => {
-        // get current height and log
-        // console.log("\ngonna try to convert object ot bigint\n");
-        // const height = BigInt(h);
+        // temporary
         console.log(`\n Congrats, you made it to the end of block ${r.height}\n`);
         return {
             validatorUpdates: []
