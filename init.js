@@ -21,7 +21,7 @@ const c = require("ansi-colors");
 let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address, n = 0;
 
 // stdout formatter functions, etc
-const write = m => console.log(`\n\t${c.bold(`@${++n}`)}\t${m}`);
+const write = m => console.log(`\n\t${c.bold(`${++n}.`)}\t${m}`);
 const err = m => console.log(`\n\t${c.red.bold(m)}`);
 
 // initially required variables
