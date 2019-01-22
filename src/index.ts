@@ -88,7 +88,6 @@ let node;                       // tendermint node child process instance
         }
 
         node = tendermint.node(env.TM_HOME, options);
-        node.stdout.pipe(process.stdout);
     } catch (error) {
         err("state", "failed starting tendermint.");
         err("state", "tendermint may not be installed or configured.");
