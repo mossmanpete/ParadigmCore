@@ -6,7 +6,5 @@
 node_modules
 dist
 
-lib/tendermint/bin/tendermint
-
-# lib/js-abci
-# ib/tendermint
+lib/js-abci
+lib/tendermint
