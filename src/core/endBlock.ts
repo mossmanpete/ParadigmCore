@@ -14,11 +14,12 @@
 
 // custom types
 import { ResponseEndBlock } from "../typings/abci";
+import { bigIntReplacer } from "../util/static/bigIntUtils";
 
 export function endBlockWrapper(state: State): (r) => ResponseEndBlock {
     return (r) => {
         // temporary
-        console.log(`\n Congrats, you made it to the end of block ${r.height}\n`);
+        console.log(`\n State at height ${r.height}:\n${JSON.stringify(state, bigIntReplacer)}\n`);
         return {
             validatorUpdates: []
         };

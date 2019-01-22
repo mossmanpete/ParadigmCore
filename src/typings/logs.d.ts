@@ -1,21 +1,21 @@
 /**
  * Object containing standard or frequently used log outputs and templates.
  */
-interface MasterLogTemplates {
-    [key: string]: LogTemplates;
+interface LogTemplates {
+    [key: string]: SubLogTemplate;
 }
 
 /**
  * Nested log templates object, sectioned into errors and general messages.
  */
-interface LogTemplates {
-    errors?: LogTemplate;
-    messages?: LogTemplate;
+interface SubLogTemplate {
+    errors?: MessageLogTemplate;
+    messages?: MessageLogTemplate;
 }
 
 /**
  * An individual log template, or nested template.
  */
-interface LogTemplate {
+interface MessageLogTemplate {
     [key: string]: string | any;
 }

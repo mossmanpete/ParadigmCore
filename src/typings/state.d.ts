@@ -7,81 +7,67 @@
  *
  * @author Henry Harder
  * @date (initial)  14-November-2018
- * @date (modified) 21-January-2019
+ * @date (modified) 22-January-2019
  *
- * Type definitions for ParadigmCore's state.
+ * Type definitions for the ParadigmCore state/state machine.
  */
 
 /**
  * Outer level datastructure representing the state of the network, including
  * poster staked balances, poster rate limit, validator set, etc.
- * /
+ */
 interface State {
+    /**
+     * Contains data necessary to track and update the rebalance rounds.
+     */
     round:              RoundInfo;
-    events:             Events;
-    balances:           Balances;
-    limits:             Limits;
-    lastEvent:          EventInfo
-    validators:         Validators;
-    consensusParams:    ConsensusParams;
-    orderCounter:       number;
-    lastBlockHeight:    number;
-    lastBlockAppHash:   string;
-}*/
 
-interface State {
-    round:              RoundInfo;
+    /**
+     * Stores pending (unconfirmed) events attested to by validators running
+     * Witness components.
+     */
     events:             Events;
+
+    /**
+     * Account and balance tracking for 'posters'
+     */
     posters:            PosterInfo;
+
+    /**
+     * Balance tracking and other critical validator information.
+     */
     validators:         ValidatorInfo;
+
+    /**
+     * Stores the height of the Ethereum blockchain at which the last event was
+     * applied in-state.
+     */
     lastEvent:          EventInfo;
+    
+    /**
+     * Parameters affecting consensus logic (separate from Tendermint consensus
+     * parameters, changable through the ABCI).
+     */
     consensusParams:    ConsensusParams;
+
+    /**
+     * Incremental counter of the number of 'order' and 'stream' transactions 
+     * accpeted on the network since genesis.
+     */
     orderCounter:       bigint;
+
+    /**
+     * Tendermint specific, tracks last commited height.
+     */
     lastBlockHeight:    bigint;
+
+    /**
+     * Tendermint specific, tracks last commited app hash.
+     */
     lastBlockAppHash:   string;
 }
 
-interface PosterInfo {
-    [key: string]: Poster
-}
-
-interface Poster {
-    balance:        bigint;
-    orderLimit:     number;
-    streamLimit:    number;
-}
-
-/**
- * key is nodeID
- */
-interface ValidatorInfo {
-    [key: string]: Validator;
-}
-
-/**
- * new validator state object
- */
-interface Validator {
-    balance:        bigint; // balance in registry contract
-    power:          bigint; // vote power on tendermint chain
-    publicKey:      string; // should be string?
-    ethAccount:     string; // should be string?
-    lastVoted:      bigint;
-    lastProposed:   bigint;
-    totalVotes:     bigint;
-    genesis?:       boolean; // true if val was in genesis.json
-}
-
-/**
- * Represents the status and parameters of the poster staking rounds. Block
- * numbers here refer to the height of the Ethereum blockchain.  
- */
-interface RoundInfo {
-    number:     number;
-    startsAt:   number;
-    endsAt:     number;
-    limit:      number;
-}
+// BELOW ARE SUPPORTING TYPES AND DATA STRUCTURES
 
 /**
  * The `state.events` mapping stores witness accounts of Ethereum events 
@@ -104,15 +90,60 @@ interface BlockEventObject {
 }
 
 /**
- * A `RawStakeEvent` is simply an event object that has not been added to the 
- * in-state `state.events` mapping.
- * /
-interface RawStakeEvent {
-    type:   string;
-    staker: string;
-    amount: bigint;
-    block:  number;
-}*/
+ * Representation of and account tracking for 'posters', individuals who may 
+ * sign and submit 'order' and 'stream' type transactions. 
+ */
+interface PosterInfo {
+    [key: string]: Poster
+}
+
+/**
+ * Representation of a 'poster' account, tracking their DIGM balance from the
+ * PosterLock contract on the Ethereum network, as well as current 'order' and
+ * 'stream' transaction limits.
+ */
+interface Poster {
+    balance:        bigint;
+    orderLimit:     number;
+    streamLimit:    number;
+}
+
+/**
+ * Representation of the validator set in-state includes historical validators,
+ * including validators that have been kicked off the network. The active
+ * validator set is a computable sub-set of `state.validators`.
+ */
+interface ValidatorInfo {
+    [key: string]: Validator;
+}
+
+/**
+ * For each validator, parameters regarding their historical activity is stored.
+ * This allows interested parties to derive the active validator set, and audit
+ * the historical actions of active and former validators.
+ */
+interface Validator {
+    balance:        bigint; // balance in registry contract
+    power:          bigint; // vote power on tendermint chain
+    publicKey:      string; 
+    ethAccount:     string;
+    lastVoted:      bigint;
+    lastProposed:   bigint;
+    totalVotes:     bigint;
+    active?:        boolean; // true if voted on last block
+    genesis?:       boolean; // true if val was in genesis.json
+}
+
+/**
+ * Represents the status and parameters of the poster staking rounds. Block
+ * numbers here refer to the height of the Ethereum blockchain.  
+ */
+interface RoundInfo {
+    number:     number;
+    startsAt:   number;
+    endsAt:     number;
+    limit:      number;
+}
 
 /**
  * `StakeEvents` are (currently) the only Ethereum event type implemented. The
@@ -165,28 +196,6 @@ interface EventInfo {
     add:    number;
     remove: number;
 }
-
-/**
- * Representation of the validator set in-state includes historical validators,
- * including validators that have been kicked off the network. The active
- * validator set is a computable sub-set of `state.validators`.
- * /
-interface Validators {
-    [key: string]:  ValidatorInfo;
-}*/
-
-/**
- * For each validator, parameters regarding their historical activity is stored.
- * This allows interested parties to derive the active validator set, and audit
- * the historical actions of active and former validators.
- * /
-interface ValidatorInfo {
-    lastProposed:   number;
-    lastVoted:      number;
-    totalVotes:     number;
-    votePower:      number;
-    active?:        boolean;    // @TODO: implement in state-machine
-}*/
 
 /**
  * Parameters required for validators within a network to reach consensus on

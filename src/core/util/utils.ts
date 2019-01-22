@@ -24,6 +24,7 @@ import { ParsedWitnessData } from "src/typings/abci";
 // Other
 import { cloneDeep, isInteger } from "lodash";
 import { createHash } from "crypto";
+import { Verify } from "ed25519";
 
 /**
  * Verify validator signature, and confirm transaction originated from an
@@ -31,23 +32,42 @@ import { createHash } from "crypto";
  *
  * @param tx    {SignedTransaction} signed transaction object (decoded)
  * @param state {State}             current state
- * @param txGen {TxGenerator}       transaction generator instance
  */
-export function preVerifyTx(
-    tx: SignedTransaction,
-    state: State,
-    txGen: TxGenerator
-): boolean {
-    // Immediately invalidate if invalid signature
-    if (!txGen.verify(tx)) { return false; }
+export function preVerifyTx(tx: SignedTransaction, state: State): boolean {
+    // result of verification
+    let isValid: boolean;
 
-    // Check that signing party is an active validator
+    // attempt to verify
+    try {
+        const msg = Buffer.from(JSON.stringify(tx.data), "utf8");
+        const sig = Buffer.from(tx.proof.signature, "hex");
+        const pub = Buffer.from(tx.proof.from, "hex");
+
+        // verify message
+        isValid = Verify(msg, sig, pub);
+
+        // recompute id from signature/pub key
+        const idRaw = createHash("sha256").update(pub).digest("hex").slice(0, 40);
+        const idBuf = Buffer.from(idRaw, "hex").toString("hex")
+
+        // temporary
+        console.log("\n");
+        console.log(idRaw, " is? ", idBuf);
+        console.log("\n");
+
+        // verify computed id matches reported "fromAddr"
+        if (idBuf !== tx.proof.fromAddr) return false;
+    } catch (error) {
+        return false;
+    }
+
+    // check that signing party is an active validator
     if (!state.validators.hasOwnProperty(tx.proof.fromAddr)) {
         return false;
     }
 
-    // Above conditions pass mean tx is from active validator
-    return true;
+    // if above conditions pass mean tx is from active validator
+    return isValid;
 }
 
 /**
@@ -161,17 +181,20 @@ export function applyEvent(
     state: State,
     address: string,
     amount: bigint,
-    type: string
+    type: string,
+    block: number
 ): void {
     switch (type) {
         // Staker is adding stake
         case "add": {
+            if (block <= state.lastEvent.add) return; 
             state.posters[address].balance += amount;
             break;
         }
 
         // Staker is removing stake
         case "remove": {
+            if (block <= state.lastEvent.remove) return;
             state.posters[address].balance -= amount;
             break;
         }
@@ -213,28 +236,17 @@ export function updateMappings(
         ) {
             log("state", "witness event confirmed, updating balances");
 
-            // See if staker already has a balance
-            switch (state.posters.hasOwnProperty(address)) {
-                // Staker already has balance, we are just updating
-                case true: {
-                    applyEvent(state, address, amount, type);
-                    break;
-                }
-
-                // Staker does not have a current balance so create new entry
-                case false: {
-                    state.posters[address] = {
-                        balance: 0n,
-                        orderLimit: null,
-                        streamLimit: null
-                    };
-                    applyEvent(state, address, amount, type);
-                    break;
-                }
-
-                // Shouldn't happen!
-                default: { return; }
+            // if this is a new account, add to state
+            if (!state.posters.hasOwnProperty(address)) {
+                state.posters[address] = {
+                    balance: 0n,
+                    orderLimit: null,
+                    streamLimit: null
+                };
             }
+
+            // apply event to state (add confirmation, new event, etc.)
+            applyEvent(state, address, amount, type, block);
 
             // Remove events that were just applied to state
             delete state.events[block][id];

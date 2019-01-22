@@ -81,9 +81,9 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
         // Establish ABCI handler functions
         let handlers = {
             beginBlock: beginBlockWrapper(dState),
-            checkTx: checkTxWrapper(cState, templates, generator, Order),
+            checkTx: checkTxWrapper(cState, templates, Order),
             commit: commitWrapper(dState, cState, tracker, templates, witness),
-            deliverTx: deliverTxWrapper(dState, templates, tracker, generator, Order),
+            deliverTx: deliverTxWrapper(dState, templates, tracker, Order),
             info: infoWrapper(cState, version),
             initChain: initChainWrapper(dState, cState, consensusParams),
             endBlock: endBlockWrapper(dState)

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  21-January-2019
- * @date (modified) 21-January-2019
+ * @date (modified) 22-January-2019
  *
  * ABCI beginBlock implementation.
 */
@@ -26,31 +26,28 @@ import { log } from "../util/log";
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
-    // TODO: remove this log
-    // console.log(`\n... (begin) state: ${JSON.stringify(state, bigIntReplacer)}\n`);
-
     return (request) => {
-        // Parse height and proposer from header
+        // parse height and proposer from header
         const currHeight: bigint = BigInt(request.header.height);
         const currProposer: string = request.header.proposerAddress.toString("hex");
 
-        // Store array of last votes
+        // store array of last votes
         const lastVotes: object[] | undefined = request.lastCommitInfo.votes;
 
-        // Parse validators that voted on the last block
+        // parse validators that voted on the last block, update values
         if (lastVotes !== undefined && lastVotes.length > 0) {
-            // Iterate over votes array (supplied by Tendermint)
             lastVotes.forEach((vote: any) => {
+                // pull/parse nodeId and current vote power
                 const nodeId = vote.validator.address.toString("hex");
                 const power = BigInt(vote.validator.power);
 
-                // Create entry if validator has not voted yet
+                // create entry if validator has not voted yet
                 if (!(state.validators.hasOwnProperty(nodeId))) {
                     state.validators[nodeId] = {
                         balance: BigInt(0), // @TODO re-examine
                         power,
-                        publicKey: "probably shouldn't be reading this",
-                        ethAccount: "not implemented",
+                        publicKey: "not-implemented",
+                        ethAccount: "not-implemented",
                         lastVoted: null,
                         lastProposed: null,
                         totalVotes: BigInt(0),
@@ -58,22 +55,29 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                     };
                 }
 
-                // Update vote and height trackers
-                state.validators[nodeId].totalVotes += 1n;
-                state.validators[nodeId].lastVoted = (currHeight - 1n);
+                // update vote and height trackers
+                if (vote.signedLastBlock) {
+                    state.validators[nodeId].totalVotes += 1n;
+                    state.validators[nodeId].lastVoted = (currHeight - 1n);
+                }
 
-                // Record if they are proposer this round
+                // record if validator was active last round
+                state.validators[nodeId].active = vote.signedLastBlock;
+
+                // record if they are proposer this round
                 if (nodeId === currProposer) {
                     state.validators[nodeId].lastProposed = currHeight;
                 }
 
-                // Update (or re-record) validator vote power
+                // update (or re-record) validator vote power
                 state.validators[nodeId].power = power;
 
-                // TEMPORARY
-                // @TODO remove
+                /**
+                 * TEMPORARY
+                 * @todo remove
+                 */
                 if (state.validators[nodeId].genesis) {
-                    state.validators[nodeId].ethAccount = "updated from gen dude";
+                    state.validators[nodeId].ethAccount = "0x0";
                 }
             });
         }
@@ -89,8 +93,6 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
             "state",
             `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
         );
-
-        console.log("... end of beginBlock: " + JSON.stringify(state, bigIntReplacer));
         return {};
     };
 }
