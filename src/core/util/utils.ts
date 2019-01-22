@@ -268,6 +268,12 @@ export function updateMappings(
     }
 }
 
+/**
+ * Parses and validates a `witness` transaction from a validator's witness
+ * module.
+ * 
+ * @param data raw witness event transaction (from Witness module)
+ */
 export function parseWitness(data: WitnessData): ParsedWitnessData {
     // raw vals
     const { subject, type, block, amount, publicKey, address, id } = data;
@@ -335,8 +341,9 @@ export function parseWitness(data: WitnessData): ParsedWitnessData {
 
 /**
  * Add a new witness event to state, or add confirmation to existing
+ * @todo: move logic from witness.ts to here
  * 
- * @param state 
+ * @param state current state object
  * @param tx 
  */
 export function addNewEventOrCheckExists(state: State, tx: ParsedWitnessData) {
@@ -345,6 +352,11 @@ export function addNewEventOrCheckExists(state: State, tx: ParsedWitnessData) {
     // if (state.events.hasOwnProperty(block))
 }
 
+/**
+ * Creates a hash of a witness event, for validation inside state machine
+ * 
+ * @param tx a raw witness transaction
+ */
 export function createWitnessEventHash(tx: WitnessData): string {
     const hashVals =
         `${tx.subject}-${tx.type}-${tx.amount}-${tx.block}-` +
@@ -358,6 +370,16 @@ export function createWitnessEventHash(tx: WitnessData): string {
     return hash;
 }
 
+/**
+ * Creates a witness tx object from raw input data.
+ * 
+ * @param subject state modification subject (validator or poster)
+ * @param type state modification type (add or remove)
+ * @param amount amount of tokens (added or removed) to modify by
+ * @param block the block number (ethereum) of the event
+ * @param address ethereum address of the relevant party
+ * @param publicKey tendermint public key (only for validator witness tx's)
+ */
 export function createWitnessEventObject(
     subject: string,
     type: string,
