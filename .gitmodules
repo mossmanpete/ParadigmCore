@@ -1,3 +1,0 @@
-[submodule "lib/tendermint"]
-	path = lib/tendermint
-	url = git://github.com/hrharder/js-tendermint
