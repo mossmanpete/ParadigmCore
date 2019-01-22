@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 21-January-2019
+ * @date (modified) 22-January-2019
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
@@ -16,7 +16,6 @@
 // ParadigmCore classes
 import { PayloadCipher } from "../../crypto/PayloadCipher";
 import { err, log, warn } from "../../util/log";
-import { TxGenerator } from "./TxGenerator";
 
 // ParadigmCore types
 import { ParsedWitnessData } from "src/typings/abci";
@@ -81,6 +80,8 @@ export function syncStates(source: State, target: State): void {
 
 /**
  * Decode and decompress input transaction. Wrapper for PayloadCipher class.
+ * 
+ * @todo implement logic directly in this function
  *
  * @param raw {Buffer} encoded/compressed raw transaction
  */
@@ -103,6 +104,18 @@ export function computeConf(active: number): number {
         err("state", "unexpected case.");
         return 1;
     }
+}
+
+/**
+ * Compute and apply the value of 2/3 the active validators as the required 
+ * confirmation threshold for pending events. Essentially a wrapper (that 
+ * applies transition) of `computeConf()`.
+ * 
+ * @param state {State} current network state object
+ * @param last {Array} array of 'lastVotes' (from RequestBeginBlock) 
+ */
+export function stateUpdateConfThreshold(state: State, last: object[]): void {
+    state.consensusParams.confirmationThreshold = computeConf(last.length);
 }
 
 /**

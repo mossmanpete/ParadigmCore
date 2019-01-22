@@ -464,6 +464,7 @@ export class Witness {
                 );
                 break;
             }
+
             case "validatorremoved": {
                 // TODO: should be -1 (special case) or just 0? or null?
                 const amount = "-1";
@@ -477,6 +478,7 @@ export class Witness {
                 );
                 break;
             }
+
             default: {
                 err("peg", "received unknown validator event type");
                 return;
@@ -485,7 +487,7 @@ export class Witness {
 
         // apply event if it is historical (already matured)
         if ((this.initHeight - block) > this.finalityThreshold) {
-
+            // TODO: implement
         }
     }
 

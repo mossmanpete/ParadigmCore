@@ -19,6 +19,7 @@ import { ResponseBeginBlock } from "../typings/abci";
 import { computeConf } from "./util/utils";
 import { bigIntReplacer } from "../util/static/bigIntUtils";
 import { log } from "../util/log";
+import { doForEachValidator } from "./util/valFunctions";
 
 /**
  * Called at the beginning of each new block. Updates proposer and block height.
@@ -42,18 +43,19 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                 const power = BigInt(vote.validator.power);
 
                 // create entry if validator has not voted yet
+                /* @todo where should this be moved?
                 if (!(state.validators.hasOwnProperty(nodeId))) {
                     state.validators[nodeId] = {
                         balance: BigInt(0), // @TODO re-examine
                         power,
-                        publicKey: "not-implemented",
+                        publicKey: Buffer.from(0),
                         ethAccount: "not-implemented",
                         lastVoted: null,
                         lastProposed: null,
                         totalVotes: BigInt(0),
                         genesis: false,
                     };
-                }
+                }*/
 
                 // update vote and height trackers
                 if (vote.signedLastBlock) {
@@ -78,6 +80,19 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                  */
                 if (state.validators[nodeId].genesis) {
                     state.validators[nodeId].ethAccount = "0x0";
+                }
+            });
+
+            // update inactive validators
+            doForEachValidator(state, (key) => {
+                // current validator
+                const validator = state.validators[key];
+
+                // mark active if vote recorded on last block
+                if (validator.lastVoted + 1n === currHeight) {
+                    validator.active = true;
+                } else {
+                    validator.active = false;
                 }
             });
         }

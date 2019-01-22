@@ -52,12 +52,14 @@ export function initChainWrapper(
                 deliverState.validators[nodeId] = {
                     balance: BigInt(-1),
                     power,
-                    publicKey: pubKey.toString("base64"),
+                    publicKey: pubKey,
                     ethAccount: null,
                     lastProposed: null,
                     lastVoted: null,
                     totalVotes: BigInt(0),
+                    active: true,
                     genesis: true,
+                    applied: true,
                 };
             }
         });

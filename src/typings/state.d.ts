@@ -125,13 +125,14 @@ interface ValidatorInfo {
 interface Validator {
     balance:        bigint; // balance in registry contract
     power:          bigint; // vote power on tendermint chain
-    publicKey:      string; 
+    publicKey:      Buffer; // raw 32 byte public key 
     ethAccount:     string;
     lastVoted:      bigint;
     lastProposed:   bigint;
     totalVotes:     bigint;
     active?:        boolean; // true if voted on last block
     genesis?:       boolean; // true if val was in genesis.json
+    applied:        boolean; // true if a) in genesis or b) through endblock
 }
 
 /**

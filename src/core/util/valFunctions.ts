@@ -7,9 +7,9 @@
  *
  * @author Henry Harder
  * @date (initial)  03-December-2018
- * @date (modified) 21-January-2019
+ * @date (modified) 22-January-2019
  *
- * Utility and conversion functions for validator keys and addresses.
+ * Utility and conversion functions for validator-related activities.
  */
 
 // Standard library imports
@@ -50,12 +50,30 @@ export function privToPub(input: Buffer): Buffer {
     return input.slice(32, 64);
 }
 
+/**
+ * Generates a `ValidatorUpdate` object, intended to be used in the EndBlock 
+ * handler.
+ * 
+ * @param pubKey {Buffer} raw 32 byte public key
+ * @param power {bigint} desired power for validator
+ */
 export function validatorUpdate(pubKey: Buffer, power: bigint): ValidatorUpdate {
     return {
         pubKey : {
-            type: "tendermint/PubKeyEd25519",
+            type: "ed25519",
             data: pubKey
         },
         power: parseInt(power.toString(), 10),
     };
+}
+
+/**
+ * Simple wrapper for Object.keys() to execute a function on each validator that
+ * is currently in-state.
+ * 
+ * @param state {State} current state object
+ * @param cb {function} callback function to execute on each validator
+ */
+export function doForEachValidator(state: State, cb: (v, i, a) => void): void {
+    Object.keys(state.validators).forEach(cb);
 }

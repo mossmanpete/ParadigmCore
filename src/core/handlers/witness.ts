@@ -81,6 +81,8 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
     // unpack/parse event data after id is confirmed
     const { subject, type, amount, block, address, publicKey, id } = parsedTx;
 
+    // @todo implement an outer level switch block to check for tx.subject
+
     // apply transition depending on if event is already in state or not
     switch (state.events.hasOwnProperty(block)) {
         case true: {
