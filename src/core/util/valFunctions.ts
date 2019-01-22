@@ -7,13 +7,14 @@
  *
  * @author Henry Harder
  * @date (initial)  03-December-2018
- * @date (modified) 03-December-2018
+ * @date (modified) 21-January-2019
  *
  * Utility and conversion functions for validator keys and addresses.
  */
 
 // Standard library imports
 import { createHash } from "crypto";
+import { ValidatorUpdate } from "src/typings/abci";
 
 /**
  * Convert a Tendermint ed25519 public key to nodeID/address.
@@ -47,4 +48,14 @@ export function privToPub(input: Buffer): Buffer {
 
     // Compute and return public key
     return input.slice(32, 64);
+}
+
+export function validatorUpdate(pubKey: Buffer, power: bigint): ValidatorUpdate {
+    return {
+        pubKey : {
+            type: "tendermint/PubKeyEd25519",
+            data: pubKey
+        },
+        power: parseInt(power.toString(), 10),
+    };
 }

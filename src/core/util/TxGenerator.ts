@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  08-November-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * A class that allows for the generation of signed ABCI transaction, and
  * provides methods for verifying transaction signatures.
@@ -67,10 +67,11 @@ export class TxGenerator {
             case "witness": {
                 const txData = rawTx.data as WitnessData;
                 if (
-                    Object.keys(txData).length !== 4 ||
+                    Object.keys(txData).length !== 7 ||
                     typeof(txData.block) !== "number" ||
-                    typeof(txData.staker) !== "string"
+                    typeof(txData.address) !== "string"
                 ) {
+                    console.log("\n\n (txgenerator): bad witness event data\n");
                     return false;
                 } else {
                     return true;

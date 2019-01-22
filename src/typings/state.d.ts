@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  14-November-2018
- * @date (modified) 20-December-2018
+ * @date (modified) 21-January-2019
  *
  * Type definitions for ParadigmCore's state.
  */
@@ -15,7 +15,7 @@
 /**
  * Outer level datastructure representing the state of the network, including
  * poster staked balances, poster rate limit, validator set, etc.
- */
+ * /
 interface State {
     round:              RoundInfo;
     events:             Events;
@@ -27,6 +27,49 @@ interface State {
     orderCounter:       number;
     lastBlockHeight:    number;
     lastBlockAppHash:   string;
+}*/
+
+interface State {
+    round:              RoundInfo;
+    events:             Events;
+    posters:            PosterInfo;
+    validators:         ValidatorInfo;
+    lastEvent:          EventInfo;
+    consensusParams:    ConsensusParams;
+    orderCounter:       bigint;
+    lastBlockHeight:    bigint;
+    lastBlockAppHash:   string;
+}
+
+interface PosterInfo {
+    [key: string]: Poster
+}
+
+interface Poster {
+    balance:        bigint;
+    orderLimit:     number;
+    streamLimit:    number;
+}
+
+/**
+ * key is nodeID
+ */
+interface ValidatorInfo {
+    [key: string]: Validator;
+}
+
+/**
+ * new validator state object
+ */
+interface Validator {
+    balance:        bigint; // balance in registry contract
+    power:          bigint; // vote power on tendermint chain
+    publicKey:      string; // should be string?
+    ethAccount:     string; // should be string?
+    lastVoted:      bigint;
+    lastProposed:   bigint;
+    totalVotes:     bigint;
+    genesis?:       boolean; // true if val was in genesis.json
 }
 
 /**
@@ -48,7 +91,7 @@ interface RoundInfo {
  * the `state.balances` mapping.
  */
 interface Events {
-    [key: string]:  BlockEventObject;
+    [block: string]:  BlockEventObject;
 }
 
 /**
@@ -57,29 +100,32 @@ interface Events {
  * triggered the event, containing parameters of the event.
  */
 interface BlockEventObject {
-    [key: string]:  StakeEvent;
+    [id: string]:  WitnessEvent;
 }
 
 /**
  * A `RawStakeEvent` is simply an event object that has not been added to the 
  * in-state `state.events` mapping.
- */
+ * /
 interface RawStakeEvent {
     type:   string;
     staker: string;
     amount: bigint;
     block:  number;
-}
+}*/
 
 /**
  * `StakeEvents` are (currently) the only Ethereum event type implemented. The
  * data within `StakeEvents` is the information contained with the event emitted
  * by the Ethereum `PosterStaking` contract.
  */
-interface StakeEvent {
-    amount: bigint;
-    conf:   number;
-    type:   string;
+interface WitnessEvent {
+    subject:    string;
+    type:       string;
+    amount:     bigint;
+    address:    string;
+    publicKey:  string;
+    conf:       number;
 }
 
 /**
@@ -87,7 +133,7 @@ interface StakeEvent {
  * stakers. The mapping is generated from events within `state.events` once each
  * event recieves sufficient witness confirmations.
  */
-interface Balances {
+interface PosterBalances {
     [key: string]:  bigint;
 }
 
@@ -124,23 +170,23 @@ interface EventInfo {
  * Representation of the validator set in-state includes historical validators,
  * including validators that have been kicked off the network. The active
  * validator set is a computable sub-set of `state.validators`.
- */
+ * /
 interface Validators {
     [key: string]:  ValidatorInfo;
-}
+}*/
 
 /**
  * For each validator, parameters regarding their historical activity is stored.
  * This allows interested parties to derive the active validator set, and audit
  * the historical actions of active and former validators.
- */
+ * /
 interface ValidatorInfo {
     lastProposed:   number;
     lastVoted:      number;
     totalVotes:     number;
     votePower:      number;
     active?:        boolean;    // @TODO: implement in state-machine
-}
+}*/
 
 /**
  * Parameters required for validators within a network to reach consensus on

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 19-January-2018
+ * @date (modified) 21-January-2019
  *
  * ParadigmCore primary state machine, and implementation of Tendermint handler
  * functions and state transition logic.
@@ -33,11 +33,20 @@ import { checkWitness, deliverWitness } from "./handlers/witness";
 import { err, log, warn } from "../util/log";
 import { bigIntReplacer } from "../util/static/bigIntUtils";
 import { messages as templates } from "../util/static/messages";
-import { pubToAddr } from "../util/static/valFunctions";
+import { pubToAddr } from "./util/valFunctions";
 import { computeConf, decodeTx, preVerifyTx, syncStates } from "./util/utils";
 
 // Custom types
-import { ParadigmCoreOptions } from "../typings/abci";
+import { 
+    ParadigmCoreOptions,
+    ResponseEndBlock,
+    ResponseInitChain,
+    ResponseDeliverTx,
+    ResponseCheckTx,
+    ResponseCommit,
+    ResponseInfo,
+    ResponseBeginBlock,
+} from "../typings/abci";
 
 /**
  * Initialize and start the ABCI application.
@@ -93,6 +102,7 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
             deliverTx: deliverTxWrapper(dState, templates, tracker, generator, Order),
             info: infoWrapper(cState, version),
             initChain: initChainWrapper(dState, cState, consensusParams),
+            endBlock: endBlockWrapper(dState)
         };
 
         // Start ABCI server (connection to Tendermint core)
@@ -113,257 +123,26 @@ Below are implementations of Tendermint ABCI handler functions.
  *
  * @param request {RequestInfo}    info request
  */
-function infoWrapper(state: State, version: string): (r) => any {
+function infoWrapper(state: State, version: string): (r) => ResponseInfo {
     return (request) => {
         return {
             data: "ParadigmCore (alpha)",
             lastBlockAppHash: state.lastBlockAppHash,
-            lastBlockHeight: state.lastBlockHeight,
+            lastBlockHeight: parseInt(state.lastBlockHeight.toString(), 10),
             version
         };
     };
 }
 
-/**
- * Called once upon chain initialization. Sets initial validators and consensus
- * parameters.
- *
- * @param request {RequestInitChain}    genesis information
- */
-function initChainWrapper(
-    deliverState: State,
-    commitState: State,
-    params: ConsensusParams
-): (r) => any {
-    // Destructure initial consensus parameters
-    const {
-        finalityThreshold,
-        periodLimit,
-        periodLength,
-        maxOrderBytes
-    } = params;
 
-    // Return initChain function
-    return (request) => {
-        // add genesis validators to in-state validator list
-        request.validators.forEach((validator) => {
-            // Generate hexadecimal address from public key
-            let pubKey: Buffer = validator.pubKey.data;
-            let addrHex: string = pubToAddr(pubKey).toString("hex");
 
-            // Create entry if validator has not voted yet
-            if (!(deliverState.validators.hasOwnProperty(addrHex))) {
-                deliverState.validators[addrHex] = {
-                    lastProposed: null,
-                    lastVoted: null,
-                    totalVotes: 0,
-                    votePower: null,
-                };
-            }
-        });
-
-        // set initial consensus parameters
-        deliverState.consensusParams = {
-            finalityThreshold,
-            periodLength,
-            periodLimit,
-            maxOrderBytes,
-            confirmationThreshold: computeConf(request.validators.length),
+function endBlockWrapper(state: State): (r) => ResponseEndBlock {
+    return (r) => {
+        // temporary
+        console.log(`\n Congrats, you made it to the end of block ${r.height}\n`);
+        return {
+            validatorUpdates: []
         };
-
-        // synchronize states upon network genesis
-        syncStates(deliverState, commitState);
-
-        // Do not change any other parameters here
-        return {};
-    };
-}
-
-/**
- * Called at the beginning of each new block. Updates proposer and block height.
- *
- * @param request {object} raw transaction as delivered by Tendermint core.
- */
-function beginBlockWrapper(state: State): (r) => any {
-    console.log(`\n... (begin) state: ${JSON.stringify(state, bigIntReplacer)}\n`);
-    return (request) => {
-        // Parse height and proposer from header
-        const currHeight: number = request.header.height.low; // @TODO: consider
-        const currProposer: string = request.header.proposerAddress.toString("hex");
-
-        // Store array of last votes
-        const lastVotes: object[] | undefined = request.lastCommitInfo.votes;
-
-        // Parse validators that voted on the last block
-        if (lastVotes !== undefined && lastVotes.length > 0) {
-            // Iterate over votes array (supplied by Tendermint)
-            lastVotes.forEach((vote: any) => {
-                const valHex = vote.validator.address.toString("hex");
-                const valPower = vote.validator.power.low;  // @TODO re-examine
-
-                // Create entry if validator has not voted yet
-                if (!(state.validators.hasOwnProperty(valHex))) {
-                    state.validators[valHex] = {
-                        lastProposed: null,
-                        lastVoted: null,
-                        totalVotes: 0,
-                        votePower: null,
-                    };
-                }
-
-                // Update vote and height trackers
-                state.validators[valHex].totalVotes += 1;
-                state.validators[valHex].lastVoted = (currHeight - 1);
-
-                // Record if they are proposer this round
-                if (valHex === currProposer) {
-                    state.validators[valHex].lastProposed = currHeight;
-                }
-
-                // Update (or re-record) validator vote power
-                state.validators[valHex].votePower = valPower;
-            });
-        }
-
-        // update confirmation threshold based on number of active validators
-        // confirmation threshold is >=2/3 active validators, unless there is
-        // only one active validator, in which case it MUST be 1 in order for
-        // state.balances to remain accurate.
-        state.consensusParams.confirmationThreshold = computeConf(lastVotes.length);
-
-        // Indicate new round, return no indexing tags
-        log(
-            "state",
-            `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
-        );
-        return {};
-    };
-}
-
-/**
- * Perform light verification on incoming transactions, accept valid
- * transactions to the mempool, and reject invalid ones.
- *
- * @param request {object} raw transaction as delivered by Tendermint core.
- */
-function checkTxWrapper(
-    state: State,
-    msg: MasterLogTemplates,
-    generator: TxGenerator,
-    Order: any
-): (r) => Vote {
-    return (request) => {
-        // Load transaction from request
-        const rawTx: Buffer = request.tx;   // Encoded/compressed tx object
-        let tx: SignedTransaction;          // Decoded tx object
-
-        // Decode the buffered and compressed transaction
-        try {
-            tx = decodeTx(rawTx);
-        } catch (error) {
-            warn("mem", msg.abci.errors.decompress);
-            return Vote.invalid(msg.abci.errors.decompress);
-        }
-
-        // Verify the transaction came from a validator
-        if (!preVerifyTx(tx, state, generator)) {
-            warn("mem", msg.abci.messages.badSig);
-            return Vote.invalid(msg.abci.messages.badSig);
-        }
-
-        // Selects the proper handler verification logic based on the tx type.
-        switch (tx.type) {
-            // OrderBroadcast type transaction
-            case "order": {
-                return checkOrder(tx as SignedOrderTx, state, Order);
-            }
-
-            // StreamBroadcast type external transaction
-            // @TODO implement
-            case "stream": {
-                return checkStream(tx as SignedStreamTx, state);
-            }
-
-            // Validator reporting witness to Ethereum event
-            case "witness": {
-                return checkWitness(tx as SignedWitnessTx, state);
-            }
-
-            // Rebalance transaction updates limit mapping
-            case "rebalance": {
-                return checkRebalance(tx as SignedRebalanceTx, state);
-            }
-
-            // Invalid transaction type
-            default: {
-                warn("mem", msg.abci.errors.txType);
-                return Vote.invalid(msg.abci.errors.txType);
-            }
-        }
-    };
-}
-
-/**
- * Execute a transaction in full: perform state modification, and verify
- * transaction validity.
- *
- * @param request {object} raw transaction as delivered by Tendermint core.
- */
-function deliverTxWrapper(
-    state: State,
-    msg: MasterLogTemplates,
-    tracker: OrderTracker,
-    generator: TxGenerator,
-    Order: any
-): (r) => Vote {
-    return (request) => {
-        // Load transaction from request
-        const rawTx: Buffer = request.tx;   // Encoded/compressed tx object
-        let tx: SignedTransaction;          // Decoded tx object
-
-        // Decode the buffered and compressed transaction
-        try {
-            tx = decodeTx(rawTx);
-        } catch (error) {
-            warn("state", msg.abci.errors.decompress);
-            return Vote.invalid(msg.abci.errors.decompress);
-        }
-
-        // Verify the transaction came from a validator
-        if (!preVerifyTx(tx, state, generator)) {
-            warn("state", msg.abci.messages.badSig);
-            return Vote.invalid(msg.abci.messages.badSig);
-        }
-
-        // Selects the proper handler verification logic based on the tx type.
-        switch (tx.type) {
-            // OrderBroadcast type transaction
-            case "order": {
-                return deliverOrder(tx as SignedOrderTx, state, tracker, Order);
-            }
-
-            // StreamBroadcast type external transaction
-            // @TODO implement
-            case "stream": {
-                return deliverStream(tx, state, tracker);
-            }
-
-            // Validator reporting witness to Ethereum event
-            case "witness": {
-                return deliverWitness(tx as SignedWitnessTx, state);
-            }
-
-            // Rebalance transaction updates limit mapping
-            case "rebalance": {
-                return deliverRebalance(tx as SignedRebalanceTx, state);
-            }
-
-            // Invalid transaction type
-            default: {
-                warn("state", msg.abci.errors.txType);
-                return Vote.invalid(msg.abci.errors.txType);
-            }
-        }
     };
 }
 
@@ -379,8 +158,8 @@ function commitWrapper(
     tracker: OrderTracker,
     msg: MasterLogTemplates,
     witness: Witness
-): (r) => string {
-    return (request) => {
+): () => ResponseCommit {
+    return () => {
         // store string encoded state hash
         let stateHash: string = "";
 
@@ -416,7 +195,7 @@ function commitWrapper(
             }
 
             // Increase last block height
-            deliverState.lastBlockHeight += 1;
+            deliverState.lastBlockHeight += 1n;
 
             // Generate new state hash and update
             stateHash = Hasher.hashState(deliverState);
@@ -433,10 +212,10 @@ function commitWrapper(
                 `committing new state with hash: ...${stateHash.slice(-8)}`
             );
         } catch (error) {
-            err("state", msg.abci.errors.broadcast);
+            err("state", `${msg.abci.errors.broadcast}: ${error.message}`);
         }
 
         // Return state's hash to be included in next block header
-        return stateHash;
+        return { data: stateHash };
     };
 }

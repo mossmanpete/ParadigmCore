@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * Handler functions for verifying ABCI Rebalance transactions, originating
  * from validator nodes. Implements state transition logic as specified in the
@@ -76,6 +76,7 @@ export function deliverRebalance(
     tx: SignedRebalanceTx,
     state: State,
 ) {
+    // unpack proposal from transaction
     const proposal: RebalanceData = tx.data;
 
     // Main verification switch block
@@ -109,10 +110,11 @@ export function deliverRebalance(
         default: {
             if ((1 + state.round.number) === proposal.round.number) {
                 // Limits from proposal
+                // @TODO ensure to change structure in Witness class
                 const propLimits = proposal.limits;
 
                 // Compute limits from in-state balances
-                const localLimits = genLimits(state.balances, state.round.limit);
+                const localLimits = genLimits(state.posters, state.round.limit);
 
                 // TODO: add condition around period length
                 if (isEqual(propLimits, localLimits)) {
@@ -123,7 +125,12 @@ export function deliverRebalance(
                     state.round.number += 1;
                     state.round.startsAt = proposal.round.startsAt;
                     state.round.endsAt = proposal.round.endsAt;
-                    state.limits = proposal.limits;
+
+                    // TODO: move to function
+                    Object.keys(propLimits).forEach((i) => {
+                        state.posters[i].orderLimit = propLimits[i].orderLimit;
+                        state.posters[i].streamLimit = propLimits[i].orderLimit;
+                    });
                     // End state modification
 
                     // Vote to accept

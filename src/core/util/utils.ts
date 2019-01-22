@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 21-January-2019
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
@@ -18,8 +18,12 @@ import { PayloadCipher } from "../../crypto/PayloadCipher";
 import { err, log, warn } from "../../util/log";
 import { TxGenerator } from "./TxGenerator";
 
+// ParadigmCore types
+import { ParsedWitnessData } from "src/typings/abci";
+
 // Other
-import { cloneDeep } from "lodash";
+import { cloneDeep, isInteger } from "lodash";
+import { createHash } from "crypto";
 
 /**
  * Verify validator signature, and confirm transaction originated from an
@@ -107,34 +111,33 @@ export function verifyOrder(order: any, state: State): boolean {
 
 /**
  * Generates a rate-limit mapping based on staked balances and the total order
- * limit per staking period.
+ * limit per staking period, from in-state object.
  *
- * @param bals  {object} current in-state staked balances
+ * @param posters   {object} current in-state poster balances/limits
  * @param limit     {number} the total number of orders accepted in the period
  */
-export function genLimits(bals: Balances, limit: number): Limits {
+export function genLimits(posters: PosterInfo, limit: number): Limits {
     let total: bigint = BigInt(0);      // Total amount currently staked
     const output: Limits = {};          // Generated output mapping
 
     // Calculate total balance currently staked
-    Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
-            total += bals[k];
+    Object.keys(posters).forEach((k, v) => {
+        if (posters.hasOwnProperty(k)) {
+            total += posters[k].balance;
         }
     });
 
     // Compute the rate-limits for each staker based on stake size
-    Object.keys(bals).forEach((k, v) => {
-        if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
+    Object.keys(posters).forEach((k, v) => {
+        if (posters.hasOwnProperty(k)) {
             // Compute proportional order limit
-            const bal = parseInt(bals[k].toString(), 10);
-            const tot = parseInt(total.toString(), 10);
-            const lim = (bal / tot) * limit;
+            const bal = posters[k].balance;
+            const lim = (bal / total) * BigInt(limit);
 
             // Create limit object for each address
             output[k] = {
                 // orderLimit is proportional to stake size
-                orderLimit: Math.floor(lim),
+                orderLimit: parseInt(lim.toString(), 10),
 
                 // streamLimit is always 1, regardless of stake size
                 streamLimit: 1,
@@ -156,20 +159,20 @@ export function genLimits(bals: Balances, limit: number): Limits {
  */
 export function applyEvent(
     state: State,
-    staker: string,
+    address: string,
     amount: bigint,
     type: string
 ): void {
     switch (type) {
         // Staker is adding stake
         case "add": {
-            state.balances[staker] += amount;
+            state.posters[address].balance += amount;
             break;
         }
 
         // Staker is removing stake
         case "remove": {
-            state.balances[staker] -= amount;
+            state.posters[address].balance -= amount;
             break;
         }
 
@@ -192,35 +195,40 @@ export function applyEvent(
  */
 export function updateMappings(
     state: State,
-    staker: string,
+    id: string,
+    address: string,
     block: number,
     amount: bigint,
     type: string
 ) {
     if (
         state.events.hasOwnProperty(block) &&
-        state.events[block].hasOwnProperty(staker) &&
-        state.events[block][staker].type === type &&
-        state.events[block][staker].amount === amount
+        state.events[block].hasOwnProperty(id) &&
+        state.events[block][id].type === type &&
+        state.events[block][id].amount === amount
     ) {
         // Is this event now confirmed?
-        if (state.events[block][staker].conf >=
+        if (state.events[block][id].conf >=
             state.consensusParams.confirmationThreshold
         ) {
             log("state", "witness event confirmed, updating balances");
 
             // See if staker already has a balance
-            switch (state.balances.hasOwnProperty(staker)) {
-                // Staker already has balance, we are updating
+            switch (state.posters.hasOwnProperty(address)) {
+                // Staker already has balance, we are just updating
                 case true: {
-                    applyEvent(state, staker, amount, type);
+                    applyEvent(state, address, amount, type);
                     break;
                 }
 
-                // Staker does not have a current balance
+                // Staker does not have a current balance so create new entry
                 case false: {
-                    state.balances[staker] = BigInt(0);
-                    applyEvent(state, staker, amount, type);
+                    state.posters[address] = {
+                        balance: 0n,
+                        orderLimit: null,
+                        streamLimit: null
+                    };
+                    applyEvent(state, address, amount, type);
                     break;
                 }
 
@@ -229,7 +237,7 @@ export function updateMappings(
             }
 
             // Remove events that were just applied to state
-            delete state.events[block][staker];
+            delete state.events[block][id];
 
             // Remove event block entry if empty
             if (Object.keys(state.events[block]).length === 0) {
@@ -237,8 +245,8 @@ export function updateMappings(
             }
 
             // Remove balance entry if now empty
-            if (state.balances[staker] === BigInt(0)) {
-                delete state.balances[staker];
+            if (state.posters[address].balance === BigInt(0)) {
+                delete state.posters[address];
             }
 
             // Update highest event block accepted
@@ -261,34 +269,164 @@ export function updateMappings(
 }
 
 /**
- * Checks if a stake event is structurally valid. Considered
- * state-less verification (validity does not depend on state).
- *
- * @param data  {object}    the stake event to validate
+ * Parses and validates a `witness` transaction from a validator's witness
+ * module.
+ * 
+ * @param data raw witness event transaction (from Witness module)
  */
-export function isValidStakeEvent(data: any, state: State): boolean {
-    // TODO: add info about proposer to validation condition
-    if (
-        !(data.hasOwnProperty("staker") &&
-        data.hasOwnProperty("type") &&
-        data.hasOwnProperty("block") &&
-        data.hasOwnProperty("amount") &&
-        Object.keys(data).length === 4)
-    ) {
-        return false;
-    } else if (
-        typeof(data.staker) !== "string" ||
-        typeof(data.type) !== "string" ||
-        typeof(data.block) !== "number" ||
-        typeof(data.amount) !== "string" ||
-        data.amount.slice(-1) !== "n"
-    ) {
-        return false;
-    } else if (!(data.type === "add" || data.type === "remove")) {
-        return false;
-    } else if (data.block <= state.lastEvent[data.type]) {
-        return false;
-    } else {
-        return true;
+export function parseWitness(data: WitnessData): ParsedWitnessData {
+    // raw vals
+    const { subject, type, block, amount, publicKey, address, id } = data;
+
+    // parsed vals
+    let intAmount, parsedAddress, parsedPublicKey;
+
+    // validate subject is validator or poster
+    if (subject !== "validator" && subject !== "poster") {
+        throw new Error("invlalid witness subject");
     }
+
+    // validate state operation
+    if (type !== "add" && type !== "remove") {
+        throw new Error("invalid witness state operation");
+    }
+
+    // ensure block is integer number
+    if (!isInteger(block)) {
+        throw new Error("invalid target block");
+    }
+
+    // ensure amount is a bigint
+    // TODO: figure out this check
+    intAmount = BigInt(amount);
+    // if (amount.slice(-1) === "n") {
+    //     intAmount = BigInt(amount.slice(0, -1));
+    // } else {
+    //     throw new Error("expected amount to be bigint");
+    // }
+
+    // ensure address is valid eth address and remove checksum
+    const buffAddr = Buffer.from(address.slice(2), "hex");
+    if (buffAddr.length === 20) {
+        parsedAddress = `0x${buffAddr.toString("hex")}`;
+    } else {
+        throw new Error("invalid target account address");
+    }
+
+    // validate publicKey if this is validator subject
+    if (subject === "poster" && publicKey === null) {
+        // all good
+        parsedPublicKey = null;
+    } else if (subject === "poster" && publicKey !== null) {
+        throw new Error("expected no publicKey for poster witnesses");
+    } else if (subject === "validator" && publicKey === null) {
+        throw new Error("expected publicKey for validator witnesses");
+    } else if (subject === "validator" && publicKey !== null) {
+        const pubKeyBuff = Buffer.from(publicKey, "base64");
+        if (pubKeyBuff.length !== 32) throw new Error("bad validator pubKey");
+        parsedPublicKey = pubKeyBuff.toString("base64");
+    }
+
+    // valid if this point reached
+    return {
+        subject,
+        type,
+        block,
+        amount: intAmount,
+        address: parsedAddress,
+        publicKey: parsedPublicKey,
+        id
+    }
+}
+
+/**
+ * Add a new witness event to state, or add confirmation to existing
+ * @todo: move logic from witness.ts to here
+ * 
+ * @param state current state object
+ * @param tx 
+ */
+export function addNewEventOrCheckExists(state: State, tx: ParsedWitnessData) {
+    const { subject, type, amount, block, address, publicKey } = tx;
+
+    // if (state.events.hasOwnProperty(block))
+}
+
+/**
+ * Creates a hash of a witness event, for validation inside state machine
+ * 
+ * @param tx a raw witness transaction
+ */
+export function createWitnessEventHash(tx: WitnessData): string {
+    const hashVals =
+        `${tx.subject}-${tx.type}-${tx.amount}-${tx.block}-` +
+        `${tx.address}-${tx.publicKey === null ? "null" : tx.publicKey}`;
+    
+    // buffer input and create hash
+    const hashBuffer = Buffer.from(hashVals);
+    const hash = createHash("sha256").update(hashBuffer).digest("hex");
+
+    // return hash as ID for witness event tx's
+    return hash;
+}
+
+/**
+ * Creates a witness tx object from raw input data.
+ * 
+ * @param subject state modification subject (validator or poster)
+ * @param type state modification type (add or remove)
+ * @param amount amount of tokens (added or removed) to modify by
+ * @param block the block number (ethereum) of the event
+ * @param address ethereum address of the relevant party
+ * @param publicKey tendermint public key (only for validator witness tx's)
+ */
+export function createWitnessEventObject(
+    subject: string,
+    type: string,
+    amount: string,
+    block: number,
+    address: string,
+    publicKey?: string
+): WitnessData {
+    // should never occur where subject is validator and key is blank
+    if (subject === "validator" && publicKey === undefined) {
+        throw new Error("expected publicKey for validator witness event");
+    }
+
+    // will store returned event
+    let outputEvent: WitnessData;
+
+    // check if poster or validator
+    switch (subject) {
+        case "poster": {
+            outputEvent = {
+                subject,
+                type,
+                amount,
+                block,
+                address,
+                publicKey: null
+            }
+            break;
+        }
+        case "validator": {
+            outputEvent = {
+                subject,
+                type,
+                amount,
+                block,
+                address,
+                publicKey
+            }
+            break;
+        }
+        default: { return; }
+    }
+
+    // compute and add eventId to witness event
+    const eventId = createWitnessEventHash(outputEvent);
+    outputEvent["id"] = eventId;
+
+    // return parsed and completed event object
+    return outputEvent;
 }

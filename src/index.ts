@@ -7,10 +7,10 @@
  *
  * @author Henry Harder
  * @date (initial)  12-September-2018
- * @date (modified) 19-January-2018
+ * @date (modified) 21-January-2019
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
- */
+*/
 
 // Load configuration from environment
 require("dotenv").config();
