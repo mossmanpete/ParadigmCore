@@ -14,13 +14,13 @@
 */
 
 // 3rd party and STDLIB imports
-const abci: any = require("../../lib/js-abci");
+const abci: any = require("abci");
 
 // general utilities
 import { log } from "../util/log";
 import { messages as templates } from "../util/static/messages";
 
-// abci handler implementatinos
+// abci handler implementations
 import { beginBlockWrapper } from "./beginBlock";
 import { checkTxWrapper } from "./checkTx";
 import { deliverTxWrapper } from "./deliverTx";

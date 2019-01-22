@@ -185,10 +185,10 @@ abbrev@1:
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
   integrity sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==
 
-abci@^4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/abci/-/abci-4.0.2.tgz#2025cd107b2413edf44bcf024c2a27bcda1390b1"
-  integrity sha512-T3YTyu9pJOfluEw/KXYWv3qeIe3TR+iSAEmFnIQK0ZnbrgyZjGv3ClF97EjHBDelnE5mS++OPTON37/ldiH/NA==
+abci@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/abci/-/abci-5.0.1.tgz#412ce3ad9176797e09f558c9eae6a7acd9adfd1b"
+  integrity sha512-fUqeJAbIZCAW85Q2HZ49/W6tkqPyhBBbhflJpLWuJI10rXZxO9kvwCWXW1aPoLskztyK2ocsPPWPymMQAC8S8Q==
   dependencies:
     bl "^1.2.2"
     debug "^3.1.0"

@@ -2,6 +2,8 @@
 /**
  * ParadigmCore (optional) initialize/setup script
  * 
+ * Use only with Tendermint v0.29.x
+ * 
  * Can perform the following:
  * - verifies node version
  * - sets required environment variable
@@ -11,7 +13,7 @@
  * - copy new keys from tendermint config to environment
  * - validates environment config file
  * - validates copied keys
- **/
+**/
 
 // imports, scope, etc.
 const { execSync } = require("child_process");
@@ -67,7 +69,7 @@ function setupValidator() {
 function validateKeys() {
     write("Loading validator keys...");
     try {
-        const pathstr = `${tmhome}/config/priv_validator.json`;
+        const pathstr = `${tmhome}/config/priv_validator_key.json`;
         privValidator = require(pathstr);
     } catch (error) {
         fail("Failed to load keypair, try removing 'NODE_ID', ... from .env", error);
@@ -117,7 +119,7 @@ function validateEnvironment(){
     // check env keys match priv_validator.json keys
     write("Checking that config keys match validator keys...");
     try {
-        const pathstr = `${tmhome}/config/priv_validator.json`;
+        const pathstr = `${tmhome}/config/priv_validator_key.json`;
         const ks = require(pathstr);
         if (
             !pad(ks.address, "hex").equals(pad(newEnv.NODE_ID, "hex")) ||
