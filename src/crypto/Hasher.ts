@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  19-August-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 21-January-2019
  *
  * Hashing class to allow creation of state hashes. Also used to generate
  * ID's (orderID) for valid orders.
@@ -51,22 +51,21 @@ export class Hasher {
    *
    * @param state {State} the current state object
    */
-  public static hashState(state: State): string {
-    let stateHash: string;
+  public static hashState(state: State): Buffer {
+    let stateHash: Buffer;
     const hashPrep: object = {
-      balances: JSON.stringify(state.balances, bigIntReplacer),
+      posters: JSON.stringify(state.posters, bigIntReplacer),
       endHeight: state.round.endsAt,
       events: JSON.stringify(state.events, bigIntReplacer),
-      lastHeight: state.lastBlockHeight,
-      limits: JSON.stringify(state.limits),
-      ordernum: state.orderCounter,
+      lastHeight: parseInt(state.lastBlockHeight.toString(), 10),
+      ordernum: parseInt(state.orderCounter.toString(), 10),
       roundNumber: state.round.number,
       startHeight: state.round.startsAt,
       lastHash: state.lastBlockAppHash
     };
 
     try {
-      stateHash = hash(hashPrep);
+      stateHash = Buffer.from(hash(hashPrep), "hex");
     } catch (error) {
       throw new Error(`failed generating state hash: ${error.message}`);
     }

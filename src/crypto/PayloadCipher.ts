@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  21-September-2018
- * @date (modified) 18-December-2018
+ * @date (modified) 21-January-2019
  *
  * Compression and encoding (and decompression and decoding) for local ABCI
  * transactions.

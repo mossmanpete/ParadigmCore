@@ -2,6 +2,8 @@
 /**
  * ParadigmCore (optional) initialize/setup script
  * 
+ * Use only with Tendermint v0.29.x
+ * 
  * Can perform the following:
  * - verifies node version
  * - sets required environment variable
@@ -11,95 +13,25 @@
  * - copy new keys from tendermint config to environment
  * - validates environment config file
  * - validates copied keys
- **/
+**/
 
 // imports, scope, etc.
 const { execSync } = require("child_process");
 const { readdirSync, appendFileSync, readFileSync } = require('fs');
 const env = require("dotenv").config().parsed;
 const c = require("ansi-colors");
-let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address;
+let tendermint, pchome, tmhome, privValidator, priv_key, pub_key, address, n = 0;
 
 // stdout formatter functions, etc
-let n = 0;
-const write = m => console.log(`\n\t${c.bold(`@${++n}`)}\t${m}`);
+const write = m => console.log(`\n\t${c.bold(`${++n}.`)}\t${m}`);
 const err = m => console.log(`\n\t${c.red.bold(m)}`);
-
-// exit and indicate failure if node is incompatible
-let semVer = process.version.slice(1).split(".").map(i => parseInt(i));
-semVer[0] > 10 ? null : semVer[0] === 10 && semVer[1] >= 4 ? null : fail("Node.JS >=10.4 required.");
-
-// exit if paradigmcore home directory environment var not set
-if (
-    process.env.PCHOME === undefined || 
-    process.env.PCHOME.toLocaleLowerCase() !== process.cwd().toLocaleLowerCase()
-) {
-    fail("Environment variable PCHOME is not set, or does not match CWD.");
-} else {
-    write("Setting tendermint home directory...")
-    pchome = process.env.PCHOME;
-    tmhome = `${pchome}/lib/tendermint`;
-    try {
-        write("Checking environment file (step 1/2)...");
-        if (!env) {
-            fail(
-                "Missing or empty environment file (should at be $PCHOME/.env)\n"+
-                "\tTry starting with a template from $PCHOME/lib"
-            );
-        } else if (!env.TM_HOME || env.TM_HOME === "") {
-            appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
-        } else {
-            write("TM_HOME already set, skipping.");
-        }
-    } catch (error) {
-        fail("Failed to set tendermint home; check /lib and try again.", error);
-    }
-}
-
-// check if tendermint binary is already installed, download if needed
-if (readdirSync(`${tmhome}/bin`).indexOf("tendermint") === -1) {
-    write("No tendermint install found, downloading...");
-    try {
-        let upV = readFileSync(`${tmhome}/bin/version`).toString("utf8");
-        execSync(`node ${tmhome}/bin/download.js`);
-        execSync(`node ${tmhome}/bin/update.js ${upV}`);
-        write("Successfully downloaded and updated tendermint.");
-    } catch (error) {
-        fail("Failed to download or verify tendermint binary.", error);
-    }
-}
 
 // initially required variables
 const reqVars = [
-    "NODE_TYPE",
-    "WEB3_PROVIDER",
-    "API_PORT",
-    "WS_PORT",
-    "WINDOW_MS",
-    "WINDOW_MAX",
-    "ABCI_HOST",
-    "ABCI_RPC_PORT",
-    "ABCI_PORT",
-    "PERIOD_LENGTH",
-    "PERIOD_LIMIT",
-    "FINALITY_THRESHOLD",
-    "MAX_ORDER_SIZE",
-    "SIG_ENC",
+    "NODE_TYPE", "WEB3_PROVIDER", "API_PORT", "WS_PORT", "WINDOW_MS", "WINDOW_MAX",
+    "ABCI_HOST", "ABCI_RPC_PORT", "ABCI_PORT", "PERIOD_LENGTH", "PERIOD_LIMIT",
+    "FINALITY_THRESHOLD", "MAX_ORDER_SIZE", "SIG_ENC",
 ]
-
-// check for missing options
-write("Checking environment file (step 2/2)...");
-checkReqs(reqVars, env);
-
-if (!env.PRIV_KEY && !env.PUB_KEY && !env.NODE_ID) {
-    setupValidator();
-    validateEnvironment();
-} else if (!env.PRIV_KEY || !env.PUB_KEY || !env.NODE_ID) {
-    fail("Please remove 'NODE_ID', 'PRIV_KEY', and 'PUB_KEY' from .env.");
-} else {
-    validateKeys();
-    validateEnvironment();
-}
 
 // setup tendermint config/data dir
 function setupValidator() {
@@ -137,7 +69,7 @@ function setupValidator() {
 function validateKeys() {
     write("Loading validator keys...");
     try {
-        const pathstr = `${tmhome}/config/priv_validator.json`;
+        const pathstr = `${tmhome}/config/priv_validator_key.json`;
         privValidator = require(pathstr);
     } catch (error) {
         fail("Failed to load keypair, try removing 'NODE_ID', ... from .env", error);
@@ -187,7 +119,7 @@ function validateEnvironment(){
     // check env keys match priv_validator.json keys
     write("Checking that config keys match validator keys...");
     try {
-        const pathstr = `${tmhome}/config/priv_validator.json`;
+        const pathstr = `${tmhome}/config/priv_validator_key.json`;
         const ks = require(pathstr);
         if (
             !pad(ks.address, "hex").equals(pad(newEnv.NODE_ID, "hex")) ||
@@ -241,3 +173,64 @@ function fail(msg, error, missing) {
     }
     process.exit(1);
 } 
+
+// main function
+(function () {
+    process.version.slice(1).split(".").map(i => parseInt(i))[0] > 10 ?
+    null : semVer[0] === 10 && semVer[1] >= 4 ? 
+    null : fail("Node.JS >=10.4 required.");
+
+    // exit if paradigmcore home directory environment var not set
+    if (
+        process.env.PCHOME === undefined || 
+        process.env.PCHOME.toLocaleLowerCase() !== process.cwd().toLocaleLowerCase()
+    ) {
+        fail("Environment variable PCHOME is not set, or does not match CWD.");
+    } else {
+        write("Setting tendermint home directory...")
+        pchome = process.env.PCHOME;
+        tmhome = `${pchome}/lib/tendermint`;
+        try {
+            write("Checking environment file (step 1/2)...");
+            if (!env) {
+                fail(
+                    "Missing or empty environment file (should at be $PCHOME/.env)\n"+
+                    "\tTry starting with a template from $PCHOME/lib"
+                );
+            } else if (!env.TM_HOME || env.TM_HOME === "") {
+                appendFileSync(".env", `\nTM_HOME="${tmhome}"\n`);
+            } else {
+                write("TM_HOME already set, skipping.");
+            }
+        } catch (error) {
+            fail("Failed to set tendermint home; check /lib and try again.", error);
+        }
+    }
+
+    // check if tendermint binary is already installed, download if needed
+    if (readdirSync(`${tmhome}/bin`).indexOf("tendermint") === -1) {
+        write("No tendermint install found, downloading...");
+        try {
+            let upV = readFileSync(`${tmhome}/bin/version`).toString("utf8");
+            execSync(`node ${tmhome}/bin/download.js`);
+            execSync(`node ${tmhome}/bin/update.js ${upV}`);
+            write("Successfully downloaded and updated tendermint.");
+        } catch (error) {
+            fail("Failed to download or verify tendermint binary.", error);
+        }
+    }
+
+    // check for missing options
+    write("Checking environment file (step 2/2)...");
+    checkReqs(reqVars, env);
+
+    if (!env.PRIV_KEY && !env.PUB_KEY && !env.NODE_ID) {
+        setupValidator();
+        validateEnvironment();
+    } else if (!env.PRIV_KEY || !env.PUB_KEY || !env.NODE_ID) {
+        fail("Please remove 'NODE_ID', 'PRIV_KEY', and 'PUB_KEY' from .env.");
+    } else {
+        validateKeys();
+        validateEnvironment();
+    }
+})();

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 21-December-2018
+ * @date (modified) 22-January-2019
  *
  * Handler functions for verifying ABCI event Witness transactions,
  * originating from validator nodes. Implements state transition logic as
@@ -18,21 +18,28 @@
 import { log, warn } from "../../util/log";
 import { Vote } from "../util/Vote";
 
-// ParadigmCore utilities
-import { isValidStakeEvent, updateMappings } from "../util/utils";
+// ParadigmCore utilities/types
+import { ParsedWitnessData } from "../../typings/abci";
+import {
+    parseWitness,
+    updateMappings,
+    createWitnessEventHash
+} from "../util/utils";
 
 /**
- * Performs mempool verification of Ethereum StakeEvent transactions.
+ * Performs mempool verification of Ethereum StakeEvent transactions. Condition
+ * for validity is purely structural. I.E. are all necessary parameters present?
  *
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
  */
 export function checkWitness(tx: SignedWitnessTx, state: State): Vote {
-    if (isValidStakeEvent(tx.data, state)) {
+    try {
+        parseWitness(tx.data);
         log("mem", "stake witness transaction accepted");
         return Vote.valid("stake witness transaction accepted");
-    } else {
-        warn("mem", "invalid witness event rejected");
+    } catch (error) {
+        warn("mem", `invalid witness event rejected: ${error.message}`);
         return Vote.invalid("invalid witness event rejected");
     }
 }
@@ -43,57 +50,73 @@ export function checkWitness(tx: SignedWitnessTx, state: State): Vote {
  *
  * @param tx    {object} decoded transaction body
  * @param state {object} current round state
- *
- * @todo: options for confirmation threshold
  */
 export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
-    // Check structural validity
-    if (!(isValidStakeEvent(tx.data, state))) {
-        warn("mem", "invalid witness event rejected");
+    // will store parsed event data (after validation)
+    let parsedTx: ParsedWitnessData;
+
+    try {
+        // parse valid event data (also validates)
+        parsedTx = parseWitness(tx.data);
+
+        // compute hash of event as ID to confirm validity
+        let calcId = createWitnessEventHash({
+            subject: tx.data.subject,
+            type: tx.data.type,
+            amount: tx.data.amount,
+            block: tx.data.block,
+            address: tx.data.address,
+            publicKey: tx.data.publicKey
+        });
+       
+        // confirm id in event matches hash of event data
+        if (calcId !== tx.data.id) {
+            throw new Error("reported eventId does not match actual");
+        }
+    } catch (error) {
+        warn("mem", `invalid witness event rejected: ${error.message}`);
         return Vote.invalid();
     }
 
-    // Unpack/parse event data
-    const staker: string = tx.data.staker;
-    const type: string = tx.data.type;
-    const block: number = tx.data.block;
+    // unpack/parse event data after id is confirmed
+    const { subject, type, amount, block, address, publicKey, id } = parsedTx;
 
-    // We must remove the trailing "n" from BigInt strings
-    const amount: bigint = BigInt(tx.data.amount.slice(0, -1));
+    // @todo implement an outer level switch block to check for tx.subject
 
+    // apply transition depending on if event is already in state or not
     switch (state.events.hasOwnProperty(block)) {
-        // Block is already in state
         case true: {
+            // events from this block already pending, see if new must be added
             if (
-                state.events[block].hasOwnProperty(staker) &&
-                state.events[block][staker].amount === amount &&
-                state.events[block][staker].type === type
+                state.events[block].hasOwnProperty(id) &&
+                state.events[block][id].amount === amount &&
+                state.events[block][id].type === type
             ) {
-                // Event is already in state, add confirmation
-                state.events[block][staker].conf += 1;
-                updateMappings(state, staker, block, amount, type);
-
-                // Voted for valid existing event
+                // event is already in state, add confirmation
+                state.events[block][id].conf += 1;
+                updateMappings(state, id, address, block, amount, type);
                 log("state", "vote recorded for valid stake event (existing)");
                 return Vote.valid();
 
-            } else if (!(state.events[block].hasOwnProperty(staker))) {
-                // Block in state, event is not
-                state.events[block][staker] = {
-                    amount,
-                    conf: 1,
+            // block in state, event is not    
+            } else if (!(state.events[block].hasOwnProperty(id))) {
+                state.events[block][id] = {
+                    subject,
                     type,
+                    address,
+                    amount,
+                    publicKey,
+                    conf: 1
                 };
 
-                // If running with single node, update balances
+                // if running with single node, update balances
                 if (process.env.NODE_ENV === "development") {
-                    updateMappings(state, staker, block, amount, type);
+                    updateMappings(state, id, address, block, amount, type);
                 }
 
-                // Voted for valid new event
+                // voted added for valid new event
                 log("state", "voted added for valid stake event (new)");
                 return Vote.valid();
-
             } else {
                 // Block and event are in state, but does not match Tx
                 warn("state", "witness tx does not match in-state event");
@@ -101,29 +124,30 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
             }
         }
 
-        // Block is not already in state
         case false: {
-            // Block is not in state yet, add new one
+            // block is not in state yet, add new one
             state.events[block] = {};
 
-            // Add event to block
-            state.events[block][staker] = {
-                amount,
-                conf: 1,
+            // add event to block
+            state.events[block][id] = {
+                subject,
                 type,
+                address,
+                amount,
+                publicKey,
+                conf: 1
             };
 
-            // If running with single node, update balances
+            // if running with single node, update balances
             if (process.env.NODE_ENV === "development") {
-                updateMappings(state, staker, block, amount, type);
+                updateMappings(state, id, address, block, amount, type);
             }
 
-            // Added new event to state
             log("state", "voted added for valid stake event (new)");
             return Vote.valid();
         }
 
-        // Shouldn't happen!
+        // shouldn't happen, safety
         default: {
             return Vote.invalid();
         }

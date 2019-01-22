@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-November-2018
- * @date (modified) 15-November-2018
+ * @date (modified) 21-January-2019
  *
  * Type definitions for OrderStream transaction types.
  */
@@ -151,10 +151,13 @@ interface OrderPosterSignature {
  * Transaction data interface for `witness` type tx.
  */
 interface WitnessData extends TransactionData {
-    type:   string;
-    amount: string;
-    block:  number;
-    staker: string;
+    subject:    string; // 'poster' or 'validator'
+    type:       string; // 'add' or 'remove'
+    amount:     string; // stringified bigint
+    block:      number; // block number of event
+    address:    string; // ethereum address of validator/poster
+    publicKey:  string | undefined; // tendermint ed25519 key of validator
+    id?:        string; // hash of event data
 }
 
 /**
