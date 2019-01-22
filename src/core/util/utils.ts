@@ -46,17 +46,9 @@ export function preVerifyTx(tx: SignedTransaction, state: State): boolean {
         // verify message
         isValid = Verify(msg, sig, pub);
 
-        // recompute id from signature/pub key
-        const idRaw = createHash("sha256").update(pub).digest("hex").slice(0, 40);
-        const idBuf = Buffer.from(idRaw, "hex").toString("hex")
-
-        // temporary
-        console.log("\n");
-        console.log(idRaw, " is? ", idBuf);
-        console.log("\n");
-
         // verify computed id matches reported "fromAddr"
-        if (idBuf !== tx.proof.fromAddr) return false;
+        const idRaw = createHash("sha256").update(pub).digest("hex").slice(0, 40);
+        if (idRaw !== tx.proof.fromAddr) return false;
     } catch (error) {
         return false;
     }

@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  15-October-2018
- * @date (modified) 21-January-2019
+ * @date (modified) 22-January-2019
  *
  * ParadigmCore primary state machine (via imported handlers) and ABCI
  * application.
@@ -16,7 +16,7 @@
 // 3rd party and STDLIB imports
 const abci: any = require("../../lib/js-abci");
 
-// General utilities
+// general utilities
 import { log } from "../util/log";
 import { messages as templates } from "../util/static/messages";
 
@@ -42,7 +42,6 @@ import { ParadigmCoreOptions } from "src/typings/abci";
  *  - options.deliverState  {object}        deliverTx state object
  *  - options.commitState   {object}        commit state object
  *  - options.abciServPort  {number}        local ABCI server port
- *  - options.txGenerator   {TxGenerator}   transaction signer and verification
  *  - options.finalityThreshold {number}    Ethereum block finality threshold
  *  - options.maxOrderBytes {number}        maximum order size in bytes
  *  - options.periodLength  {number}        length of rebalance period
@@ -63,9 +62,6 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
 
         // Queue for valid broadcast transactions (order/stream)
         let tracker = options.tracker;
-
-        // Transaction generator/verifier
-        let generator = options.txGenerator;
 
         // witness instance
         let witness = options.witness;

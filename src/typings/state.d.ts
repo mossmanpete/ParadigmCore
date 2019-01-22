@@ -64,7 +64,7 @@ interface State {
     /**
      * Tendermint specific, tracks last commited app hash.
      */
-    lastBlockAppHash:   string;
+    lastBlockAppHash:   Buffer;
 }
 
 // BELOW ARE SUPPORTING TYPES AND DATA STRUCTURES

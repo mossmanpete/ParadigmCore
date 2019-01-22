@@ -60,28 +60,28 @@ export function deliverTxWrapper(
 
         // select the proper handler verification logic based on the tx type.
         switch (tx.type) {
-            // OrderBroadcast type transaction
+            // sumbission of an 'order' tx (external)
             case "order": {
                 return deliverOrder(tx as SignedOrderTx, state, tracker, Order);
             }
 
-            // StreamBroadcast type external transaction
+            // sumbission of a 'stream' tx (external)
             // @TODO implement
             case "stream": {
                 return deliverStream(tx, state, tracker);
             }
 
-            // Validator reporting witness to Ethereum event
+            // validator reporting witness to Ethereum event (internal)
             case "witness": {
                 return deliverWitness(tx as SignedWitnessTx, state);
             }
 
-            // Rebalance transaction updates limit mapping
+            // rebalance transaction updates poster allocation (internal)
             case "rebalance": {
                 return deliverRebalance(tx as SignedRebalanceTx, state);
             }
 
-            // Invalid transaction type
+            // invalid/unknown transaction type
             default: {
                 warn("state", msg.abci.errors.txType);
                 return Vote.invalid(msg.abci.errors.txType);

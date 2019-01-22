@@ -35,12 +35,12 @@ export function commitWrapper(
     deliverState: State,
     commitState: State,
     tracker: OrderTracker,
-    msg: MasterLogTemplates,
+    msg: LogTemplates,
     witness: Witness
 ): () => ResponseCommit {
     return () => {
         // store string encoded state hash
-        let stateHash: string = "";
+        let stateHash: Buffer;
 
         // perform commit responsibilities
         try {
@@ -88,7 +88,7 @@ export function commitWrapper(
 
             log(
                 "state",
-                `committing new state with hash: ...${stateHash.slice(-8)}`
+                `committing new state with hash: ...${stateHash.toString("hex").slice(-8)}`
             );
         } catch (error) {
             err("state", `${msg.abci.errors.broadcast}: ${error.message}`);

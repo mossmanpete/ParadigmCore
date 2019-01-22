@@ -30,7 +30,7 @@ interface ParadigmCoreOptions {
  */
 interface ResponseInfo {
     data: string;
-    lastBlockAppHash: string;
+    lastBlockAppHash: Buffer;
     lastBlockHeight: number;
     version: string;
 }

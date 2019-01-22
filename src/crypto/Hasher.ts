@@ -51,8 +51,8 @@ export class Hasher {
    *
    * @param state {State} the current state object
    */
-  public static hashState(state: State): string {
-    let stateHash: string;
+  public static hashState(state: State): Buffer {
+    let stateHash: Buffer;
     const hashPrep: object = {
       posters: JSON.stringify(state.posters, bigIntReplacer),
       endHeight: state.round.endsAt,
@@ -65,7 +65,7 @@ export class Hasher {
     };
 
     try {
-      stateHash = hash(hashPrep);
+      stateHash = Buffer.from(hash(hashPrep), "hex");
     } catch (error) {
       throw new Error(`failed generating state hash: ${error.message}`);
     }

@@ -15,6 +15,7 @@
 // custom types
 import { ResponseEndBlock } from "../typings/abci";
 import { bigIntReplacer } from "../util/static/bigIntUtils";
+import { validatorUpdate } from "./util/valFunctions";
 
 export function endBlockWrapper(state: State): (r) => ResponseEndBlock {
     return (r) => {
