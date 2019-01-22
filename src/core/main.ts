@@ -9,44 +9,28 @@
  * @date (initial)  15-October-2018
  * @date (modified) 21-January-2019
  *
- * ParadigmCore primary state machine, and implementation of Tendermint handler
- * functions and state transition logic.
- */
+ * ParadigmCore primary state machine (via imported handlers) and ABCI
+ * application.
+*/
 
 // 3rd party and STDLIB imports
 const abci: any = require("../../lib/js-abci");
 
-// ParadigmCore classes
-import { OrderTracker } from "../async/OrderTracker";
-import { Witness } from "../async/Witness";
-import { Hasher } from "../crypto/Hasher";
-import { TxGenerator } from "./util/TxGenerator";
-import { Vote } from "./util/Vote";
-
-// Tendermint checkTx/deliverTx handler functions
-import { checkOrder, deliverOrder } from "./handlers/order";
-import { checkRebalance, deliverRebalance } from "./handlers/rebalance";
-import { checkStream, deliverStream } from "./handlers/stream";
-import { checkWitness, deliverWitness } from "./handlers/witness";
-
 // General utilities
-import { err, log, warn } from "../util/log";
-import { bigIntReplacer } from "../util/static/bigIntUtils";
+import { log } from "../util/log";
 import { messages as templates } from "../util/static/messages";
-import { pubToAddr } from "./util/valFunctions";
-import { computeConf, decodeTx, preVerifyTx, syncStates } from "./util/utils";
 
-// Custom types
-import { 
-    ParadigmCoreOptions,
-    ResponseEndBlock,
-    ResponseInitChain,
-    ResponseDeliverTx,
-    ResponseCheckTx,
-    ResponseCommit,
-    ResponseInfo,
-    ResponseBeginBlock,
-} from "../typings/abci";
+// abci handler implementatinos
+import { beginBlockWrapper } from "./beginBlock";
+import { checkTxWrapper } from "./checkTx";
+import { deliverTxWrapper } from "./deliverTx";
+import { initChainWrapper } from "./initChain";
+import { commitWrapper } from "./commit";
+import { infoWrapper } from "./info";
+import { endBlockWrapper } from "./endBlock";
+
+// custom types
+import { ParadigmCoreOptions } from "src/typings/abci";
 
 /**
  * Initialize and start the ABCI application.
@@ -112,110 +96,4 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
         throw new Error(`initializing abci application: ${error.message}`);
     }
     return;
-}
-
-/*
-Below are implementations of Tendermint ABCI handler functions.
-*/
-
-/**
- * Return information about the state and software.
- *
- * @param request {RequestInfo}    info request
- */
-function infoWrapper(state: State, version: string): (r) => ResponseInfo {
-    return (request) => {
-        return {
-            data: "ParadigmCore (alpha)",
-            lastBlockAppHash: state.lastBlockAppHash,
-            lastBlockHeight: parseInt(state.lastBlockHeight.toString(), 10),
-            version
-        };
-    };
-}
-
-
-
-function endBlockWrapper(state: State): (r) => ResponseEndBlock {
-    return (r) => {
-        // temporary
-        console.log(`\n Congrats, you made it to the end of block ${r.height}\n`);
-        return {
-            validatorUpdates: []
-        };
-    };
-}
-
-/**
- * Persist application state, synchronize commit and deliver states, and
- * trigger the broadcast of valid orders in that block.
- *
- * @param request {object} raw transaction as delivered by Tendermint core.
- */
-function commitWrapper(
-    deliverState: State,
-    commitState: State,
-    tracker: OrderTracker,
-    msg: MasterLogTemplates,
-    witness: Witness
-): () => ResponseCommit {
-    return () => {
-        // store string encoded state hash
-        let stateHash: string = "";
-
-        // perform commit responsibilities
-        try {
-            // Calculate difference between cState and dState round height
-            const roundDiff = deliverState.round.number - commitState.round.number;
-
-            switch (roundDiff) {
-                // No rebalance proposal accepted in this round
-                case 0: { break; }
-
-                // Rebalance proposal accepted in this round
-                case 1: {
-                    // Load round parameters from state
-                    const newRound = deliverState.round.number;
-                    const newStart = deliverState.round.startsAt;
-                    const newEnd = deliverState.round.endsAt;
-
-                    // Synchronize staking period parameters
-                    witness.synchronize(newRound, newStart, newEnd);
-
-                    // Temporary
-                    console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
-                    break;
-                }
-
-                default: {
-                    // Commit state is more than 1 round ahead of deliver state
-                    warn("state", msg.abci.messages.roundDiff);
-                    break;
-                }
-            }
-
-            // Increase last block height
-            deliverState.lastBlockHeight += 1n;
-
-            // Generate new state hash and update
-            stateHash = Hasher.hashState(deliverState);
-            deliverState.lastBlockAppHash = stateHash;
-
-            // Trigger broadcast of orders and streams
-            tracker.triggerBroadcast();
-
-            // Synchronize commit state from delivertx state
-            syncStates(deliverState, commitState);
-
-            log(
-                "state",
-                `committing new state with hash: ...${stateHash.slice(-8)}`
-            );
-        } catch (error) {
-            err("state", `${msg.abci.errors.broadcast}: ${error.message}`);
-        }
-
-        // Return state's hash to be included in next block header
-        return { data: stateHash };
-    };
 }
