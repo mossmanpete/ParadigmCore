@@ -10,7 +10,7 @@
  * @date (modified) 21-January-2019
  *
  * Startup script for ParadigmCore. Provide configuration through environment.
- */
+*/
 
 // Load configuration from environment
 require("dotenv").config();
