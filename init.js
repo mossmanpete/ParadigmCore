@@ -176,9 +176,10 @@ function fail(msg, error, missing) {
 
 // main function
 (function () {
-    process.version.slice(1).split(".").map(i => parseInt(i))[0] > 10 ?
-    null : semVer[0] === 10 && semVer[1] >= 4 ? 
-    null : fail("Node.JS >=10.4 required.");
+    semVer = process.version.slice(1).split(".").map(i => parseInt(i));
+    semVer[0] > 10 ?
+        null : semVer[0] === 10 && semVer[1] >= 4 ? 
+        null : fail("Node.JS >=10.4 required.");
 
     // exit if paradigmcore home directory environment var not set
     if (
