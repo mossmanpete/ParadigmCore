@@ -381,7 +381,7 @@ export function createWitnessEventHash(tx: WitnessData): string {
     
     // buffer input and create hash
     const hashBuffer = Buffer.from(hashVals);
-    const hash = createHash("sha256").update(hashBuffer).digest("hex");
+    const hash = createHash("sha256").update(hashBuffer).digest("hex").slice(16);
 
     // return hash as ID for witness event tx's
     return hash;
