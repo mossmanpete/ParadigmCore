@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 21-January-2019
+ * @date (modified) 22-January-2019
  *
  * Handler functions for verifying ABCI Rebalance transactions, originating
  * from validator nodes. Implements state transition logic as specified in the
