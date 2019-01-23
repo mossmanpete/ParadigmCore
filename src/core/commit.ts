@@ -88,7 +88,10 @@ export function commitWrapper(
 
             log(
                 "state",
-                `committing new state with hash: ...${stateHash.toString("hex").slice(-8)}`
+                `new state hash: ` + 
+                `${stateHash.toString("hex").slice(0,5)}...` +
+                `${stateHash.toString("hex").slice(-5)}`,
+                commitState.lastBlockHeight
             );
         } catch (error) {
             err("state", `${msg.abci.errors.broadcast}: ${error.message}`);

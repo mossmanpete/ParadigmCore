@@ -11,6 +11,7 @@ function ts(): string {
 }
 
 function print(msg, lvl) {
+    if (lvl === -1) {  console.log(`\n${ts()} ${msg}\n`); return; }
     if (level > lvl || _.isUndefined(levels[lvl])) { return; }
     console.log(`${ts()} ${msg}`);
 }
@@ -18,26 +19,45 @@ function print(msg, lvl) {
 export function logStart(msg?) {
     // return if invalid function call
     if (!msg) {
+        // special welcome message
         print(
-            `${c.bold.green("startup")}\t${c.bold("info")}\t` +
-            `starting ${c.bold.blue("paradigm-core")} v${version}...`,
-            2
+            `${c.gray("lvl:")} ${c.bold("info")}\t` +
+            `welcome :)` +
+            `${c.bold("\tstarting paradigm core")}` +
+            ` v${c.italic(version)}`,
+            -1
         );
     } else {
         print(
-            `${c.bold.green("startup")}\t${c.bold("info")}\t${msg}`,
+            `${c.gray("lvl:")} ${c.bold("info")}\t` +
+            `${c.gray("mod:")} ${c.bold.green("startup")}\t` +
+            `${c.gray("msg:")} ${msg}`,
             2
         );
     }
 }
 
-export function log(mod: string, msg: string) {
+export function log(mod: string, msg: string, height?: number | bigint) {
     // return if invalid function call
     if (_.isUndefined(defs[mod]) || !_.isString(msg)) { return; }
 
+    // special case for state machine ("core") module and TM blockchain
+    if (mod === "state" && height) {
+        print(
+            `${c.gray("lvl:")} ${c.bold("info")}\t` + 
+            `${c.gray("mod:")} ${c.bold[(defs[mod].color)](defs[mod].label)}\t` + 
+            `${c.gray("msg:")} ${msg}\t` +
+            `${c.gray("height: ")} ${height}`,
+            0
+        );
+        return;
+    }
+
     // write to stdout with log level 0 (info/all)
     print(
-        `${c.bold[(defs[mod].color)](defs[mod].label)}\t${c.bold("info")}\t${msg}`,
+        `${c.gray("lvl:")} ${c.bold("info")}\t` + 
+        `${c.gray("mod:")} ${c.bold[(defs[mod].color)](defs[mod].label)}\t` + 
+        `${c.gray("msg:")} ${msg}`,
         0
     );
 }
@@ -47,8 +67,10 @@ export function warn(mod: string, msg: string) {
     if (_.isUndefined(defs[mod]) || !_.isString(msg)) { return; }
 
     // write to stdout with log level 1 (warnings)
-    print(
-        `${c.bold[(defs[mod].color)](defs[mod].label)}\t${c.bold.yellow("warn")}\t${msg}`,
+     print(
+        `${c.gray("lvl:")} ${c.bold.yellow("warn")}\t` + 
+        `${c.gray("mod:")} ${c.bold[(defs[mod].color)](defs[mod].label)}\t` + 
+        `${c.gray("msg:")} ${msg}`,
         1
     );
 }
@@ -59,7 +81,9 @@ export function err(mod: string, msg: string) {
 
     // write to stdout with log level 2 (errors)
     print(
-        `${c.bold[(defs[mod].color)](defs[mod].label)}\t${c.bold.red("error")}\t${msg}`,
+        `${c.gray("lvl:")} ${c.bold.red("error")}\t` + 
+        `${c.gray("mod:")} ${c.bold[(defs[mod].color)](defs[mod].label)}\t` + 
+        `${c.gray("msg:")} ${msg}`,
         2
     );
 }

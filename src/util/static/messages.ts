@@ -33,8 +33,8 @@ export let messages  = {
             fatal:      "fatal error starting websocket server, exiting"
         },
         messages: {
-            connected:  `Connected to the OrderStream network at ${new Date().toLocaleString()}`,
-            servStart:  `websocket server started on port ${WS_PORT}`,
+            // connected:  `Connected to the OrderStream network at ${new Date().toLocaleString()}`,
+            // servStart:  `websocket server started on port ${WS_PORT}`,
         }
     },
     abci: {
@@ -55,7 +55,7 @@ export let messages  = {
             mempool:    "new order passed mempool verification",
             noStake:    "new order rejected: invalid poster or no poster stake",
             verified:   "new order verified and added to OrderStream queue",
-            servStart:  `abci server started on port ${ABCI_PORT}`,
+            // servStart:  `abci server started on port ${ABCI_PORT}`,
             roundDiff:  "this round deliverTx state is more than 1 period ahead of committed state",
             badSig:     "rejected ABCI transaction with invalid validator signature"
         }
@@ -68,8 +68,8 @@ export let messages  = {
             fatal:      "fatal error starting API server, exiting"
         },
         messages: {
-            starting:   "starting http api server...",
-            servStart:  `api server started on port ${API_PORT}`
+            // starting:   "starting http api server...",
+            // servStart:  `api server started on port ${API_PORT}`
         }
     },
     rebalancer: {

@@ -30,7 +30,7 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
     return (request) => {
         // parse height and proposer from header
         const currHeight: bigint = BigInt(request.header.height);
-        const currProposer: string = request.header.proposerAddress.toString("hex");
+        const proposer: string = request.header.proposerAddress.toString("hex");
 
         // store array of last votes
         const lastVotes: object[] | undefined = request.lastCommitInfo.votes;
@@ -67,7 +67,7 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                 state.validators[nodeId].active = vote.signedLastBlock;
 
                 // record if they are proposer this round
-                if (nodeId === currProposer) {
+                if (nodeId === proposer) {
                     state.validators[nodeId].lastProposed = currHeight;
                 }
 
@@ -106,7 +106,8 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
         // Indicate new round, return no indexing tags
         log(
             "state",
-            `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
+            `current proposer: ${proposer.slice(0,5)} .. ${proposer.slice(-5)}`,
+            currHeight
         );
         return {};
     };

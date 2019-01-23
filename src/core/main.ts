@@ -76,18 +76,25 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
 
         // Establish ABCI handler functions
         let handlers = {
-            beginBlock: beginBlockWrapper(dState),
-            checkTx: checkTxWrapper(cState, templates, Order),
-            commit: commitWrapper(dState, cState, tracker, templates, witness),
-            deliverTx: deliverTxWrapper(dState, templates, tracker, Order),
+            // query state hash, height, version
             info: infoWrapper(cState, version),
+            
+            // called at genesis
             initChain: initChainWrapper(dState, cState, consensusParams),
-            endBlock: endBlockWrapper(dState)
+
+            // mempool verifiction, pre-gossip
+            checkTx: checkTxWrapper(cState, Order),
+
+            // roundstep: [ beginBlock, deliverTx[, ...], endBlock, commit ]
+            beginBlock: beginBlockWrapper(dState),
+            deliverTx: deliverTxWrapper(dState, templates, tracker, Order),
+            endBlock: endBlockWrapper(dState),
+            commit: commitWrapper(dState, cState, tracker, templates, witness),
         };
 
         // Start ABCI server (connection to Tendermint core)
         await abci(handlers).listen(options.abciServPort);
-        log("state", templates.abci.messages.servStart);
+        log("state", `abci server connected on port ${options.abciServPort}`)
     } catch (error) {
         throw new Error(`initializing abci application: ${error.message}`);
     }

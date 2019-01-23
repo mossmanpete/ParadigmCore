@@ -135,7 +135,7 @@ let node;                       // tendermint node child process instance
         process.exit(1);
     }
 
-    // order tracker and stream server
+    // order tracker and order-stream server
     logStart("starting order tracker and websocket server...");
     try {
         // Create a "parent" EventEmitter
@@ -170,7 +170,6 @@ let node;                       // tendermint node child process instance
         };
 
         await startAPIserver(options);
-        log("api", msg.api.messages.servStart);
     } catch (error) {
         err("api", "failed initializing api server.");
         err("start", error.message);
