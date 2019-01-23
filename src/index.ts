@@ -87,7 +87,11 @@ let node;                       // tendermint node child process instance
             };
         }
 
+        // create tendermint subprocess
         node = tendermint.node(env.TM_HOME, options);
+
+        // if in debug mode, pipe tendermint logs to STDOUT
+        if (env.DEBUG) node.stdout.pipe(process.stdout);
     } catch (error) {
         err("state", "failed starting tendermint.");
         err("state", "tendermint may not be installed or configured.");
