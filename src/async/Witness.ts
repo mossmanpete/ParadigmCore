@@ -88,6 +88,8 @@ export class Witness {
         let total: bigint = BigInt(0);      // Total amount currently staked
         const output: Limits = {};          // Generated output mapping
 
+        try {
+
         // Calculate total balance currently staked
         Object.keys(bals).forEach((k, v) => {
             if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
@@ -102,7 +104,7 @@ export class Witness {
                 const balNum = parseInt(bals[k].toString());
                 const totNum = parseInt(total.toString());
                 const lim = (balNum / totNum) * limit;
-                
+
                 // Create limit object for each address
                 output[k] = {
                     // orderLimit is proportional to stake size
@@ -113,6 +115,11 @@ export class Witness {
                 };
             }
         });
+
+        } catch (error) {
+            err("state", "bigint issue happening here");
+            process.exit(1)
+        }
 
         // Return constructed output mapping.
         return output;
