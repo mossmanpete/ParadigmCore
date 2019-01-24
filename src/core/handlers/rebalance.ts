@@ -35,32 +35,26 @@ export function checkRebalance(tx: SignedRebalanceTx, state: State) {
     // Load proposal from rebalance tx
     const proposal: RebalanceData = tx.data;
 
-    // Check if this is the initial rebalance period
-    switch (state.round.number) {
-        // No previous periods
-        case 0: {
-            if (proposal.round.number === 1) {
-                // Accept valid initial rebalance proposal to mempool
-                log("mem", msg.rebalancer.messages.iAccept);
-                return Vote.valid();
-            } else {
-                // Reject invalid initial rebalance proposal from mempool
-                warn("mem", msg.rebalancer.messages.iReject);
-                return Vote.invalid();
-            }
+    // check if this is the initial rebalance period
+    if (state.round.number === 0) {
+        if (proposal.round.number === 1) {
+            // Accept valid initial rebalance proposal to mempool
+            log("mem", msg.rebalancer.messages.iAccept);
+            return Vote.valid();
+        } else {
+            // Reject invalid initial rebalance proposal from mempool
+            warn("mem", msg.rebalancer.messages.iReject);
+            return Vote.invalid();
         }
-
-        // Not the first period (period > 0)
-        default: {
-            if ((1 + state.round.number) === proposal.round.number) {
-                // Accept valid rebalance proposal to mempool
-                log("mem", msg.rebalancer.messages.accept);
-                return Vote.valid(msg.rebalancer.messages.accept);
-            } else {
-                // Reject invalid rebalance proposal from mempool
-                warn("mem", msg.rebalancer.messages.reject);
-                return Vote.invalid(msg.rebalancer.messages.reject);
-            }
+    } else {
+        if ((1 + state.round.number) === proposal.round.number) {
+            // Accept valid rebalance proposal to mempool
+            log("mem", msg.rebalancer.messages.accept);
+            return Vote.valid(msg.rebalancer.messages.accept);
+        } else {
+            // Reject invalid rebalance proposal from mempool
+            warn("mem", msg.rebalancer.messages.reject);
+            return Vote.invalid(msg.rebalancer.messages.reject);
         }
     }
 }
@@ -126,10 +120,10 @@ export function deliverRebalance(
                     state.round.startsAt = proposal.round.startsAt;
                     state.round.endsAt = proposal.round.endsAt;
 
-                    // TODO: move to function
+                    // copy limits from proposal to each balance
                     Object.keys(propLimits).forEach((i) => {
                         state.posters[i].orderLimit = propLimits[i].orderLimit;
-                        state.posters[i].streamLimit = propLimits[i].orderLimit;
+                        state.posters[i].streamLimit = propLimits[i].streamLimit;
                     });
                     // End state modification
 

@@ -17,14 +17,12 @@ function print(msg, lvl) {
 }
 
 export function logStart(msg?) {
-    // return if invalid function call
     if (!msg) {
         // special welcome message
         print(
-            `${c.gray("lvl:")} ${c.bold("info")}\t` +
-            `welcome :)` +
-            `${c.bold("\tstarting paradigm core")}` +
-            ` v${c.italic(version)}`,
+            `${c.gray("lvl:")} ${c.bold("info")}\twelcome :)\t` +
+            `starting ${c.bold.greenBright("paradigm core")}` +
+            ` v${version}`,
             -1
         );
     } else {

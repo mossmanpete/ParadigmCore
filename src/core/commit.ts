@@ -59,10 +59,11 @@ export function commitWrapper(
                     const newEnd = deliverState.round.endsAt;
 
                     // Synchronize staking period parameters
+                    // todo: this can't be a functino call from within SM
                     witness.synchronize(newRound, newStart, newEnd);
 
                     // Temporary
-                    console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
+                    console.log(`\n... current state: ${JSON.stringify(deliverState, bigIntReplacer)}\n`);
                     break;
                 }
 
@@ -81,6 +82,7 @@ export function commitWrapper(
             deliverState.lastBlockAppHash = stateHash;
 
             // Trigger broadcast of orders and streams
+            // todo: this can't be a function call from SM
             tracker.triggerBroadcast();
 
             // Synchronize commit state from delivertx state

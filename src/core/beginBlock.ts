@@ -42,20 +42,7 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                 const nodeId = vote.validator.address.toString("hex");
                 const power = BigInt(vote.validator.power);
 
-                // create entry if validator has not voted yet
-                /* @todo where should this be moved?
-                if (!(state.validators.hasOwnProperty(nodeId))) {
-                    state.validators[nodeId] = {
-                        balance: BigInt(0), // @TODO re-examine
-                        power,
-                        publicKey: Buffer.from(0),
-                        ethAccount: "not-implemented",
-                        lastVoted: null,
-                        lastProposed: null,
-                        totalVotes: BigInt(0),
-                        genesis: false,
-                    };
-                }*/
+                // TODO: sould we check for new validators here?
 
                 // update vote and height trackers
                 if (vote.signedLastBlock) {
@@ -106,7 +93,7 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
         // Indicate new round, return no indexing tags
         log(
             "state",
-            `current proposer: ${proposer.slice(0,5)} .. ${proposer.slice(-5)}`,
+            `current proposer: ${proposer.slice(0,5)}...${proposer.slice(-5)}`,
             currHeight
         );
         return {};

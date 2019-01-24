@@ -24,6 +24,7 @@ import { ParsedWitnessData } from "src/typings/abci";
 import { cloneDeep, isInteger } from "lodash";
 import { createHash } from "crypto";
 import { Verify } from "ed25519";
+import { bigIntReplacer } from "../../util/static/bigIntUtils";
 
 /**
  * Verify validator signature, and confirm transaction originated from an
@@ -136,7 +137,7 @@ export function verifyOrder(order: any, state: State): boolean {
 
 /**
  * Generates a rate-limit mapping based on staked balances and the total order
- * limit per staking period, from in-state object.
+ * limit per staking period, from in-state 'posters' object.
  *
  * @param posters   {object} current in-state poster balances/limits
  * @param limit     {number} the total number of orders accepted in the period
@@ -156,9 +157,10 @@ export function genLimits(posters: PosterInfo, limit: number): Limits {
     Object.keys(posters).forEach((k, v) => {
         if (posters.hasOwnProperty(k)) {
             // Compute proportional order limit
-            const bal = posters[k].balance;
-            const lim = (bal / total) * BigInt(limit);
-
+            const balNum = parseInt(posters[k].balance.toString());
+            const totNum = parseInt(total.toString());
+            const lim = (balNum / totNum) * limit;
+            
             // Create limit object for each address
             output[k] = {
                 // orderLimit is proportional to stake size
@@ -220,7 +222,7 @@ export function applyEvent(
  * @param block     {number}    relevant block height
  * @param amount    {number}    amount staked (or unstaked)
  * @param type      {string}    event type (stake made or removed)
- */
+ * /
 export function updateMappings(
     state: State,
     id: string,
@@ -283,7 +285,7 @@ export function updateMappings(
         warn("state", "disagreement about event data, potential failure");
         return;
     }
-}
+}*/
 
 /**
  * Parses and validates a `witness` transaction from a validator's witness
@@ -361,12 +363,174 @@ export function parseWitness(data: WitnessData): ParsedWitnessData {
  * @todo: move logic from witness.ts to here
  * 
  * @param state current state object
- * @param tx 
+ * @param tx parsed, already validated witness attestation tx
  */
-export function addNewEventOrCheckExists(state: State, tx: ParsedWitnessData) {
-    const { subject, type, amount, block, address, publicKey } = tx;
+export function addNewEvent(state: State, tx: ParsedWitnessData): boolean {
+    // destructure event data
+    const { subject, type, amount, block, address, publicKey, id } = tx;
 
-    // if (state.events.hasOwnProperty(block))
+    // new events should have block > lastEvent
+    if (state.lastEvent[type] >= block) {
+        err("state", "ignoring new event that may have been applied");
+        return false;
+    }
+
+    // if this is a new accepted event, 1 conf is added (for first report)
+    state.events[block][id] = {
+        subject,
+        type,
+        address,
+        amount,
+        publicKey: subject === "validator" ? publicKey : undefined,
+        conf: 1
+    };
+
+    // if there is only one validator, immediatley apply event
+    if (state.consensusParams.confirmationThreshold === 1) {
+        log("state", "immediately applying event in development mode");
+
+        switch(subject) {
+            case "poster": { 
+                return applyPosterEvent(state, tx);
+            }
+    
+            case "validator": {
+                // temporary
+                err("state", "VALIDATOR TYPE NOT SUPPORTED YET");
+                return applyValidatorEvent(state, tx);
+            }
+    
+            default: {
+                err("state", "unknown witness event subject");
+                return false; 
+            }
+        }
+    }
+
+    log("state", "added vote for event (new)");
+    return true;
+}
+
+export function addConfMaybeApplyEvent(
+    state: State,
+    tx: ParsedWitnessData
+): boolean {
+    // destructure event data
+    const { subject, type, amount, block, address, publicKey, id } = tx;
+
+    // will be true if sucessfully completed transition
+    let accepted: boolean;
+
+    // @todo does validator and poster subjects need to be tracked separately?
+    // todo: remove? move up the stack?
+    if (state.lastEvent[type] >= block) {
+        err("state", "ignoring existing event that may have been applied");
+        return false;
+    }
+
+    // add a confirmation to the pending event
+    state.events[block][id].conf += 1;
+
+    // exit if the event hasn't received enough confirmations
+    if (state.consensusParams.confirmationThreshold > state.events[block][id].conf) {
+        log("state", "added vote for event (existing)");
+        return true;
+    }
+
+    // otherwise, apply the confirmed event to state
+    switch(subject) {
+        case "poster": { 
+            accepted = applyPosterEvent(state, tx);
+            break;
+        }
+
+        case "validator": {
+            // temporary
+            err("state", "VALIDATOR TYPE NOT SUPPORTED YET");
+            accepted = applyValidatorEvent(state, tx);
+            break;
+        }
+
+        default: {
+            err("state", "unknown witness event subject");
+            accepted = false; 
+        }
+    }
+
+    // update latest event, if update was applied
+    if (accepted) state.lastEvent[type] = block;
+    return accepted;
+}
+
+export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
+    // destructure necessary event data
+    const { type, amount, block, address, id } = tx;
+
+    // will be true if event is applied
+    let accepted: boolean;
+
+    // check if poster already has an account
+    if (state.posters.hasOwnProperty(address)) {
+        // poster already has account, increase or decrease balance
+        switch (type) {
+            case "add": { state.posters[address].balance += amount; break; }
+            case "remove": { state.posters[address].balance -= amount; break; }
+            default: {
+                err("state", "recieved uknown type for poster subject");
+                return false; 
+            }
+        }
+
+        // report what was done
+        log("state", "confirmed and applied event to state (existing poster)");
+        accepted = true;
+    } else if (!state.posters.hasOwnProperty(address) && type === "add") {
+        // create new account for poster
+        state.posters[address] = {
+            balance: BigInt(0),
+            orderLimit: null,
+            streamLimit: null
+        };
+
+        // add amount from event to balance
+        state.posters[address].balance += amount;
+        // report what was done
+        log("state", "confirmed and applied event to state (new poster)");
+        accepted = true;
+    } else {
+        // unexpected case, for now will exit process
+        err("state", "unexpected: no poster account, but requesting withdrawl");
+        process.exit(1);
+        accepted = false;
+    }
+
+    // don't prune events if no event accepted
+    if (!accepted) return false;
+
+    // remove the pending event that was just appled
+    delete state.events[block][id];
+
+    // remove event block if none left pending
+    if (Object.keys(state.events[block]).length === 0) {
+        delete state.events[block];
+    }
+
+    // when removing, also check if balance is now 0
+    if (type === "remove" && state.posters[address].balance === 0n) {
+        delete state.posters[address];
+    }
+
+    // if reached, accepted should be true
+    return accepted;
+}
+
+export function applyValidatorEvent(
+    state: State,
+    tx: ParsedWitnessData
+): boolean {
+    // destructure necessary event data
+    const { type, amount, block, address, id } = tx;
+    return false;
 }
 
 /**
