@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  23-October-2018
- * @date (modified) 22-January-2019
+ * @date (modified) 23-January-2019
  *
  * Handler functions for verifying ABCI event Witness transactions,
  * originating from validator nodes. Implements state transition logic as
@@ -83,7 +83,7 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
     }
 
     // unpack/parse event data after id is confirmed
-    const { subject, type, amount, block, address, publicKey, id } = parsedTx;
+    const { block, id } = parsedTx;
     
     // will be true if transaction is ultimately valid
     let accepted: boolean;
@@ -113,71 +113,4 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
         warn("state", "no reported status on witness transaction");
         return Vote.invalid();
     }
-
-    // end new logic
-
-    /*old logic bwlo
-    switch (state.events.hasOwnProperty(block)) {
-        case true: {
-            // events from this block already pending, see if new must be added
-            if (state.events[block].hasOwnProperty(id) && id === eventId) {
-                state.events[block][id].conf += 1;
-                updateMappings(state, id, address, block, amount, type);
-                log("state", "vote recorded for valid stake event (existing)");
-                return Vote.valid();
-
-            // block in state, event is not    
-            } else if (!(state.events[block].hasOwnProperty(id))) {
-                state.events[block][id] = {
-                    subject,
-                    type,
-                    address,
-                    amount,
-                    publicKey,
-                    conf: 1
-                };
-
-                // if running with single node, update balances
-                if (process.env.NODE_ENV === "development") {
-                    updateMappings(state, id, address, block, amount, type);
-                }
-
-                // voted added for valid new event
-                log("state", "voted added for valid stake event (new)");
-                return Vote.valid();
-            } else {
-                // Block and event are in state, but does not match Tx
-                warn("state", "witness tx does not match in-state event");
-                return Vote.invalid();
-            }
-        }
-
-        case false: {
-            // block is not in state yet, add new one
-            state.events[block] = {};
-
-            // add event to block
-            state.events[block][id] = {
-                subject,
-                type,
-                address,
-                amount,
-                publicKey,
-                conf: 1
-            };
-
-            // if running with single node, update balances
-            if (process.env.NODE_ENV === "development") {
-                updateMappings(state, id, address, block, amount, type);
-            }
-
-            log("state", "voted added for valid stake event (new)");
-            return Vote.valid();
-        }
-
-        // shouldn't happen, safety
-        default: {
-            return Vote.invalid();
-        }
-    }*/
 }

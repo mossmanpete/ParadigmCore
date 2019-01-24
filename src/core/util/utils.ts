@@ -7,7 +7,7 @@
  *
  * @author Henry Harder
  * @date (initial)  04-December-2018
- * @date (modified) 22-January-2019
+ * @date (modified) 23-January-2019
  *
  * ParadigmCore state machine (ABCI) utility functions – pure and non state-
  * modifying.
@@ -177,117 +177,6 @@ export function genLimits(posters: PosterInfo, limit: number): Limits {
 }
 
 /**
- * Apply event state transition of balances.
- *
- * @param state     {object}    current state object
- * @param staker    {string}    staker's address
- * @param amount    {number}    amount staked (or unstaked)
- * @param type      {string}    event type (add or remove)
- */
-export function applyEvent(
-    state: State,
-    address: string,
-    amount: bigint,
-    type: string,
-    block: number
-): void {
-    switch (type) {
-        // Staker is adding stake
-        case "add": {
-            if (block <= state.lastEvent.add) return; 
-            state.posters[address].balance += amount;
-            break;
-        }
-
-        // Staker is removing stake
-        case "remove": {
-            if (block <= state.lastEvent.remove) return;
-            state.posters[address].balance -= amount;
-            break;
-        }
-
-        // Unknown event type
-        default: { return; }
-    }
-
-    // Return upon completion of updates
-    return;
-}
-
-/**
- * Update state upon event confirmation
- *
- * @param state     {object}    current state object
- * @param staker    {string}    staker's address
- * @param block     {number}    relevant block height
- * @param amount    {number}    amount staked (or unstaked)
- * @param type      {string}    event type (stake made or removed)
- * /
-export function updateMappings(
-    state: State,
-    id: string,
-    address: string,
-    block: number,
-    amount: bigint,
-    type: string
-) {
-    if (
-        state.events.hasOwnProperty(block) &&
-        state.events[block].hasOwnProperty(id) &&
-        state.events[block][id].type === type &&
-        state.events[block][id].amount === amount
-    ) {
-        // Is this event now confirmed?
-        if (state.events[block][id].conf >=
-            state.consensusParams.confirmationThreshold
-        ) {
-            log("state", "witness event confirmed, updating balances");
-
-            // if this is a new account, add to state
-            if (!state.posters.hasOwnProperty(address)) {
-                state.posters[address] = {
-                    balance: 0n,
-                    orderLimit: null,
-                    streamLimit: null
-                };
-            }
-
-            // apply event to state (add confirmation, new event, etc.)
-            applyEvent(state, address, amount, type, block);
-
-            // Remove events that were just applied to state
-            delete state.events[block][id];
-
-            // Remove event block entry if empty
-            if (Object.keys(state.events[block]).length === 0) {
-                delete state.events[block];
-            }
-
-            // Remove balance entry if now empty
-            if (state.posters[address].balance === BigInt(0)) {
-                delete state.posters[address];
-            }
-
-            // Update highest event block accepted
-            if (state.lastEvent[type] < block) {
-                state.lastEvent[type] = block;
-            }
-
-            // Done
-            return;
-        } else {
-            // Witness account added, but event is not confirmed yet
-            log("state", "confirmation added for pending witness event");
-            return;
-        }
-    } else {
-        // Event in state does not match event TX
-        warn("state", "disagreement about event data, potential failure");
-        return;
-    }
-}*/
-
-/**
  * Parses and validates a `witness` transaction from a validator's witness
  * module.
  * 
@@ -318,11 +207,6 @@ export function parseWitness(data: WitnessData): ParsedWitnessData {
     // ensure amount is a bigint
     // TODO: figure out this check
     intAmount = BigInt(amount);
-    // if (amount.slice(-1) === "n") {
-    //     intAmount = BigInt(amount.slice(0, -1));
-    // } else {
-    //     throw new Error("expected amount to be bigint");
-    // }
 
     // ensure address is valid eth address and remove checksum
     const buffAddr = Buffer.from(address.slice(2), "hex");
@@ -362,8 +246,8 @@ export function parseWitness(data: WitnessData): ParsedWitnessData {
  * Add a new witness event to state, or add confirmation to existing
  * @todo: move logic from witness.ts to here
  * 
- * @param state current state object
- * @param tx parsed, already validated witness attestation tx
+ * @param state {State} current state object
+ * @param tx {ParsedWitnessData} the witness attestation tx being executed
  */
 export function addNewEvent(state: State, tx: ParsedWitnessData): boolean {
     // destructure event data
@@ -411,12 +295,20 @@ export function addNewEvent(state: State, tx: ParsedWitnessData): boolean {
     return true;
 }
 
+/**
+ * Used in `witness` transaction execution. Responsible for increasing the conf
+ * conuter on pending events, and deterministically applying the event to state
+ * if the required confirmation threshold (enough attestations) is reached.
+ * 
+ * @param state {State} the current deliverState object
+ * @param tx {ParsedWitnessData} the witness transaction being executed
+ */
 export function addConfMaybeApplyEvent(
     state: State,
     tx: ParsedWitnessData
 ): boolean {
     // destructure event data
-    const { subject, type, amount, block, address, publicKey, id } = tx;
+    const { subject, type, block, id } = tx;
 
     // will be true if sucessfully completed transition
     let accepted: boolean;
@@ -462,6 +354,14 @@ export function addConfMaybeApplyEvent(
     return accepted;
 }
 
+/**
+ * Used in `witness` transaction execution, where `witness.subject` is "poster". 
+ * This function "applies" a pending, and recently confirmed witness event to 
+ * state, by updating the poster's balance in-state depending on the event type.
+ * 
+ * @param state {State} the current deliverState object
+ * @param tx {ParsedWitnessData} the witness transaction being executed
+ */
 export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
     // destructure necessary event data
     const { type, amount, block, address, id } = tx;
@@ -524,6 +424,15 @@ export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
     return accepted;
 }
 
+/**
+ * Used in `witness` transaction execution, where `witness.subject` is 
+ * "validator". This function "applies" a pending, and recently confirmed 
+ * witness event to state, by updating the validator's balance in-state 
+ * depending on the event type (add vs remove).
+ * 
+ * @param state {State} the current deliverState object
+ * @param tx {ParsedWitnessData} the witness transaction being executed
+ */
 export function applyValidatorEvent(
     state: State,
     tx: ParsedWitnessData
