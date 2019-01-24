@@ -315,10 +315,10 @@ export function addConfMaybeApplyEvent(
 
     // @todo does validator and poster subjects need to be tracked separately?
     // todo: remove? move up the stack?
-    if (state.lastEvent[type] >= block) {
-        err("state", "ignoring existing event that may have been applied");
-        return false;
-    }
+    // if (state.lastEvent[type] >= block) {
+    //    err("state", "ignoring existing event that may have been applied");
+    //    return false;
+    //}
 
     // add a confirmation to the pending event
     state.events[block][id].conf += 1;
@@ -409,13 +409,10 @@ export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
 
     // remove the pending event that was just appled
     delete state.events[block][id];
-    console.log("\n\ndeleted that event-id dawg\n\n");
 
-    console.log("\n\nblock length: " + Object.keys(state.events[block]).length + "\n\n");
     // remove event block if none left pending
     if (Object.keys(state.events[block]).length === 0) {
         delete state.events[block];
-        console.log("\n\ndeleted that event-block dawg\n\n");
     }
 
     // when removing, also check if balance is now 0

@@ -15,7 +15,7 @@
  */
 
  // ParadigmCore classes
-import { log, warn } from "../../util/log";
+import { log, warn, err } from "../../util/log";
 import { Vote } from "../util/Vote";
 
 // ParadigmCore utilities/types
@@ -83,10 +83,16 @@ export function deliverWitness(tx: SignedWitnessTx, state: State): Vote {
     }
 
     // unpack/parse event data after id is confirmed
-    const { block, id } = parsedTx;
+    const { block, id, type } = parsedTx;
     
     // will be true if transaction is ultimately valid
     let accepted: boolean;
+
+    // immediatley invalidate if event is older than most recent update
+    if (state.lastEvent[type] >= block) {
+        err("state", "ignoring existing event that may have been applied");
+        return Vote.invalid();
+    }
 
     if (state.events.hasOwnProperty(block)) {
         // block is already in state
