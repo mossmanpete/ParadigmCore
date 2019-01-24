@@ -694,8 +694,6 @@ export class Witness {
         // send transaction via broadcaster instance
         this.broadcaster.send(tx).catch((error) => {
             err("peg", `failed to send local abci tx: ${error.message}`);
-            console.log("bye");
-            process.exit(0);
         });
 
         // Will return OK unless ABCI is disconnected
