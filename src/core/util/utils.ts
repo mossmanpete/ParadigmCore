@@ -350,7 +350,7 @@ export function addConfMaybeApplyEvent(
     }
 
     // update latest event, if update was applied
-    if (accepted) state.lastEvent[type] = block;
+    // if (accepted) state.lastEvent[type] = block;
     return accepted;
 }
 
@@ -409,16 +409,22 @@ export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
 
     // remove the pending event that was just appled
     delete state.events[block][id];
+    console.log("\n\ndeleted that event-id dawg\n\n");
 
+    console.log("\n\nblock length: " + Object.keys(state.events[block]).length + "\n\n");
     // remove event block if none left pending
     if (Object.keys(state.events[block]).length === 0) {
         delete state.events[block];
+        console.log("\n\ndeleted that event-block dawg\n\n");
     }
 
     // when removing, also check if balance is now 0
     if (type === "remove" && state.posters[address].balance === 0n) {
         delete state.posters[address];
     }
+
+    // update latest event, if update was applied
+    if (accepted) state.lastEvent[type] = block;
 
     // if reached, accepted should be true
     return accepted;
