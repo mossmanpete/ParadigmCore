@@ -255,7 +255,7 @@ export function addNewEvent(state: State, tx: ParsedWitnessData): boolean {
 
     // new events should have block > lastEvent
     if (state.lastEvent[type] >= block) {
-        err("state", "ignoring new event that may have been applied");
+        warn("state", "ignoring new event that may have been applied");
         return false;
     }
 
