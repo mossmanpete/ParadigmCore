@@ -29,7 +29,7 @@ import { doForEachValidator } from "./util/valFunctions";
 export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
     return (request) => {
         // parse height and proposer from header
-        const currHeight: bigint = BigInt(request.header.height);
+        const currHeight: number = Number(request.header.height);
         const proposer: string = request.header.proposerAddress.toString("hex");
 
         // store array of last votes
@@ -40,14 +40,14 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
             lastVotes.forEach((vote: any) => {
                 // pull/parse nodeId and current vote power
                 const nodeId = vote.validator.address.toString("hex");
-                const power = BigInt(vote.validator.power);
+                const power = Number(vote.validator.power);
 
                 // TODO: sould we check for new validators here?
 
                 // update vote and height trackers
                 if (vote.signedLastBlock) {
-                    state.validators[nodeId].totalVotes += 1n;
-                    state.validators[nodeId].lastVoted = (currHeight - 1n);
+                    state.validators[nodeId].totalVotes += 1;
+                    state.validators[nodeId].lastVoted = (currHeight - 1);
                 }
 
                 // record if validator was active last round
@@ -76,7 +76,7 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                 const validator = state.validators[key];
 
                 // mark active if vote recorded on last block
-                if (validator.lastVoted + 1n === currHeight) {
+                if ((validator.lastVoted + 1) === currHeight) {
                     validator.active = true;
                 } else {
                     validator.active = false;

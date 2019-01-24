@@ -98,7 +98,7 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, O
 
         // Begin state modification
         state.posters[poster].orderLimit -= 1;
-        state.orderCounter += 1n;
+        state.orderCounter += 1;
         // End state modification
 
         // Add order to block's broadcast queue

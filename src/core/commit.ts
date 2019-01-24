@@ -75,7 +75,7 @@ export function commitWrapper(
             }
 
             // Increase last block height
-            deliverState.lastBlockHeight += 1n;
+            deliverState.lastBlockHeight += 1;
 
             // Generate new state hash and update
             stateHash = Hasher.hashState(deliverState);
