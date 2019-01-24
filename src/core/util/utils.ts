@@ -400,7 +400,6 @@ export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
     } else {
         // unexpected case, for now will exit process
         err("state", "unexpected: no poster account, but requesting withdrawl");
-        process.exit(1);
         accepted = false;
     }
 
