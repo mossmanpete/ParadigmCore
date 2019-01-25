@@ -1,8 +1,8 @@
 
 <h1 align="center">
   ParadigmCore
-  <a href="https://github.com/ParadigmFoundation/ParadigmCore/pull/24">
-    <code>v0.7.0-rc-1</code>
+  <a href="https://github.com/ParadigmFoundation/ParadigmCore/pull/38">
+    <code>v0.7.0-rc-3</code>
   </a>
 </h1>
 
@@ -81,7 +81,7 @@ $ yarn install
 
 ### Build from source
 
-Build the TypeScript source files into executable JS (by default placed at `./dist`) by running the following command. The required 
+Build the TypeScript source files into executable JS (by default placed at `./dist`) by running the following command.
 ```shell
 # build with npm
 npm run build
@@ -94,7 +94,7 @@ If needed, modify [`tsconfig.json`](./tsconfig.json) to set compiler options.
 
 ### Start
 
-Start ParadigmCore by running one of the following. Do not run the startup script directly.
+Start ParadigmCore by running one of the following. ParadigmCore will intentionally exit if initiated by executing the startup script (`src/index.ts`) directly. If this behavior is desired, you can remove that check from the startup proceedure.
 
 ```shell
 # with npm

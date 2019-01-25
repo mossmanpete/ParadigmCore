@@ -156,7 +156,7 @@ interface WitnessData extends TransactionData {
     amount:     string; // stringified bigint
     block:      number; // block number of event
     address:    string; // ethereum address of validator/poster
-    publicKey:  string | undefined; // tendermint ed25519 key of validator
+    publicKey:  string; // tendermint ed25519 key of validator (base64 enc string)
     id?:        string; // hash of event data
 }
 

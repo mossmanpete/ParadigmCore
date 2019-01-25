@@ -15,10 +15,11 @@
 // custom typings
 import { ResponseCheckTx } from "../typings/abci";
 
-// util functions
+// utils
 import { Vote } from "./util/Vote";
 import { warn } from "../util/log";
 import { decodeTx, preVerifyTx } from "./util/utils";
+import { messages as msg } from "../util/static/messages"
 
 // tx handlers
 import { checkOrder } from "./handlers/order";
@@ -29,12 +30,18 @@ import { checkRebalance } from "./handlers/rebalance";
 /**
  * Perform light verification on incoming transactions, accept valid
  * transactions to the mempool, and reject invalid ones.
+ * 
+ * Currently, all transaction types are checked before mempool/gossip by:
+ * - encoding according to spec/implementation of TxGenerator and TxBroadcaster
+ * - zlib compression
+ * - signature from an active validator
+ * - transaction type specific rules
  *
  * @param request {object} raw transaction as delivered by Tendermint core.
  */
 export function checkTxWrapper(
     state: State,
-    msg: LogTemplates,
+    // msg: LogTemplates,
     Order: any
 ): (r) => ResponseCheckTx {
     return (request) => {

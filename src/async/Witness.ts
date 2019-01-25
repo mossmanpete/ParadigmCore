@@ -31,6 +31,7 @@ import { default as codes } from "../util/Codes";
 import { err, log } from "../util/log";
 import { messages as msg } from "../util/static/messages";
 import { createWitnessEventObject } from "../core/util/utils";
+import { bigIntReplacer } from "../util/static/bigIntUtils";
 
 /**
  * A Witness supports a one way peg-zone between Ethereum and the OrderStream to
@@ -98,7 +99,9 @@ export class Witness {
         Object.keys(bals).forEach((k, v) => {
             if (bals.hasOwnProperty(k) && typeof(bals[k]) === "bigint") {
                 // Compute proportional order limit
-                const lim = (bals[k] / total) * BigInt(limit);
+                const balNum = parseInt(bals[k].toString());
+                const totNum = parseInt(total.toString());
+                const lim = (balNum / totNum) * limit;
 
                 // Create limit object for each address
                 output[k] = {
@@ -691,8 +694,6 @@ export class Witness {
         // send transaction via broadcaster instance
         this.broadcaster.send(tx).catch((error) => {
             err("peg", `failed to send local abci tx: ${error.message}`);
-            console.log("bye");
-            process.exit(0);
         });
 
         // Will return OK unless ABCI is disconnected

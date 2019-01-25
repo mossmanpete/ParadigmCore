@@ -87,7 +87,11 @@ let node;                       // tendermint node child process instance
             };
         }
 
+        // create tendermint subprocess
         node = tendermint.node(env.TM_HOME, options);
+
+        // if in debug mode, pipe tendermint logs to STDOUT
+        if (env.DEBUG) node.stdout.pipe(process.stdout);
     } catch (error) {
         err("state", "failed starting tendermint.");
         err("state", "tendermint may not be installed or configured.");
@@ -135,7 +139,7 @@ let node;                       // tendermint node child process instance
         process.exit(1);
     }
 
-    // order tracker and stream server
+    // order tracker and order-stream server
     logStart("starting order tracker and websocket server...");
     try {
         // Create a "parent" EventEmitter
@@ -170,7 +174,6 @@ let node;                       // tendermint node child process instance
         };
 
         await startAPIserver(options);
-        log("api", msg.api.messages.servStart);
     } catch (error) {
         err("api", "failed initializing api server.");
         err("start", error.message);

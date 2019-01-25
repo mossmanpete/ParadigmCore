@@ -170,7 +170,7 @@ $ sudo reboot
 
 ## Install software
 
-There are several packages you must install before you can run ParadigmCore and connect it to the OrderStream network. This includes Node.JS (the required runtime for ParadigmCore) as well as some required build tools, and an optional Ethereum client. 
+There are several packages you must install before you can run ParadigmCore and connect it to the OrderStream network. This includes Node.js (the required runtime for ParadigmCore) as well as some required build tools, and an optional Ethereum client. 
 
 ### Install build tools
 Certain ParadigmCore dependencies rely on common software build tools. Conveniently, they can all be installed with the following command(s). 
@@ -189,10 +189,10 @@ $ sudo apt-get install -y nodejs
 ```
 
 ## Configure Ethereum client
-Skip this step if you plan to use Infura or another remote `web3` provider. The instructions show below are for parity, but feel free to use geth or another Ethereum client of your choosing. 
+Skip this step if you plan to use Infura or another remote `web3` provider. The instructions show below are for `parity`, but feel free to use `geth` or another Ethereum client of your choosing. 
 
 ### Download and install binary
-Grab a recent Parity Ethereum binary with their one-liner install script.
+Grab a recent Parity Ethereum binary with their convenient one-liner install script.
 
 ```shell
 $ bash <(curl https://get.parity.io -L)
@@ -224,14 +224,14 @@ WantedBy=default.target
 ```
 
 ### Create configuration file
-Now, you will create a config.toml file that will be used by the system to configure the parity process. Currently, the OrderStream network uses Ethereum's Ropsten testnet, so to sync with the current OrderStream network, your Ethereum client must sync to the Ropsten testnet.
+Now, you will create a `config.toml` file that will be used by the system to configure the parity process. Currently, the OrderStream network uses Ethereum's Ropsten testnet, so to sync with the current OrderStream network, your Ethereum client must sync to the Ropsten testnet.
 
 ```shell
 $ sudo mkdir /etc/parity
 $ sudo touch /etc/parity/config.toml
 ```
 
-Open the newly created configuration file (with sudo privileges) and paste in the following. Adjust the config if you are deploying a custom OrderStream on a different Ethereum network.
+Open the newly created configuration file (with `sudo` privileges) and paste in the following. Adjust the config if you are deploying a custom OrderStream on a different Ethereum network.
 
 ```shell
 [parity]
@@ -263,7 +263,7 @@ This section will guide you through the process of cloning and configuring Parad
 
 ### Clone ParadigmCore source
 
-In the absence of a downloadable release for ParadigmCore, you must clone the source repository via git. 
+In the absence of a downloadable release for ParadigmCore, you must clone the source repository via `git`. 
 
 First, create a new directory in your home folder - or wherever else you wish to store, build, and run ParadigmCore.
 
@@ -282,7 +282,7 @@ $ git clone git@github.com:ParadigmFoundation/ParadigmCore ~/paradigmcore
 ```
 
 ### Set environment variables
-ParadigmCore is configured via local environment variables. You can store these config variables in a .env file (recommended) placed in the root directory of ParadigmCore. A startup script will handle the installation and configuration of tendermint, but first you must set the necessary config variables.
+ParadigmCore is configured via local environment variables. You can store these config variables in a `.env` file (recommended) placed in the root directory of ParadigmCore. A startup script will handle the installation and configuration of tendermint, but first you must set the necessary config variables.
 
 #### Copy included template
 Get started by copying a mostly filled template included with the repository. You can use a blank template (also included) for more granular control and custom setups.
@@ -296,6 +296,8 @@ Unless otherwise specified, you should run all commands in your ParadigmCore roo
 
 #### Add required fields 
 There are three fields that must be added to the `.env` in for all configurations, and an additional one for nodes joining an existing network.
+
+The most up-to-date testnet information can be found [here.](https://github.com/ParadigmFoundation/blind-star-testnet)
 
 - `NODE_TYPE` is used to configure full vs. validator (required)
 - `NODE_ENV` is for development/production (required)
@@ -312,7 +314,7 @@ If you want to run a full node, and connect it to the existing OrderStream test-
 NODE_TYPE="full"
 NODE_ENV="production"
 WEB3_PROVIDER="ws://localhost:8546"
-SEEDS="1AB8749957B75602794A0EF8306FE4E27BE5B27A@bs1.paradigm.market:26656"
+SEEDS="AB96D9C6ACA18EE587A5DC24783CFBA20636D0E8@bs1.paradigm.market:26656"
 ```
 
 If you want to run a full node on the existing test-network, but don't have or want a full Ethereum client locally, replace `WEB3_PROVIDER` with the following.
@@ -341,14 +343,14 @@ Use this configuration if you already are included as a validator in the testnet
 NODE_TYPE="validator"
 NODE_ENV="production"
 WEB3_PROVIDER="ws://localhost:8546"
-SEEDS="1AB8749957B75602794A0EF8306FE4E27BE5B27A@bs1.paradigm.market:26656"
+SEEDS="AB96D9C6ACA18EE587A5DC24783CFBA20636D0E8@bs1.paradigm.market:26656"
 ```
 
 A local Ethereum client is required for OrderStream validators. See previous lesson for parity install instructions. 
 
 ### Add genesis file
 
-Validators and full nodes intending to join the active OrderStream test-network will also need to obtain the [current `genesis.json`](https://gist.github.com/hrharder/890a9c12773bfdfb4275b1f768db9292) that the OrderStream testnet was initialized with. You will need to place that file at `lib/tendermint/config/genesis.json` and delete the file generated after the next step.
+Validators and full nodes intending to join the active OrderStream test-network will also need to obtain the [current `genesis.json`](https://github.com/ParadigmFoundation/blind-star-testnet) that the OrderStream testnet was initialized with. You will need to place that file at `lib/tendermint/config/genesis.json` and delete the file generated after the next step.
 
 ## Install dependencies
 After adding the required fields to your configuration file, you can run npm i to perform various configuration steps. It will handle the following primary steps, among other setup and validation.

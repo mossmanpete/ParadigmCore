@@ -33,7 +33,7 @@ export let deliverState: State = {
     maxOrderBytes: null,
     confirmationThreshold: null
   },
-  orderCounter: 0n,
-  lastBlockHeight: 0n,
+  orderCounter: 0,
+  lastBlockHeight: 0,
   lastBlockAppHash: null
 };

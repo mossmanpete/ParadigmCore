@@ -68,17 +68,21 @@ export async function start(options) {
             }
         });
 
-        // Setup express server
+        // setup express server
         app.enable("trust proxy");
         app.use(limiter);
         app.use(helmet());
         app.use(cors());
         app.use(bodyParser.json());
+
+        // attach handlers
         app.post("/*", wrapAsync(postHandler));
         app.use(errorHandler);
 
-        // Start API server
+        // start API server
         await app.listen(options.port);
+        log("api", `http api server started on port ${options.port}`);
+        
         return;
     } catch (error) {
         throw new Error(error.message);

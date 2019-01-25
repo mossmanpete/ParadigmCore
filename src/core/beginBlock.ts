@@ -29,8 +29,8 @@ import { doForEachValidator } from "./util/valFunctions";
 export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
     return (request) => {
         // parse height and proposer from header
-        const currHeight: bigint = BigInt(request.header.height);
-        const currProposer: string = request.header.proposerAddress.toString("hex");
+        const currHeight: number = Number(request.header.height);
+        const proposer: string = request.header.proposerAddress.toString("hex");
 
         // store array of last votes
         const lastVotes: object[] | undefined = request.lastCommitInfo.votes;
@@ -40,34 +40,21 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
             lastVotes.forEach((vote: any) => {
                 // pull/parse nodeId and current vote power
                 const nodeId = vote.validator.address.toString("hex");
-                const power = BigInt(vote.validator.power);
+                const power = Number(vote.validator.power);
 
-                // create entry if validator has not voted yet
-                /* @todo where should this be moved?
-                if (!(state.validators.hasOwnProperty(nodeId))) {
-                    state.validators[nodeId] = {
-                        balance: BigInt(0), // @TODO re-examine
-                        power,
-                        publicKey: Buffer.from(0),
-                        ethAccount: "not-implemented",
-                        lastVoted: null,
-                        lastProposed: null,
-                        totalVotes: BigInt(0),
-                        genesis: false,
-                    };
-                }*/
+                // TODO: sould we check for new validators here?
 
                 // update vote and height trackers
                 if (vote.signedLastBlock) {
-                    state.validators[nodeId].totalVotes += 1n;
-                    state.validators[nodeId].lastVoted = (currHeight - 1n);
+                    state.validators[nodeId].totalVotes += 1;
+                    state.validators[nodeId].lastVoted = (currHeight - 1);
                 }
 
                 // record if validator was active last round
                 state.validators[nodeId].active = vote.signedLastBlock;
 
                 // record if they are proposer this round
-                if (nodeId === currProposer) {
+                if (nodeId === proposer) {
                     state.validators[nodeId].lastProposed = currHeight;
                 }
 
@@ -89,7 +76,7 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
                 const validator = state.validators[key];
 
                 // mark active if vote recorded on last block
-                if (validator.lastVoted + 1n === currHeight) {
+                if ((validator.lastVoted + 1) === currHeight) {
                     validator.active = true;
                 } else {
                     validator.active = false;
@@ -106,7 +93,8 @@ export function beginBlockWrapper(state: State): (r) => ResponseBeginBlock {
         // Indicate new round, return no indexing tags
         log(
             "state",
-            `block #${currHeight} being proposed by validator ...${currProposer.slice(-5)}`
+            `current proposer: ${proposer.slice(0,5)}...${proposer.slice(-5)}`,
+            currHeight
         );
         return {};
     };

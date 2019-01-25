@@ -59,10 +59,11 @@ export function commitWrapper(
                     const newEnd = deliverState.round.endsAt;
 
                     // Synchronize staking period parameters
+                    // todo: this can't be a functino call from within SM
                     witness.synchronize(newRound, newStart, newEnd);
 
                     // Temporary
-                    console.log(`\n... current state: ${JSON.stringify(commitState, bigIntReplacer)}\n`);
+                    console.log(`\n... current state: ${JSON.stringify(deliverState, bigIntReplacer)}\n`);
                     break;
                 }
 
@@ -74,13 +75,14 @@ export function commitWrapper(
             }
 
             // Increase last block height
-            deliverState.lastBlockHeight += 1n;
+            deliverState.lastBlockHeight += 1;
 
             // Generate new state hash and update
             stateHash = Hasher.hashState(deliverState);
             deliverState.lastBlockAppHash = stateHash;
 
             // Trigger broadcast of orders and streams
+            // todo: this can't be a function call from SM
             tracker.triggerBroadcast();
 
             // Synchronize commit state from delivertx state
@@ -88,7 +90,10 @@ export function commitWrapper(
 
             log(
                 "state",
-                `committing new state with hash: ...${stateHash.toString("hex").slice(-8)}`
+                `new state hash: ` + 
+                `${stateHash.toString("hex").slice(0,5)}...` +
+                `${stateHash.toString("hex").slice(-5)}`,
+                commitState.lastBlockHeight
             );
         } catch (error) {
             err("state", `${msg.abci.errors.broadcast}: ${error.message}`);

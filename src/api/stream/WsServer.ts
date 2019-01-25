@@ -35,7 +35,7 @@ function bind(server: Server): Server {
     return server.on("connection", (connection) => {
         // Send connection message
         try {
-            Message.sendMessage(connection, msg.websocket.messages.connected);
+            Message.sendMessage(connection, "connected to order-stream");
         } catch (error) {
             err("api", `(ws) ${msg.websocket.errors.connect}`);
         }
@@ -74,7 +74,7 @@ export function start(port: number, emitter: EventEmitter) {
     try {
         // Create WebSocket server
         let server = new Server({ port }, () => {
-            log("api", msg.websocket.messages.servStart);
+            log("api", `order-stream server started on port ${port}`);
         });
 
         // Load global order emitter

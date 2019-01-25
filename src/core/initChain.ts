@@ -45,7 +45,7 @@ export function initChainWrapper(
             // Generate hexadecimal nodeID from public key
             const pubKey: Buffer = validator.pubKey.data;
             const nodeId: string = pubToAddr(pubKey).toString("hex");
-            const power: bigint = BigInt(validator.power);
+            const power: number = Number(validator.power);
 
             // Create entry if validator has not voted yet
             if (!(deliverState.validators.hasOwnProperty(nodeId))) {
@@ -55,8 +55,8 @@ export function initChainWrapper(
                     publicKey: pubKey,
                     ethAccount: null,
                     lastProposed: null,
-                    lastVoted: null,
-                    totalVotes: BigInt(0),
+                    lastVoted: 0,
+                    totalVotes: 0,
                     active: true,
                     genesis: true,
                     applied: true,
