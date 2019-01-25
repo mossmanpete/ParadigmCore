@@ -5,7 +5,7 @@ title: Getting Started
 
 Follow this guide to download, configure, build, and run a full or validating OrderStream node.
 
-If you want more detailed and complete instructions, follow [this tutorial](./tutorial.html) to set up a ParadigmCore instance, and join the current OrderStream test-network. 
+If you want more detailed and complete instructions, follow [this tutorial](https://docs.paradigm.market/paradigmcore/tutorial.html) to set up a ParadigmCore instance, and join the current OrderStream test-network. 
 
 ## Setup Runtime
 
@@ -33,9 +33,9 @@ ParadigmCore is configured through it's runtime environment variables, which can
 ```bash
 $ cp lib/template.env .env
 ```
-_A blank template is also included at [`./lib/raw_template.env`](./lib/raw_template.env) for more granular control and custom configuration._
+_A blank template is also included at [`./lib/raw_template.env`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/lib/raw_template.env) for more granular control and custom configuration._
 
-The [`template.env`](./lib/template.env) is nearly-complete with some sensible defaults, but you must set the following two variables before trying to configure and run ParadigmCore:
+The [`template.env`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/lib/template.env) is nearly-complete with some sensible defaults, but you must set the following two variables before trying to configure and run ParadigmCore:
 ```bash
 # set to 'full' to configure a non-validating node
 NODE_TYPE="validator"
@@ -50,8 +50,8 @@ A local Ethereum node is recommended, but for development purposes the WebSocket
 
 If you use the `STAKE_CONTRACT_ADDR` set in the template, you must use a Ropsten provider. The Paradigm Protocol is not yet deployed on the main Ethereum network.
 
-## [Join an existing network](/paradigmcore/tutorial)
-_Note: more detailed instructions for joining a network, as well as hardware requirements for validators can be found [here](/paradigmcore/tutorial.md)._
+## [Join the OrderStream Test Network](https://github.com/ParadigmFoundation/blind-star-testnet)
+_Note: more detailed instructions for joining a network, as well as hardware requirements for validators can be found [here](./tutorial.md). Other information required to join the "blind-star" test-network [can be found in its repository.](https://github.com/ParadigmFoundation/blind-star-testnet)_
 
 If you intend to join an existing network as a full or validating node, you must also specify the following variable in your `.env` file:
 ```bash
@@ -70,7 +70,7 @@ Conveniently, all dependencies, configuration, and validation can be run with a 
 $ npm i # or yarn install
 ```
 
-This will trigger a number of steps, including the execution of [`init.js`](./init.js) which downloads the correct tendermint binary, configures it's directories, generates node keys and network genesis files, and copies some required fields (including keys) to the environment file.
+This will trigger a number of steps, including the execution of [`init.js`](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/init.js) which downloads the correct tendermint binary, configures it's directories, generates node keys and network genesis files, and copies some required fields (including keys) to the environment file.
 
 It also performs validation of the environment file and (tries) to provide helpful messages in the case of incomplete or incorrect configuration. You can run this script as many times as necessary – if validation fails the first time – after making changes to the `.env` file by running `npm i` again.
 

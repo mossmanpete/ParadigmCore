@@ -4,7 +4,7 @@ title: Overview
 
 # ParadigmCore
 
-ParadigmCore is the reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper.](https://paradigm.market/whitepaper) An introduction to the protocol as a whole can be found [here](/overview/intro.html). Additional documentation and tutorials will be published over the coming weeks and months.
+ParadigmCore is the reference implementation of the OrderStream (OS) network. To read more about OS network and the high-level functionality the software enables, check out the Paradigm Protocol [whitepaper.](https://paradigm.market/whitepaper) An introduction to the protocol as a whole can be found [here](/overview/). Additional documentation and tutorials will be published over the coming weeks and months.
 
 ParadigmCore is built on [Tendermint](https://tendermint.com/), which it uses for networking and BFT consensus.
 
