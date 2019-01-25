@@ -417,4 +417,3 @@ If you ran into issues following this tutorial, don't hesitate to ask for help i
 - Ask the team on [our chat server](https://chat.paradigm.market)
 
 If you encounter an issue you believe to be a bug or design flaw, please inform us as well.
-
