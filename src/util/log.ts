@@ -17,45 +17,38 @@ function print(msg, lvl) {
 }
 
 export function logStart(msg?) {
-    if (!msg) {
-        // special welcome message
-        print(
-            `${c.gray("lvl:")} ${c.bold("info")}\twelcome :)\t` +
-            `starting ${c.bold.greenBright("paradigm core")}` +
-            ` v${version}`,
-            -1
-        );
-    } else {
+    if (msg) {
         print(
             `${c.gray("lvl:")} ${c.bold("info")}\t` +
             `${c.gray("mod:")} ${c.bold.green("startup")}\t` +
             `${c.gray("msg:")} ${msg}`,
             2
         );
+        return;
     }
+
+    // special welcome message
+    print(
+        `${c.gray("lvl:")} ${c.bold("info")}\twelcome :)\t` +
+        `starting ${c.bold.greenBright("paradigm core")}` +
+        ` v${version}`,
+        -1
+    );
 }
 
-export function log(mod: string, msg: string, height?: number | bigint) {
+export function log(mod: string, msg: string, height?: number, hash?: string) {
     // return if invalid function call
     if (_.isUndefined(defs[mod]) || !_.isString(msg)) { return; }
 
-    // special case for state machine ("core") module and TM blockchain
-    if (mod === "state" && height) {
-        print(
-            `${c.gray("lvl:")} ${c.bold("info")}\t` + 
-            `${c.gray("mod:")} ${c.bold[(defs[mod].color)](defs[mod].label)}\t` + 
-            `${c.gray("msg:")} ${msg}\t` +
-            `${c.gray("height: ")} ${height}`,
-            0
-        );
-        return;
-    }
+    // special cases for state machine ("core") module and TM blockchain
+    const ifHeight = height ? `${c.gray("height: ")} ${height}\t` : "";
+    const ifHash = hash ? `${c.gray("appHash: ")} ${hash}` : "";
 
     // write to stdout with log level 0 (info/all)
     print(
         `${c.gray("lvl:")} ${c.bold("info")}\t` + 
         `${c.gray("mod:")} ${c.bold[(defs[mod].color)](defs[mod].label)}\t` + 
-        `${c.gray("msg:")} ${msg}`,
+        `${c.gray("msg:")} ${msg}\t` + ifHeight + ifHash,
         0
     );
 }

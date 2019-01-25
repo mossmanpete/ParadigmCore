@@ -297,7 +297,7 @@ export function addNewEvent(state: State, tx: ParsedWitnessData): boolean {
 
 /**
  * Used in `witness` transaction execution. Responsible for increasing the conf
- * conuter on pending events, and deterministically applying the event to state
+ * counter on pending events, and deterministically applying the event to state
  * if the required confirmation threshold (enough attestations) is reached.
  * 
  * @param state {State} the current deliverState object
@@ -312,13 +312,6 @@ export function addConfMaybeApplyEvent(
 
     // will be true if sucessfully completed transition
     let accepted: boolean;
-
-    // @todo does validator and poster subjects need to be tracked separately?
-    // todo: remove? move up the stack?
-    // if (state.lastEvent[type] >= block) {
-    //    err("state", "ignoring existing event that may have been applied");
-    //    return false;
-    //}
 
     // add a confirmation to the pending event
     state.events[block][id].conf += 1;
