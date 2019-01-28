@@ -691,9 +691,18 @@ export class Witness {
      * @param tx   {object}    raw transaction object
      */
     private execAbciTx(tx: SignedTransaction): number {
+        // temporary?
+        let errCounter = 0;
+
         // send transaction via broadcaster instance
-        this.broadcaster.send(tx).catch((error) => {
+        this.broadcaster.send(tx).then(() => {
+            errCounter = 0;
+        }).catch((error) => {
             err("peg", `failed to send local abci tx: ${error.message}`);
+            errCounter++;
+
+            // exit if ABCI server is dead (with reasonable certainty)
+            if (errCounter >= 10) process.exit(1);
         });
 
         // Will return OK unless ABCI is disconnected
