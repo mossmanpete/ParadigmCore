@@ -269,7 +269,7 @@ export function addNewEvent(state: State, tx: ParsedWitnessData): boolean {
         conf: 1
     };
 
-    // if there is only one validator, immediatley apply event
+    // if there is only one validator, immediately apply event
     if (state.consensusParams.confirmationThreshold === 1) {
         log("state", "immediately applying event in development mode");
 
@@ -310,7 +310,7 @@ export function addConfMaybeApplyEvent(
     // destructure event data
     const { subject, type, block, id } = tx;
 
-    // will be true if sucessfully completed transition
+    // will be true if successfully completed transition
     let accepted: boolean;
 
     // add a confirmation to the pending event
@@ -366,10 +366,16 @@ export function applyPosterEvent(state: State, tx: ParsedWitnessData): boolean {
     if (state.posters.hasOwnProperty(address)) {
         // poster already has account, increase or decrease balance
         switch (type) {
-            case "add": { state.posters[address].balance += amount; break; }
-            case "remove": { state.posters[address].balance -= amount; break; }
+            case "add": { 
+                state.posters[address].balance += amount;
+                break;
+            }
+            case "remove": {
+                state.posters[address].balance -= amount;
+                break;
+            }
             default: {
-                err("state", "recieved uknown type for poster subject");
+                err("state", "received unknown type for poster subject");
                 return false; 
             }
         }
