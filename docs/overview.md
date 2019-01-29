@@ -17,13 +17,13 @@ Jump into ParadigmCore by following one of the links below:
 
 Non-exhaustive list of ParadigmCore functionality.
 
+- - Robust one-way [communication "bridge"](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/spec/ethereum-peg-spec.md) between Ethereum and ParadigmCore
 - Securely and consistently replicate state across node instances
-- Four distinct internal transaction types
-- Fully ABCI compliant transactional state machine
-- Robust one-way [communication "bridge"](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/spec/ethereum-peg-spec.md) between Ethereum and ParadigmCore
+- Security guaranteed by signatures from all network participants
+- Fully compliant Tendermint ABCI transactional state machine
 - Dynamic setup script for "easy" configuration
 - Event based `order-stream` API served over WS
-- REST API for submitting orders over HTTP
+- REST API for submitting orders over HTTP to validator nodes
 
 ## Features in-progress
 
