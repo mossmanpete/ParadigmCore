@@ -12,6 +12,22 @@ This software is in development. While we consider ParadigmCore to be reasonably
 
 **Note:** this version of ParadigmCore only supports Tendermint `v0.29.0`, which it automatically configures on installation.
 
+## Jump to...
+
+- [Reference and documentation](#reference-and-documentation)
+- [Quick start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Clone](#clone)
+  - [Set up environment](#set-up-environment)
+  - [Install dependencies](#install-dependencies)
+  - [Build from source](#build-from-source)
+  - [Start](#start)
+  - [Reset blockchain and state](#reset-blockchain-and-state)
+- [Test](#test)
+- [Run with Docker](#run-with-docker)
+- [Issues and proposals](#issues-and-proposals)
+- [Contributing](#contributing)
+
 ## Reference and Documentation
 
 For more information about ParadigmCore and the protocol as a whole:
@@ -48,6 +64,7 @@ Complete install instructions can be found [here](./docs/install.md), and an eve
   $ npm install --global scrypt
   ```
 - Access to a local (or remote, if necessary) `web3` provider
+
 ### Clone
 
 Clone the repository via SSH or HTTPS (specify target directory as well):
@@ -116,7 +133,7 @@ $ npm run reset
 $ yarn reset
 ```
 
-### Run Tests
+## Test
 
 Run the current test suite (only unit tests, currently) with the following command. 
 
@@ -127,6 +144,27 @@ $ npm run test
 # with yarn
 $ yarn test
 ```
+
+## Run with Docker
+
+A `Dockerfile` is included for convenience. To run ParadigmCore as a docker container, create a `docker.env` file at the repositories root directory, with any normal configuration. Build the image with (run from ParadigmCore directory):
+
+```shell
+$ docker build -t paradigmcore .
+```
+
+Run the container with one of the following:
+
+```shell
+# run in foreground (view log output)
+$ docker run paradigmcore
+
+# detach process
+$ docker run -d paradigmcore
+```
+
+If you wish to use a dockerized ParadigmCore as a production node, you will manually need to manage network ports inside and outside the container to ensure it can communicate with the rest of the network.
+
 ## Issues and proposals
 ParadigmCore is under active development, and at this point should not be considered stable. If you find a bug, inconsistency, or vulnerability please open an [issue](https://github.com/paradigmfoundation/paradigmcore/issues).
 
