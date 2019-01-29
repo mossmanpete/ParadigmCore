@@ -323,6 +323,8 @@ If you want to run a full node on the existing test-network, but don't have or w
 WEB3_PROVIDER="wss://ropsten.infura.io/ws"
 ```
 
+Get the `genesis.json` file for the OrderStream test-network in its repository, [found here.](https://github.com/ParadigmFoundation/blind-star-testnet)
+
 **b) Single local development node**
 
 Use this configuration if you wish to run a single instance of ParadigmCore locally for development or testing purposes. With this config, you will be the only node on your "network" and will act as a validator.
@@ -346,7 +348,9 @@ WEB3_PROVIDER="ws://localhost:8546"
 SEEDS="AB96D9C6ACA18EE587A5DC24783CFBA20636D0E8@bs1.paradigm.market:26656"
 ```
 
-A local Ethereum client is required for OrderStream validators. See previous lesson for parity install instructions. 
+A local Ethereum client is required for OrderStream validators. See previous lesson for parity install instructions.
+
+Again, all information required to join the current "blind-star" test network can be [found in its repository here](https://github.com/ParadigmFoundation/blind-star-testnet).
 
 ### Add genesis file
 
