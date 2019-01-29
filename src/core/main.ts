@@ -82,7 +82,7 @@ export async function start(options: ParadigmCoreOptions): Promise<null> {
             // called at genesis
             initChain: initChainWrapper(dState, cState, consensusParams),
 
-            // mempool verifiction, pre-gossip
+            // mempool verification, pre-gossip
             checkTx: checkTxWrapper(cState, Order),
 
             // roundstep: [ beginBlock, deliverTx[, ...], endBlock, commit ]
