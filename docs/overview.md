@@ -17,7 +17,7 @@ Jump into ParadigmCore by following one of the links below:
 
 Non-exhaustive list of ParadigmCore functionality.
 
-- - Robust one-way [communication "bridge"](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/spec/ethereum-peg-spec.md) between Ethereum and ParadigmCore
+- Robust one-way [communication "bridge"](https://github.com/ParadigmFoundation/ParadigmCore/blob/master/spec/ethereum-peg-spec.md) between Ethereum and ParadigmCore
 - Securely and consistently replicate state across node instances
 - Security guaranteed by signatures from all network participants
 - Fully compliant Tendermint ABCI transactional state machine
@@ -27,12 +27,12 @@ Non-exhaustive list of ParadigmCore functionality.
 
 ## Features in-progress
 
-- Dynamic validator set curation based on [`ValidatorRegistry` contract](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/internal)
+- Dynamic validator set curation based on the [`ValidatorRegistry` contract](https://github.com/ParadigmFoundation/ParadigmContracts/blob/master/internal)
 - Self-administered error resolution for various network errors
-- Segregated-witness style `order` transaction separation (conserves space)
+- Segregated-witness style `order` transaction separation (conserves blockchain space)
 - Dockerfile for ParadigmCore
 - KV based indexing for historical transactions
-- Golang implementation
+- Golang implementation of ParadigmCore
 
 ## Order books and storage
 The OrderStream network design follows a partially-synchronous and event-driven architecture, with strong consistency guarantees provided by the underlying Tendermint consensus protocol. The network and client implementations are specifically designed for order message broadcast. As such, ParadigmCore does not include a database interface (by default) or offer query functionality for historical orders. Instead it provides a simple "event stream" that allows for applications to derive order books in real time that can be stored in an out-of-state database.
