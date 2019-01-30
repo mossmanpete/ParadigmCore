@@ -77,6 +77,7 @@ export function checkOrder(tx: SignedOrderTx, state: State, Order) {
 export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, Order) {
     let order: Order;   // Paradigm order object
     let poster: string; // Recovered poster address from signature
+    let tags: KVPair[] = [];
 
     // Construct order object, and recover poster signature
     try {
@@ -104,8 +105,11 @@ export function deliverOrder(tx: SignedOrderTx, state: State, q: OrderTracker, O
         // Add order to block's broadcast queue
         q.add(orderCopy);
 
+        // add tags
+        tags.push({ key: "order", value: orderCopy.id });
+
         log("state", msg.abci.messages.verified);
-        return Vote.valid(`(confirmed) orderID: ${orderCopy.id}`);
+        return Vote.valid(`orderID: ${orderCopy.id}`, tags);
     } else {
         // No stake or insufficient quota remaining
         warn("state", msg.abci.messages.noStake);

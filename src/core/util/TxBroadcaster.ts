@@ -132,7 +132,7 @@ export class TxBroadcaster {
 
         try {
             // Await ABCI response, and resolve promise
-            const res = await this.client.broadcastTxSync({
+            const res = await this.client.broadcastTxCommit({
                 tx: `"${ payload }"`,
             });
 

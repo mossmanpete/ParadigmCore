@@ -21,11 +21,13 @@ export class Vote {
      *
      * @param message {string} optional message
      */
-    public static valid(message?: string) {
-        return {
-            code: 0,
-            log: message,
-        };
+    public static valid(log?: string, tags?: KVPair[]) {
+        // basic response object
+        const res = { code: 0, log, };
+
+        // add tags if present
+        if (tags && tags.length > 0) res["tags"] = tags;
+        return res;
     }
 
     /**
@@ -33,10 +35,9 @@ export class Vote {
      *
      * @param message {string} optional message
      */
-    public static invalid(message?: string) {
-        return {
-            code: 1,
-            log: message,
-        };
+    public static invalid(log?: string, tags?: KVPair[]) {
+         // basic response object
+         const res = { code: 1, log, };
+         return res;
     }
 }

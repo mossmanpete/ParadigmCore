@@ -97,11 +97,11 @@ async function postHandler(req: Request, res: Response, next: NextFunction) {
     let tx: SignedTransaction;
 
     // verify order validity before submitting to state machine
-    const paradigmOrder = new paradigm.Order(req.body);
-    if (!await paradigmOrder.isValid()) {
-        warn("api", "invalid order rejected");
-        Message.staticSendError(res, "submitted order is invalid.", 422);
-    } else {
+    //const paradigmOrder = new paradigm.Order(req.body);
+    //if (!await paradigmOrder.isValid()) {
+       // warn("api", "invalid order rejected");
+        //Message.staticSendError(res, "submitted order is invalid.", 422);
+    // } else {
         // create and sign transaction (as validator)
         tx = generator.create({ data: req.body, type: "order" });
 
@@ -110,7 +110,7 @@ async function postHandler(req: Request, res: Response, next: NextFunction) {
 
         // send response from application back to client
         Message.staticSend(res, response);
-    }
+    // }
 }
 
 /**
