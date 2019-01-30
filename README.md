@@ -2,7 +2,7 @@
 <h1 align="center">
   ParadigmCore
   <a href="https://github.com/ParadigmFoundation/ParadigmCore/pull/38">
-    <code>v0.7.0-rc-3</code>
+    <code>v0.7.0-rc-4</code>
   </a>
 </h1>
 

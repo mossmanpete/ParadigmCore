@@ -2,7 +2,6 @@
 .notes
 .vscode
 .DS_Store
-.dockerignore
 
 node_modules
 dist
