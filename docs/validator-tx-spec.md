@@ -1,3 +1,7 @@
+---
+title: Validator Selection
+---
+
 # Specification for Dynamic Validator Updates
 
 Building on top of the established [Ethereum -> OrderStream](./ethereum-peg-spec.md) one-way peg developed to track "posters" who have made a stake in the `PosterStake` Ethereum contract for write access to the OrderStream network, this specification outlines a modification to the internal<sup>[[1]](#1)</sup> `witness` transaction type, and accompanying changes in the core state machine. 

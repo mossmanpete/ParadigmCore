@@ -1,3 +1,7 @@
+---
+title: Reference
+---
+
 # Reference
 A formal documentation site will be launched soon, alongside a developer portal with helpful resources and tutorials for building on Paradigm.
 
@@ -6,6 +10,9 @@ See [`./ethereum-peg.md`](./ethereum-peg.md).
 
 ## Websocket API (valid order event stream)
 See [`./websocket-api.md`](./websocket-api.md).
+
+## Dynamic validator selection spec
+See [`./validator-tx-spec.md`](./validator-tx-spec.md).
 
 ## HTTP API (propose an order)
 This part will be expanded on soon. The primary interface endpoint (currently is) exposed as:

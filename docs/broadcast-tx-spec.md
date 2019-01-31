@@ -1,3 +1,7 @@
+---
+title: Order TX Spec
+---
+
 # Transaction Type Specification (WIP)
 Currently there is one type of broadcast transaction supported by `ParadigmConnect` and the OrderStream network: `OrderBroadcast.` This doc contains the current OrderBroadcast model, and proposes the model for StreamBroadcasts.
 

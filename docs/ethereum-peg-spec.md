@@ -1,3 +1,7 @@
+---
+title: Ethereum Peg
+---
+
 # OrderStream/Ethereum Peg Zone and Finality Gadget
 
 _NOTE: this project is currently a WIP, so details of the implementation are likely to change. I'll strive to keep this doc up to date with changes. Last updated: 27 December 2018._
