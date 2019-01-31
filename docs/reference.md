@@ -6,7 +6,7 @@ title: Reference
 A formal documentation site will be launched soon, alongside a developer portal with helpful resources and tutorials for building on Paradigm.
 
 ## Ethereum peg and shared-security model
-See [`./ethereum-peg.md`](./ethereum-peg.md).
+See [`./ethereum-peg.md`](./ethereum-peg-spec.md).
 
 ## Websocket API (valid order event stream)
 See [`./websocket-api.md`](./websocket-api.md).
