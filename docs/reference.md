@@ -2,10 +2,10 @@
 A formal documentation site will be launched soon, alongside a developer portal with helpful resources and tutorials for building on Paradigm.
 
 ## Ethereum peg and shared-security model
-See [`./spec/ethereum-peg.md`](./spec/ethereum-peg.md).
+See [`./ethereum-peg.md`](./ethereum-peg.md).
 
 ## Websocket API (valid order event stream)
-See [`./docs/websocket-api.md`](./docs/websocket-api.md).
+See [`./websocket-api.md`](./websocket-api.md).
 
 ## HTTP API (propose an order)
 This part will be expanded on soon. The primary interface endpoint (currently is) exposed as:
