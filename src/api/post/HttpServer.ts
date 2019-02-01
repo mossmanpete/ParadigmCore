@@ -30,7 +30,7 @@ import { messages as msg } from "../../util/static/messages";
 import { HttpMessage as Message } from "./HttpMessage";
 
 // Type defs
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 
 // "Globals"
 let client: TxBroadcaster;  // Tendermint client for RPC
